@@ -1,0 +1,72 @@
+---
+name: Accessory Controller Firmware
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  formatting-firmware:
+    name: Formatting (firmware)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./accessory_controller/firmware
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Format
+        run: cargo fmt -- --check
+
+      - uses: cachix/install-nix-action@v18
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Clippy
+        run: nix-shell --run 'cargo clippy -- -Dwarnings'
+
+  formatting-firmware-tests:
+    name: Formatting (firmware tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./accessory_controller/firmware-tests
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Format
+        run: cargo fmt -- --check
+
+      - uses: cachix/install-nix-action@v18
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      # TODO
+      # - name: Clippy
+      #   run: nix-shell --run 'cargo clippy -- -Dwarnings'
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: cachix/install-nix-action@v18
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Build
+        working-directory: ./accessory_controller/firmware
+        run: |
+          nix-shell --run 'cargo build --release'
+          nix-shell --run 'cargo build --release --features simulator'
+
+      # TODO
+      # - name: In Simulator Tests
+      #   working-directory: ./accessory_controller/firmware-tests
+      #   run: nix-shell --run 'cargo build --release'
