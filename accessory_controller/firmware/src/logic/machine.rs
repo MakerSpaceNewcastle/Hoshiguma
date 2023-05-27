@@ -3,8 +3,13 @@ use ufmt::derive::uDebug;
 
 #[derive(uDebug, PartialEq)]
 pub(crate) enum MachineStatus {
+    /// The machine is currently running a job.
     Running { air_pump: bool },
+
+    /// The machine is not running, but is ready to run a job.
     Idle,
+
+    /// The machine is not running, and cannot run for some reason.
     Problem(MachineProblem),
 }
 
@@ -32,6 +37,9 @@ impl super::StatusUpdate for MachineStatus {
 
 #[derive(uDebug, PartialEq)]
 pub(crate) enum MachineProblem {
+    /// Any door to a protected area is open.
     DoorOpen,
+
+    /// The laser tube cooling system has failed.
     CoolingFault,
 }
