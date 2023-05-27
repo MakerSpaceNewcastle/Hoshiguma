@@ -2,12 +2,14 @@
 #![no_main]
 #![feature(abi_avr_interrupt)]
 
+mod checked_update;
 mod hal;
 mod io;
 mod logic;
 mod unwrap_simple;
 
 use crate::{
+    checked_update::CheckedUpdate,
     io::{
         inputs::ReadInputs,
         outputs::{Outputs, WriteOutputs},
@@ -44,33 +46,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-struct Dooter<T> {
-    value: Option<T>,
-}
-
-impl<T> Default for Dooter<T> {
-    fn default() -> Self {
-        Self { value: None }
-    }
-}
-
-impl<T: PartialEq + ufmt::uDebug> Dooter<T> {
-    fn new(value: T) -> Self {
-        Self { value: Some(value) }
-    }
-
-    fn store(&mut self, value: T) -> bool {
-        let value = Some(value);
-        let changed = value != self.value;
-        self.value = value;
-        changed
-    }
-
-    fn get(&self) -> &T {
-        self.value.as_ref().unwrap()
-    }
-}
-
 #[avr_device::entry]
 fn main() -> ! {
     let dp = atmega_hal::Peripherals::take().unwrap();
@@ -88,10 +63,10 @@ fn main() -> ! {
     let inputs = gpio_isolated_inputs!(pins);
     let mut outputs = gpio_relay_outputs!(pins);
 
-    let mut st_inputs = Dooter::default();
-    let mut machine_status = Dooter::new(MachineStatus::default());
-    let mut extraction_status = Dooter::new(ExtractionStatus::default());
-    let mut st_outputs = Dooter::default();
+    let mut st_inputs = CheckedUpdate::default();
+    let mut machine_status = CheckedUpdate::new(MachineStatus::default());
+    let mut extraction_status = CheckedUpdate::new(ExtractionStatus::default());
+    let mut st_outputs = CheckedUpdate::default();
 
     loop {
         let time = crate::hal::millis();
