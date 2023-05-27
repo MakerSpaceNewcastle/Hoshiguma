@@ -26,7 +26,7 @@ const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
     500
 } else {
     // Time in milliseconds that the extractor will continue to run after demand has ceased.
-    30_000
+    15_000
 };
 
 impl super::StatusUpdate for ExtractionStatus {
