@@ -5,6 +5,13 @@ use crate::{
 };
 use ufmt::derive::uDebug;
 
+const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
+    500
+} else {
+    // Time in milliseconds that the extractor will continue to run after demand has ceased.
+    15_000
+};
+
 #[derive(uDebug, Clone, PartialEq)]
 pub(crate) struct ExtractionStatus {
     state: RunOnDelay<TimeMillis>,
@@ -18,13 +25,6 @@ impl Default for ExtractionStatus {
     }
 }
 
-const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
-    500
-} else {
-    // Time in milliseconds that the extractor will continue to run after demand has ceased.
-    15_000
-};
-
 impl super::StatusUpdate for ExtractionStatus {
     fn update(&self, time: TimeMillis, current: &Inputs) -> Self {
         let mut new_state = self.clone();
@@ -37,7 +37,7 @@ impl super::StatusUpdate for ExtractionStatus {
 }
 
 impl ExtractionStatus {
-    pub fn fan_active(&self) -> bool {
+    pub fn active(&self) -> bool {
         self.state.should_run()
     }
 }

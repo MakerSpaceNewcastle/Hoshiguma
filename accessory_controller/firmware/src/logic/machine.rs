@@ -4,7 +4,7 @@ use ufmt::derive::uDebug;
 #[derive(uDebug, PartialEq)]
 pub(crate) enum MachineStatus {
     /// The machine is currently running a job.
-    Running { air_pump: bool },
+    Running,
 
     /// The machine is not running, but is ready to run a job.
     Idle,
@@ -26,9 +26,7 @@ impl super::StatusUpdate for MachineStatus {
         } else if !current.cooling_ok {
             Self::Problem(MachineProblem::CoolingFault)
         } else if current.machine_running {
-            Self::Running {
-                air_pump: current.air_pump_demand,
-            }
+            Self::Running
         } else {
             Self::Idle
         }

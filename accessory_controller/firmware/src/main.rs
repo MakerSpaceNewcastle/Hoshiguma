@@ -14,7 +14,10 @@ use crate::{
         inputs::ReadInputs,
         outputs::{Outputs, WriteOutputs},
     },
-    logic::{extraction::ExtractionStatus, machine::MachineStatus, StatusUpdate},
+    logic::{
+        air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus,
+        StatusUpdate,
+    },
 };
 use atmega_hal::prelude::*;
 
@@ -66,6 +69,7 @@ fn main() -> ! {
     let mut st_inputs = CheckedUpdate::default();
     let mut machine_status = CheckedUpdate::new(MachineStatus::default());
     let mut extraction_status = CheckedUpdate::new(ExtractionStatus::default());
+    let mut air_assist_status = CheckedUpdate::new(AirAssistStatus::default());
     let mut st_outputs = CheckedUpdate::default();
 
     loop {
@@ -98,7 +102,22 @@ fn main() -> ! {
             .void_unwrap();
         }
 
-        if st_outputs.store(Outputs::new(machine_status.get(), extraction_status.get())) {
+        if air_assist_status.store(air_assist_status.get().update(time, st_inputs.get())) {
+            #[cfg(not(feature = "simulator"))]
+            ufmt::uwriteln!(
+                &mut serial,
+                "[{}] Air assist status: {:?}",
+                time,
+                air_assist_status.get()
+            )
+            .void_unwrap();
+        }
+
+        if st_outputs.store(Outputs::new(
+            machine_status.get(),
+            extraction_status.get(),
+            air_assist_status.get(),
+        )) {
             #[cfg(not(feature = "simulator"))]
             ufmt::uwriteln!(&mut serial, "[{}] {:#?}", time, st_outputs.get()).void_unwrap();
         }
