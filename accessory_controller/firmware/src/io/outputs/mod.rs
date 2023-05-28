@@ -1,6 +1,7 @@
 pub(crate) mod gpio_relays;
 
 use crate::logic::{
+    air_assist::AirAssistStatus,
     extraction::ExtractionStatus,
     machine::{MachineProblem, MachineStatus},
     AlarmState, StatusLight,
@@ -18,23 +19,27 @@ pub(crate) struct Outputs {
 }
 
 impl Outputs {
-    pub(crate) fn new(machine: &MachineStatus, extraction: &ExtractionStatus) -> Self {
+    pub(crate) fn new(
+        machine: &MachineStatus,
+        extraction: &ExtractionStatus,
+        air_assist: &AirAssistStatus,
+    ) -> Self {
         match machine {
-            MachineStatus::Running { air_pump } => Outputs {
+            MachineStatus::Running => Outputs {
                 controller_machine_alarm: AlarmState::Normal,
                 controller_cooling_alarm: AlarmState::Normal,
                 laser_enable: true,
                 status_light: StatusLight::Amber,
-                air_pump: *air_pump,
-                extractor_fan: extraction.fan_active(),
+                air_pump: air_assist.active(),
+                extractor_fan: extraction.active(),
             },
             MachineStatus::Idle => Outputs {
                 controller_machine_alarm: AlarmState::Normal,
                 controller_cooling_alarm: AlarmState::Normal,
                 laser_enable: true,
                 status_light: StatusLight::Green,
-                air_pump: false,
-                extractor_fan: extraction.fan_active(),
+                air_pump: air_assist.active(),
+                extractor_fan: extraction.active(),
             },
             MachineStatus::Problem(problem) => Outputs {
                 controller_machine_alarm: if *problem == MachineProblem::DoorOpen {
@@ -49,8 +54,8 @@ impl Outputs {
                 },
                 laser_enable: false,
                 status_light: StatusLight::Red,
-                air_pump: false,
-                extractor_fan: extraction.fan_active(),
+                air_pump: air_assist.active(),
+                extractor_fan: extraction.active(),
             },
         }
     }
