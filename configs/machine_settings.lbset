@@ -1,0 +1,615 @@
+{
+    "Name": "Ruida",
+    "Settings": [
+        {
+            "Desc": "Idle speed (mm/s)",
+            "ID": "0x5",
+            "Value": 200
+        },
+        {
+            "Desc": "Idle acceleration (mm/s^2)",
+            "ID": "0x20a",
+            "Value": 2000
+        },
+        {
+            "Desc": "Idle delay (ms)",
+            "ID": "0x203",
+            "Value": 0
+        },
+        {
+            "Desc": "Start speed (mm/s)",
+            "ID": "0x201",
+            "Value": 10
+        },
+        {
+            "Desc": "Min acceleration (mm/s^2)",
+            "ID": "0x209",
+            "Value": 350
+        },
+        {
+            "Desc": "Max acceleration (mm/s^2)",
+            "ID": "0x202",
+            "Value": 2000
+        },
+        {
+            "Desc": "Accel factor % (0 to 200)",
+            "ID": "0x21a",
+            "Value": 80
+        },
+        {
+            "Desc": "G0 accel factor % (0 to 200)",
+            "ID": "0x21c",
+            "Value": 100
+        },
+        {
+            "Desc": "Speed factor % (0 to 200)",
+            "ID": "0x21b",
+            "Value": 50
+        },
+        {
+            "Desc": "X start speed (mm/sec)",
+            "ID": "0x224",
+            "Value": 20
+        },
+        {
+            "Desc": "Y start speed (mm/sec)",
+            "ID": "0x234",
+            "Value": 15
+        },
+        {
+            "Desc": "X acceleration (mm/s^2)",
+            "ID": "0x225",
+            "Value": 25000
+        },
+        {
+            "Desc": "Y acceleration (mm/s^2)",
+            "ID": "0x235",
+            "Value": 2000
+        },
+        {
+            "Desc": "Line shift speed (mm/sec)",
+            "ID": "0xe",
+            "Value": 150
+        },
+        {
+            "Desc": "Facula Size (50 - 99%)",
+            "ID": "0xb",
+            "Value": 98
+        },
+        {
+            "Desc": "Engraving factor % (0 to 100)",
+            "ID": "0x237",
+            "Value": 100
+        },
+        {
+            "Desc": "Enable Rotary",
+            "ID": "0x2260001",
+            "Value": false
+        },
+        {
+            "Desc": "Pulses per rotation",
+            "ID": "0x21f",
+            "Value": 10000
+        },
+        {
+            "Desc": "Diameter",
+            "ID": "0x221",
+            "Value": 100
+        },
+        {
+            "Desc": "Focus Distance",
+            "ID": "0x20e",
+            "Value": 0
+        },
+        {
+            "Desc": "X Axis Backlash (mm)",
+            "ID": "0x2b",
+            "Value": 0
+        },
+        {
+            "Desc": "Y Axis Backlash (mm)",
+            "ID": "0x3b",
+            "Value": 0
+        },
+        {
+            "Desc": "Enable wireless panel speed shift",
+            "ID": "0x2260004",
+            "Value": false
+        },
+        {
+            "Desc": "Wireless panel speed fast (mm/sec)",
+            "ID": "0x231",
+            "Value": 200
+        },
+        {
+            "Desc": "Wireless panel speed slow (mm/sec)",
+            "ID": "0x232",
+            "Value": 50
+        },
+        {
+            "Desc": "X Axis docking position (mm)",
+            "ID": "0x215",
+            "Value": 0
+        },
+        {
+            "Desc": "Y Axis docking position (mm)",
+            "ID": "0x216",
+            "Value": 0
+        },
+        {
+            "Desc": "Z Axis docking position (mm)",
+            "ID": "0x22d",
+            "Value": -231145.472
+        },
+        {
+            "Desc": "Reset delay (ms)",
+            "ID": "0x233",
+            "Value": -231145.472
+        },
+        {
+            "Desc": "Status on delay (ms)",
+            "ID": "0x238",
+            "Value": 0
+        },
+        {
+            "Desc": "Status off delay (ms)",
+            "ID": "0x351",
+            "Value": 0
+        },
+        {
+            "Desc": "Finish delay (ms)",
+            "ID": "0x352",
+            "Value": -231145.472
+        },
+        {
+            "Desc": "Focus Enabled",
+            "ID": "0x30f0001",
+            "Value": false
+        },
+        {
+            "Desc": "Z Axis return to docking",
+            "ID": "0x30f0008",
+            "Value": false
+        },
+        {
+            "Desc": "Air Assist Mode",
+            "ID": "0x30f0600",
+            "Value": "On/off with laser"
+        },
+        {
+            "Desc": "Engraving Mode",
+            "ID": "0x100400",
+            "Value": "Common Mode"
+        },
+        {
+            "Desc": "Return Position",
+            "ID": "0x200",
+            "Value": "No Return"
+        },
+        {
+            "Desc": "Homing Speed (mm/sec)",
+            "ID": "0xc",
+            "Value": 80
+        },
+        {
+            "Desc": "Laser 1 Output Signal",
+            "ID": "0x40200",
+            "Value": "Low"
+        },
+        {
+            "Desc": "Laser 2 Output Signal",
+            "ID": "0x40400",
+            "Value": "Low"
+        },
+        {
+            "Desc": "Water Protect Enable, Laser 1",
+            "ID": "0x40020",
+            "Value": true
+        },
+        {
+            "Desc": "Water Protect Enable, Laser 2",
+            "ID": "0x40040",
+            "Value": false
+        },
+        {
+            "Desc": "Enable air-assist output",
+            "ID": "0x40002",
+            "Value": true
+        },
+        {
+            "Desc": "Enable door open protect",
+            "ID": "0x40001",
+            "Value": true
+        },
+        {
+            "Desc": "Enable Homing",
+            "ID": "0x200008",
+            "Value": true
+        },
+        {
+            "Desc": "Limit Trigger",
+            "ID": "0x200006",
+            "Value": true
+        },
+        {
+            "Desc": "Invert Keypad Direction",
+            "ID": "0x200005",
+            "Value": false
+        },
+        {
+            "Desc": "PWM Rising Edge Valid",
+            "ID": "0x200004",
+            "Value": false
+        },
+        {
+            "Desc": "Limiter Polarity",
+            "ID": "0x200003",
+            "Value": true
+        },
+        {
+            "Desc": "Direction Polarity",
+            "ID": "0x200002",
+            "Value": true
+        },
+        {
+            "Desc": "Step length (um)",
+            "ID": "0x21",
+            "Value": 11.2318
+        },
+        {
+            "Desc": "Max speed (mm/sec)",
+            "ID": "0x23",
+            "Value": 3000
+        },
+        {
+            "Desc": "Jumpoff speed (mm/s^2)",
+            "ID": "0x24",
+            "Value": 20
+        },
+        {
+            "Desc": "Max acceleration (mm/s^2)",
+            "ID": "0x25",
+            "Value": 25000
+        },
+        {
+            "Desc": "Max travel (mm)",
+            "ID": "0x26",
+            "Value": 620
+        },
+        {
+            "Desc": "Keypad jumpoff speed (mm/sec)",
+            "ID": "0x27",
+            "Value": 5
+        },
+        {
+            "Desc": "Keypad acceleration (mm/s^2)",
+            "ID": "0x28",
+            "Value": 1000
+        },
+        {
+            "Desc": "E-Stop acceleration (mm/s^2)",
+            "ID": "0x29",
+            "Value": 30000
+        },
+        {
+            "Desc": "Home offset (mm)",
+            "ID": "0x2a",
+            "Value": 0
+        },
+        {
+            "Desc": "Enable Homing",
+            "ID": "0x300008",
+            "Value": true
+        },
+        {
+            "Desc": "Limit Trigger",
+            "ID": "0x300006",
+            "Value": true
+        },
+        {
+            "Desc": "Invert Keypad Direction",
+            "ID": "0x300005",
+            "Value": false
+        },
+        {
+            "Desc": "PWM Rising Edge Valid",
+            "ID": "0x300004",
+            "Value": false
+        },
+        {
+            "Desc": "Limiter Polarity",
+            "ID": "0x300003",
+            "Value": true
+        },
+        {
+            "Desc": "Direction Polarity",
+            "ID": "0x300002",
+            "Value": true
+        },
+        {
+            "Desc": "Step length (um)",
+            "ID": "0x31",
+            "Value": 11.2318
+        },
+        {
+            "Desc": "Max speed (mm/sec)",
+            "ID": "0x33",
+            "Value": 500
+        },
+        {
+            "Desc": "Jumpoff speed (mm/s^2)",
+            "ID": "0x34",
+            "Value": 15
+        },
+        {
+            "Desc": "Max acceleration (mm/s^2)",
+            "ID": "0x35",
+            "Value": 3000
+        },
+        {
+            "Desc": "Max travel (mm)",
+            "ID": "0x36",
+            "Value": 398
+        },
+        {
+            "Desc": "Keypad jumpoff speed (mm/sec)",
+            "ID": "0x37",
+            "Value": 5
+        },
+        {
+            "Desc": "Keypad acceleration (mm/s^2)",
+            "ID": "0x38",
+            "Value": 1000
+        },
+        {
+            "Desc": "E-Stop acceleration (mm/s^2)",
+            "ID": "0x39",
+            "Value": 12000
+        },
+        {
+            "Desc": "Home offset (mm)",
+            "ID": "0x3a",
+            "Value": 0
+        },
+        {
+            "Desc": "Enable Homing",
+            "ID": "0x400008",
+            "Value": true
+        },
+        {
+            "Desc": "Limit Trigger",
+            "ID": "0x400006",
+            "Value": true
+        },
+        {
+            "Desc": "Invert Keypad Direction",
+            "ID": "0x400005",
+            "Value": false
+        },
+        {
+            "Desc": "PWM Rising Edge Valid",
+            "ID": "0x400004",
+            "Value": false
+        },
+        {
+            "Desc": "Limiter Polarity",
+            "ID": "0x400003",
+            "Value": true
+        },
+        {
+            "Desc": "Direction Polarity",
+            "ID": "0x400002",
+            "Value": true
+        },
+        {
+            "Desc": "Step length (um)",
+            "ID": "0x41",
+            "Value": 0.6
+        },
+        {
+            "Desc": "Max speed (mm/sec)",
+            "ID": "0x43",
+            "Value": 8
+        },
+        {
+            "Desc": "Jumpoff speed (mm/s^2)",
+            "ID": "0x44",
+            "Value": 1
+        },
+        {
+            "Desc": "Max acceleration (mm/s^2)",
+            "ID": "0x45",
+            "Value": 20
+        },
+        {
+            "Desc": "Max travel (mm)",
+            "ID": "0x46",
+            "Value": 200
+        },
+        {
+            "Desc": "Keypad jumpoff speed (mm/sec)",
+            "ID": "0x47",
+            "Value": 0.1
+        },
+        {
+            "Desc": "Keypad acceleration (mm/s^2)",
+            "ID": "0x48",
+            "Value": 20
+        },
+        {
+            "Desc": "E-Stop acceleration (mm/s^2)",
+            "ID": "0x49",
+            "Value": 1000
+        },
+        {
+            "Desc": "Home offset (mm)",
+            "ID": "0x4a",
+            "Value": 0
+        },
+        {
+            "Desc": "Z Home Speed (mm/sec)",
+            "ID": "0x240",
+            "Value": 5
+        },
+        {
+            "Desc": "Z Work Speed (mm/sec)",
+            "ID": "0x241",
+            "Value": 5
+        },
+        {
+            "Desc": "Enable Homing",
+            "ID": "0x500008",
+            "Value": false
+        },
+        {
+            "Desc": "Limit Trigger",
+            "ID": "0x500006",
+            "Value": false
+        },
+        {
+            "Desc": "Invert Keypad Direction",
+            "ID": "0x500005",
+            "Value": false
+        },
+        {
+            "Desc": "PWM Rising Edge Valid",
+            "ID": "0x500004",
+            "Value": false
+        },
+        {
+            "Desc": "Limiter Polarity",
+            "ID": "0x500003",
+            "Value": false
+        },
+        {
+            "Desc": "Direction Polarity",
+            "ID": "0x500002",
+            "Value": true
+        },
+        {
+            "Desc": "Step length (um)",
+            "ID": "0x51",
+            "Value": 6.31
+        },
+        {
+            "Desc": "Max speed (mm/sec)",
+            "ID": "0x53",
+            "Value": 300
+        },
+        {
+            "Desc": "Jumpoff speed (mm/s^2)",
+            "ID": "0x54",
+            "Value": 10
+        },
+        {
+            "Desc": "Max acceleration (mm/s^2)",
+            "ID": "0x55",
+            "Value": 5000
+        },
+        {
+            "Desc": "Max travel (mm)",
+            "ID": "0x56",
+            "Value": 600
+        },
+        {
+            "Desc": "Keypad jumpoff speed (mm/sec)",
+            "ID": "0x57",
+            "Value": 10
+        },
+        {
+            "Desc": "Keypad acceleration (mm/s^2)",
+            "ID": "0x58",
+            "Value": 4000
+        },
+        {
+            "Desc": "E-Stop acceleration (mm/s^2)",
+            "ID": "0x59",
+            "Value": 10000
+        },
+        {
+            "Desc": "Home offset (mm)",
+            "ID": "0x5a",
+            "Value": 0
+        },
+        {
+            "Desc": "U Home Speed (mm/sec)",
+            "ID": "0x242",
+            "Value": 100
+        },
+        {
+            "Desc": "U Work Speed (mm/sec)",
+            "ID": "0x243",
+            "Value": 300
+        },
+        {
+            "Desc": "Tube Type",
+            "ID": "0x100003",
+            "Value": "Glass Tube"
+        },
+        {
+            "Desc": "Multi-Tube Enable",
+            "ID": "0x108000",
+            "Value": false
+        },
+        {
+            "Desc": "Laser 1 Enabled",
+            "ID": "0x102000",
+            "Value": true
+        },
+        {
+            "Desc": "Laser 2 Enabled",
+            "ID": "0x104000",
+            "Value": false
+        },
+        {
+            "Desc": "Laser 1 minimum power (%)",
+            "ID": "0x12",
+            "Value": 1
+        },
+        {
+            "Desc": "Laser 1 maximum power (%)",
+            "ID": "0x13",
+            "Value": 80
+        },
+        {
+            "Desc": "Laser 1 frequency (hz)",
+            "ID": "0x11",
+            "Value": 20000
+        },
+        {
+            "Desc": "Laser 1 pre-ignition frequency (hz)",
+            "ID": "0x1a",
+            "Value": 5000
+        },
+        {
+            "Desc": "Laser 1 pre-ignition percent (%)",
+            "ID": "0x1b",
+            "Value": 1
+        },
+        {
+            "Desc": "Laser 2 minimum power (%)",
+            "ID": "0x18",
+            "Value": 1
+        },
+        {
+            "Desc": "Laser 2 maximum power (%)",
+            "ID": "0x19",
+            "Value": 99
+        },
+        {
+            "Desc": "Laser 2 frequency (hz)",
+            "ID": "0x17",
+            "Value": 20000
+        },
+        {
+            "Desc": "Laser 2 pre-ignition frequency (hz)",
+            "ID": "0x1c",
+            "Value": 5000
+        },
+        {
+            "Desc": "Laser 2 pre-ignition percent (%)",
+            "ID": "0x1d",
+            "Value": 1
+        }
+    ]
+}
