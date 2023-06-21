@@ -15,12 +15,14 @@ const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
 #[derive(uDebug, Clone, PartialEq)]
 pub(crate) struct ExtractionStatus {
     state: RunOnDelay<TimeMillis>,
+    r#override: bool,
 }
 
 impl Default for ExtractionStatus {
     fn default() -> Self {
         Self {
             state: RunOnDelay::new(EXTRACTOR_RUN_ON_DELAY),
+            r#override: false,
         }
     }
 }
@@ -29,8 +31,8 @@ impl super::StatusUpdate for ExtractionStatus {
     fn update(&self, time: TimeMillis, current: &Inputs) -> Self {
         let mut new_state = self.clone();
 
-        let demand = current.extraction_mode == ExtractionMode::Run || current.machine_running;
-        new_state.state.update(time, demand);
+        new_state.state.update(time, current.machine_running);
+        new_state.r#override = current.extraction_mode == ExtractionMode::Run;
 
         new_state
     }
@@ -38,6 +40,6 @@ impl super::StatusUpdate for ExtractionStatus {
 
 impl ExtractionStatus {
     pub fn active(&self) -> bool {
-        self.state.should_run()
+        self.state.should_run() || self.r#override
     }
 }
