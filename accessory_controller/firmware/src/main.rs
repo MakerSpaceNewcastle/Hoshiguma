@@ -84,7 +84,7 @@ fn main() -> ! {
             #[cfg(not(feature = "simulator"))]
             ufmt::uwriteln!(
                 &mut serial,
-                "[{}] Machine status: {:?}",
+                "[{}] Machine status: {:#?}",
                 time,
                 machine_status.get()
             )
@@ -95,7 +95,7 @@ fn main() -> ! {
             #[cfg(not(feature = "simulator"))]
             ufmt::uwriteln!(
                 &mut serial,
-                "[{}] Extraction status: {:?}",
+                "[{}] Extraction status: {:#?}",
                 time,
                 extraction_status.get()
             )
@@ -106,7 +106,7 @@ fn main() -> ! {
             #[cfg(not(feature = "simulator"))]
             ufmt::uwriteln!(
                 &mut serial,
-                "[{}] Air assist status: {:?}",
+                "[{}] Air assist status: {:#?}",
                 time,
                 air_assist_status.get()
             )
