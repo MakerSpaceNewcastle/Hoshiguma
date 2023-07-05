@@ -1,5 +1,5 @@
 [package]
-name = "accessory-controller"
+name = "koishi"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2021"
@@ -11,7 +11,7 @@ simulator = []
 
 
 [[bin]]
-name = "accessory-controller"
+name = "koishi"
 test = false
 bench = false
 

@@ -9,5 +9,5 @@ use avr_tester::*;
 fn avr() -> AvrTester {
     AvrTester::atmega328p()
         .with_clock_of_8_mhz()
-        .load("../firmware/target/avr-atmega328p/release/accessory-controller.elf")
+        .load("../firmware/target/avr-atmega328p/release/koishi.elf")
 }
