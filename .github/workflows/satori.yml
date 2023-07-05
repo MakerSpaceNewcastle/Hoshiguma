@@ -1,0 +1,51 @@
+---
+name: Satori
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'flake.*'
+      - 'satori/**'
+  pull_request:
+    paths:
+      - 'flake.*'
+      - 'satori/**'
+
+jobs:
+  firmware:
+    name: Firmware
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./satori/firmware/firmware
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v20
+
+      - name: Setup Toolchain
+        run: |
+          eval "$(nix print-dev-env)"
+          distrobox create --name hoshiguma-satori --yes --image ghcr.io/dannixon/esp-rs-distrobox:v2
+          distrobox enter hoshiguma-satori -- espup install
+
+      - name: Format
+        run: |
+          eval "$(nix print-dev-env)"
+          . $HOME/export-esp.sh
+          distrobox enter hoshiguma-satori -- cargo fmt -- --check
+
+      - name: Clippy
+        run: |
+          eval "$(nix print-dev-env)"
+          . $HOME/export-esp.sh
+          distrobox enter hoshiguma-satori -- cargo clippy -- -Dwarnings
+
+      - name: Build
+        working-directory: ./satori/firmware
+        run: |
+          eval "$(nix print-dev-env)"
+          . $HOME/export-esp.sh
+          distrobox enter hoshiguma-satori -- cargo build --release

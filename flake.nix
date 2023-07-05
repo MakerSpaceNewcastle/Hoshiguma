@@ -29,6 +29,11 @@
 
             # koishi telemetry receiver demo
             systemd
+
+            # satori firmware
+            cargo-espflash
+            distrobox
+            git  # Required for ESP-IDF build script
           ];
 
           LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";

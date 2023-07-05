@@ -1,0 +1,10 @@
+[package]
+name = "satori-state"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+koishi-telemetry-protocol = { path = "../../../koishi/telemetry-protocol" }
+num = "0.4.1"
+serde = { version = "1.0.188", features = ["derive"] }
+thiserror = "1.0.48"
