@@ -2,18 +2,17 @@
 
 ## Prerequisities
 
-- rustup
 - Nix
 - ravedude (`cargo install ravedude`)
 
 ## Build
 
 ```shell
-nix-shell --run "cargo build"
+nix develop --command cargo build
 ```
 
 ## Flash
 
 ```shell
-nix-shell --run "cargo run -- -P /dev/ttyXXX"
+nix develop --command cargo run -- -P /dev/ttyXXX
 ```
