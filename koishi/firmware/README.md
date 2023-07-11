@@ -1,10 +1,5 @@
 # Firmware
 
-## Prerequisities
-
-- Nix
-- ravedude (`cargo install ravedude`)
-
 ## Build
 
 ```shell
