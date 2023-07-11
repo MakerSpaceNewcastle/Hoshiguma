@@ -3,9 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
+    ravedude.url = "github:Rahix/avr-hal?dir=ravedude";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, ravedude }:
   let
     allSystems = [
       "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -16,16 +17,19 @@
 
     forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
       pkgs = import nixpkgs { inherit system; };
+      ravedude = [ ravedude.packages."${system}".default ];
     });
   in
   {
-    devShells = forAllSystems ({ pkgs }: {
+    devShells = forAllSystems ({ pkgs, ravedude }: {
       default = pkgs.mkShell {
         packages = (with pkgs; [
           avrdude
           pkgs.pkgsCross.avr.buildPackages.gcc
           rustup
-        ]) ++ pkgs.lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ libiconv ]);
+        ])
+        ++ pkgs.lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ libiconv ])
+        ++ ravedude;
       };
     });
   };
