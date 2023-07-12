@@ -22,8 +22,15 @@
     devShells = forAllSystems ({ pkgs }: {
       default = pkgs.mkShell {
         packages = (with pkgs; [
-          cargo-espflash
+          # esp-idf-sys build requirements
+          cmake
+          ninja
+          clang_15
+          python3
+
           rustup
+
+          cargo-espflash
         ]) ++ pkgs.lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ libiconv ]);
       };
     });

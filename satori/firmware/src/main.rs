@@ -1,36 +1,49 @@
-#![no_std]
-#![no_main]
+use anyhow::{bail, Result};
+use esp_idf_hal::prelude::Peripherals;
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use log::info;
+use rgb_led::{RGB8, WS2812RMT};
+use wifi::wifi;
+use esp_idf_sys as _;
 
-use esp_backtrace as _;
-use esp_println::println;
-use hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+fn main() -> Result<()> {
+    esp_idf_sys::link_patches();
+    esp_idf_svc::log::EspLogger::initialize_default();
 
-#[entry]
-fn main() -> ! {
-    let peripherals = Peripherals::take();
-    let mut system = peripherals.SYSTEM.split();
-    let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
+    let peripherals = Peripherals::take().unwrap();
+    let sysloop = EspSystemEventLoop::take()?;
 
-    // Disable the RTC and TIMG watchdog timers
-    let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-    let timer_group0 = TimerGroup::new(
-        peripherals.TIMG0,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    let mut wdt0 = timer_group0.wdt;
-    let timer_group1 = TimerGroup::new(
-        peripherals.TIMG1,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    let mut wdt1 = timer_group1.wdt;
-    rtc.swd.disable();
-    rtc.rwdt.disable();
-    wdt0.disable();
-    wdt1.disable();
+    info!("Hello, world!");
 
-    println!("feck arse drink");
+    // Start the LED off yellow
+    let mut led = WS2812RMT::new(peripherals.pins.gpio2, peripherals.rmt.channel0)?;
+    led.set_pixel(RGB8::new(50, 50, 0))?;
 
-    loop {}
+    // Connect to the Wi-Fi network
+    let _wifi = match wifi(
+        "Maker Space",
+        "donotbeonfire",
+        peripherals.modem,
+        sysloop,
+    ) {
+        Ok(inner) => inner,
+        Err(err) => {
+            // Red!
+            led.set_pixel(RGB8::new(50, 0, 0))?;
+            bail!("Could not connect to Wi-Fi network: {:?}", err)
+        }
+    };
+
+    loop {
+        // Blue!
+        led.set_pixel(RGB8::new(0, 0, 50))?;
+        // Wait...
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        info!("Hello, world!");
+
+        // Green!
+        led.set_pixel(RGB8::new(0, 50, 0))?;
+        // Wait...
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
 }
