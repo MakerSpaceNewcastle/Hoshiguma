@@ -6,6 +6,8 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [features]
+reporting_debug = []
+reporting_postcard = ["dep:postcard"]
 devkit = []
 simulator = []
 
@@ -19,7 +21,11 @@ atmega-hal = { git = "https://github.com/rahix/avr-hal", rev = "4c9c44c314eb061e
 avr-device = { version = "0.5.1", features = ["rt", "atmega328p"] }
 avr-hal-generic = { git = "https://github.com/rahix/avr-hal", rev = "4c9c44c314eb061ee20556ef10d45dea36e75ee4" }
 embedded-hal = "0.2.3"
+git-version = "0.3.5"
+heapless = { version = "0.7.16", features = ["serde"] }
 nb = "0.1.2"
+postcard = { version = "1.0.6", optional = true }
+serde = { version = "1.0.171", default-features = false, features = ["derive"] }
 ufmt = "0.1.0"
 
 [profile.dev]

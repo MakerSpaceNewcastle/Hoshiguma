@@ -6,6 +6,8 @@ mod checked_update;
 mod hal;
 mod io;
 mod logic;
+#[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+mod reporting;
 mod unwrap_simple;
 
 use crate::{
@@ -22,24 +24,17 @@ use crate::{
 use atmega_hal::prelude::*;
 
 #[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
+fn panic(_info: &core::panic::PanicInfo) -> ! {
     avr_device::interrupt::disable();
 
     let dp = unsafe { atmega_hal::Peripherals::steal() };
     let pins = hal::Pins::with_mcu_pins(atmega_hal::pins!(dp));
 
-    let mut serial = serial!(dp, pins, 57600);
-
-    ufmt::uwriteln!(&mut serial, "Firmware panic!\r").void_unwrap();
-    if let Some(loc) = info.location() {
-        ufmt::uwriteln!(
-            &mut serial,
-            "  At {}:{}:{}\r",
-            loc.file(),
-            loc.line(),
-            loc.column(),
-        )
-        .void_unwrap();
+    #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+    {
+        let mut serial = serial!(dp, pins, 57600);
+        serial.write_byte(0u8);
+        reporting::panic(&mut serial, _info);
     }
 
     let mut led = pins.d13.into_output();
@@ -57,10 +52,10 @@ fn main() -> ! {
     hal::millis_init(dp.TC0);
     unsafe { avr_device::interrupt::enable() };
 
-    #[cfg(not(feature = "simulator"))]
+    #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
     let mut serial = serial!(dp, pins, 57600);
-    #[cfg(not(feature = "simulator"))]
-    ufmt::uwriteln!(&mut serial, "Hello, world!").void_unwrap();
+    #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+    reporting::boot(&mut serial);
 
     #[cfg(feature = "devkit")]
     let inputs = gpio_debug_inputs!(pins);
@@ -75,45 +70,29 @@ fn main() -> ! {
     let mut air_assist_status = CheckedUpdate::new(AirAssistStatus::default());
     let mut st_outputs = CheckedUpdate::default();
 
+    let mut iteration_id: u32 = 0;
+
     loop {
         let time = crate::hal::millis();
 
         if st_inputs.store(inputs.read()) {
-            #[cfg(not(feature = "simulator"))]
-            ufmt::uwriteln!(&mut serial, "[{}] {:#?}", time, st_inputs.get()).void_unwrap();
+            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            reporting::status(&mut serial, iteration_id, st_inputs.get());
         }
 
         if machine_status.store(machine_status.get().update(time, st_inputs.get())) {
-            #[cfg(not(feature = "simulator"))]
-            ufmt::uwriteln!(
-                &mut serial,
-                "[{}] Machine status: {:#?}",
-                time,
-                machine_status.get()
-            )
-            .void_unwrap();
+            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            reporting::status(&mut serial, iteration_id, machine_status.get());
         }
 
         if extraction_status.store(extraction_status.get().update(time, st_inputs.get())) {
-            #[cfg(not(feature = "simulator"))]
-            ufmt::uwriteln!(
-                &mut serial,
-                "[{}] Extraction status: {:#?}",
-                time,
-                extraction_status.get()
-            )
-            .void_unwrap();
+            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            reporting::status(&mut serial, iteration_id, extraction_status.get());
         }
 
         if air_assist_status.store(air_assist_status.get().update(time, st_inputs.get())) {
-            #[cfg(not(feature = "simulator"))]
-            ufmt::uwriteln!(
-                &mut serial,
-                "[{}] Air assist status: {:#?}",
-                time,
-                air_assist_status.get()
-            )
-            .void_unwrap();
+            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            reporting::status(&mut serial, iteration_id, air_assist_status.get());
         }
 
         if st_outputs.store(Outputs::new(
@@ -121,10 +100,12 @@ fn main() -> ! {
             extraction_status.get(),
             air_assist_status.get(),
         )) {
-            #[cfg(not(feature = "simulator"))]
-            ufmt::uwriteln!(&mut serial, "[{}] {:#?}", time, st_outputs.get()).void_unwrap();
+            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            reporting::status(&mut serial, iteration_id, st_outputs.get());
         }
 
         outputs.write(st_outputs.get());
+
+        iteration_id = iteration_id.wrapping_add(1);
     }
 }

@@ -6,9 +6,10 @@ use crate::logic::{
     machine::{MachineProblem, MachineStatus},
     AlarmState, StatusLight,
 };
+use serde::Serialize;
 use ufmt::derive::uDebug;
 
-#[derive(uDebug, PartialEq)]
+#[derive(Clone, uDebug, Serialize, PartialEq)]
 pub(crate) struct Outputs {
     pub controller_machine_alarm: AlarmState,
     pub controller_cooling_alarm: AlarmState,

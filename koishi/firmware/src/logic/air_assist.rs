@@ -1,9 +1,10 @@
 use crate::{hal::TimeMillis, io::inputs::Inputs, logic::run_on_delay::RunOnDelay};
+use serde::Serialize;
 use ufmt::derive::uDebug;
 
 const AIR_ASSIST_RUN_ON_DELAY: TimeMillis = 500;
 
-#[derive(uDebug, Clone, PartialEq)]
+#[derive(uDebug, Clone, PartialEq, Serialize)]
 pub(crate) struct AirAssistStatus {
     state: RunOnDelay<TimeMillis>,
 }

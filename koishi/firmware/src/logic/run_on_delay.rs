@@ -1,14 +1,15 @@
 use core::ops::Add;
+use serde::Serialize;
 use ufmt::derive::uDebug;
 
-#[derive(uDebug, Clone, PartialEq)]
+#[derive(uDebug, Clone, PartialEq, Serialize)]
 enum State<T: PartialEq> {
     Demand,
     RunOn { end: T },
     Idle,
 }
 
-#[derive(uDebug, Clone, PartialEq)]
+#[derive(uDebug, Clone, PartialEq, Serialize)]
 pub(crate) struct RunOnDelay<T: PartialEq> {
     delay: T,
     state: State<T>,
