@@ -1,13 +1,18 @@
 # Firmware
 
+## Dependencies
+
+- Nix (with flake support)
+- direnv (or just run `nix shell` before running the commands below)
+
 ## Build
 
 ```shell
-nix develop --command cargo build
+cargo build --release
 ```
 
 ## Flash
 
 ```shell
-nix develop --command cargo run -- -P /dev/ttyXXX
+cargo run --release -- -P /dev/ttyXXX
 ```

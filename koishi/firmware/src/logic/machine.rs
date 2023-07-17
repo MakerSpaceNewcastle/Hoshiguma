@@ -1,7 +1,8 @@
 use crate::{hal::TimeMillis, io::inputs::Inputs};
+use serde::Serialize;
 use ufmt::derive::uDebug;
 
-#[derive(uDebug, PartialEq)]
+#[derive(Clone, uDebug, PartialEq, Serialize)]
 pub(crate) enum MachineStatus {
     /// The machine is currently running a job.
     Running,
@@ -33,7 +34,7 @@ impl super::StatusUpdate for MachineStatus {
     }
 }
 
-#[derive(uDebug, PartialEq)]
+#[derive(Clone, uDebug, PartialEq, Serialize)]
 pub(crate) enum MachineProblem {
     /// Any door to a protected area is open.
     DoorOpen,

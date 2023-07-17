@@ -1,15 +1,16 @@
 pub(crate) mod gpio_debug;
 pub(crate) mod gpio_isolated;
 
+use serde::Serialize;
 use ufmt::derive::uDebug;
 
-#[derive(uDebug, PartialEq)]
+#[derive(Clone, uDebug, Serialize, PartialEq)]
 pub(crate) enum ExtractionMode {
     Normal,
     Run,
 }
 
-#[derive(uDebug, PartialEq)]
+#[derive(Clone, uDebug, Serialize, PartialEq)]
 pub(crate) struct Inputs {
     pub doors_closed: bool,
     pub cooling_ok: bool,
