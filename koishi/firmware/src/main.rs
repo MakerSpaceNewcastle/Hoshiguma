@@ -62,8 +62,11 @@ fn main() -> ! {
     #[cfg(not(feature = "simulator"))]
     ufmt::uwriteln!(&mut serial, "Hello, world!").void_unwrap();
 
-    // let inputs = gpio_debug_inputs!(pins);
+    #[cfg(feature = "devkit")]
+    let inputs = gpio_debug_inputs!(pins);
+    #[cfg(not(feature = "devkit"))]
     let inputs = gpio_isolated_inputs!(pins);
+
     let mut outputs = gpio_relay_outputs!(pins);
 
     let mut st_inputs = CheckedUpdate::default();
