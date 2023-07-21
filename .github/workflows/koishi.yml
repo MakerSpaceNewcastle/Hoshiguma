@@ -20,7 +20,7 @@ jobs:
       - uses: cachix/install-nix-action@v20
 
       - name: Format
-        run: cargo fmt -- --check
+        run: nix develop --command cargo fmt -- --check
 
       - name: Clippy
         run: nix develop --command cargo clippy -- -Dwarnings
@@ -37,13 +37,30 @@ jobs:
       - uses: cachix/install-nix-action@v20
 
       - name: Format
-        run: cargo fmt -- --check
+        run: nix develop --command cargo fmt -- --check
 
       - name: Clippy
         run: nix develop --command cargo clippy -- -Dwarnings
 
-  build-and-test:
-    name: Build and Test
+  formatting-postcard-data-receiver:
+    name: Formatting (postcard-data-receiver)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./koishi/postcard-data-receiver
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v20
+
+      - name: Format
+        run: nix develop --command cargo fmt -- --check
+
+      - name: Clippy
+        run: nix develop --command cargo clippy -- -Dwarnings
+
+  build-and-test-firmware:
+    name: Build and Test (firmware)
     runs-on: ubuntu-latest
 
     steps:
@@ -63,3 +80,15 @@ jobs:
       - name: In Simulator Tests
         working-directory: ./koishi/firmware-tests
         run: nix develop --command cargo test
+
+  build-and-test-postcard-data-receiver:
+    name: Build and Test (postcard-data-receiver)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v20
+
+      - name: Build
+        working-directory: ./koishi/firmware
+        run: nix develop --command cargo build
