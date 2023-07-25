@@ -127,56 +127,6 @@
             "Value": 50
         },
         {
-            "Desc": "X Axis docking position (mm)",
-            "ID": "0x215",
-            "Value": 0
-        },
-        {
-            "Desc": "Y Axis docking position (mm)",
-            "ID": "0x216",
-            "Value": 0
-        },
-        {
-            "Desc": "Z Axis docking position (mm)",
-            "ID": "0x22d",
-            "Value": -231145.472
-        },
-        {
-            "Desc": "Reset delay (ms)",
-            "ID": "0x233",
-            "Value": -231145.472
-        },
-        {
-            "Desc": "Status on delay (ms)",
-            "ID": "0x238",
-            "Value": 0
-        },
-        {
-            "Desc": "Status off delay (ms)",
-            "ID": "0x351",
-            "Value": 0
-        },
-        {
-            "Desc": "Finish delay (ms)",
-            "ID": "0x352",
-            "Value": -231145.472
-        },
-        {
-            "Desc": "Focus Enabled",
-            "ID": "0x30f0001",
-            "Value": false
-        },
-        {
-            "Desc": "Z Axis return to docking",
-            "ID": "0x30f0008",
-            "Value": false
-        },
-        {
-            "Desc": "Air Assist Mode",
-            "ID": "0x30f0600",
-            "Value": "On/off with laser"
-        },
-        {
             "Desc": "Engraving Mode",
             "ID": "0x100400",
             "Value": "Common Mode"
@@ -279,12 +229,12 @@
         {
             "Desc": "Keypad jumpoff speed (mm/sec)",
             "ID": "0x27",
-            "Value": 5
+            "Value": 2
         },
         {
             "Desc": "Keypad acceleration (mm/s^2)",
             "ID": "0x28",
-            "Value": 1000
+            "Value": 600
         },
         {
             "Desc": "E-Stop acceleration (mm/s^2)",
@@ -354,12 +304,12 @@
         {
             "Desc": "Keypad jumpoff speed (mm/sec)",
             "ID": "0x37",
-            "Value": 5
+            "Value": 1
         },
         {
             "Desc": "Keypad acceleration (mm/s^2)",
             "ID": "0x38",
-            "Value": 1000
+            "Value": 500
         },
         {
             "Desc": "E-Stop acceleration (mm/s^2)",
@@ -447,16 +397,6 @@
             "Value": 0
         },
         {
-            "Desc": "Z Home Speed (mm/sec)",
-            "ID": "0x240",
-            "Value": 5
-        },
-        {
-            "Desc": "Z Work Speed (mm/sec)",
-            "ID": "0x241",
-            "Value": 5
-        },
-        {
             "Desc": "Enable Homing",
             "ID": "0x500008",
             "Value": false
@@ -530,16 +470,6 @@
             "Desc": "Home offset (mm)",
             "ID": "0x5a",
             "Value": 0
-        },
-        {
-            "Desc": "U Home Speed (mm/sec)",
-            "ID": "0x242",
-            "Value": 100
-        },
-        {
-            "Desc": "U Work Speed (mm/sec)",
-            "ID": "0x243",
-            "Value": 300
         },
         {
             "Desc": "Tube Type",
