@@ -46,12 +46,12 @@ jobs:
       - name: Clippy
         run: nix develop --command cargo clippy -- -Dwarnings
 
-  formatting-postcard-data-receiver:
-    name: Formatting (postcard-data-receiver)
+  formatting-telemetry-receiver:
+    name: Formatting (telemetry-receiver)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./koishi/postcard-data-receiver
+        working-directory: ./koishi/telemetry-receiver
 
     steps:
       - uses: actions/checkout@v3
@@ -85,8 +85,8 @@ jobs:
         working-directory: ./koishi/firmware-tests
         run: nix develop --command cargo test
 
-  build-and-test-postcard-data-receiver:
-    name: Build and Test (postcard-data-receiver)
+  build-and-test-telemetry-receiver:
+    name: Build and Test (telemetry-receiver)
     runs-on: ubuntu-latest
 
     steps:
