@@ -246,6 +246,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "koishi-telemetry-receiver"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "git-version",
+ "koishi-telemetry-protocol",
+ "postcard",
+ "serde",
+ "serialport",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -367,20 +381,6 @@ checksum = "c9ee729232311d3cd113749948b689627618133b1c5012b77342c1950b25eaeb"
 dependencies = [
  "cobs",
  "serde",
-]
-
-[[package]]
-name = "postcard-data-receiver"
-version = "0.1.0"
-dependencies = [
- "clap",
- "git-version",
- "koishi-telemetry-protocol",
- "postcard",
- "serde",
- "serialport",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
