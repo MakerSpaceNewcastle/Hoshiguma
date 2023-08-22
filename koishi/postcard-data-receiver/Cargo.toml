@@ -7,6 +7,7 @@ edition = "2021"
 clap = { version = "4.3.18", features = ["derive"] }
 git-version = "0.3.5"
 postcard = { version = "1.0.6", default-features = false, features = ["use-std"] }
+koishi-telemetry-protocol = { path = "../telemetry-protocol" }
 serde = { version = "1.0.174", features = ["derive"] }
 serialport = "4.2.1"
 tracing = "0.1.37"

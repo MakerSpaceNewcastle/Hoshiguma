@@ -237,6 +237,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "koishi-telemetry-protocol"
+version = "0.1.0"
+dependencies = [
+ "postcard",
+ "serde",
+ "tracing",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -366,6 +375,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "git-version",
+ "koishi-telemetry-protocol",
  "postcard",
  "serde",
  "serialport",
