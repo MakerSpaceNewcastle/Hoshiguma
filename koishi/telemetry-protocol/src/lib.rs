@@ -4,14 +4,14 @@ type TimeMillis = u32;
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct Message {
+pub struct Message {
     time: TimeMillis,
     iteration_id: Option<u32>,
     pub payload: Payload,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) enum Payload {
+pub enum Payload {
     Boot(Boot),
     Panic(Panic),
 
@@ -25,14 +25,14 @@ pub(crate) enum Payload {
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct Boot {
+pub struct Boot {
     name: String,
     pub git_revision: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct Panic {
+pub struct Panic {
     file: Option<String>,
     line: Option<u32>,
     column: Option<u32>,
@@ -40,7 +40,7 @@ pub(crate) struct Panic {
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct Inputs {
+pub struct Inputs {
     doors_closed: bool,
     cooling_ok: bool,
     machine_running: bool,
@@ -49,14 +49,14 @@ pub(crate) struct Inputs {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) enum ExtractionMode {
+pub enum ExtractionMode {
     Normal,
     Run,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct Outputs {
+pub struct Outputs {
     controller_machine_alarm: AlarmState,
     controller_cooling_alarm: AlarmState,
     laser_enable: bool,
@@ -66,54 +66,54 @@ pub(crate) struct Outputs {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) enum AlarmState {
+pub enum AlarmState {
     Normal,
     Alarm,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) enum StatusLight {
+pub enum StatusLight {
     Green,
     Amber,
     Red,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) enum MachineStatus {
+pub enum MachineStatus {
     Running,
     Idle,
     Problem(MachineProblem),
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) enum MachineProblem {
+pub enum MachineProblem {
     DoorOpen,
     CoolingFault,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct AirAssistStatus {
+pub struct AirAssistStatus {
     state: RunOnDelay,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct ExtractionStatus {
+pub struct ExtractionStatus {
     state: RunOnDelay,
     r#override: bool,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) struct RunOnDelay {
+pub struct RunOnDelay {
     delay: TimeMillis,
     state: RunOnDelayState,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
-pub(crate) enum RunOnDelayState {
+pub enum RunOnDelayState {
     Demand,
     RunOn { end: TimeMillis },
     Idle,

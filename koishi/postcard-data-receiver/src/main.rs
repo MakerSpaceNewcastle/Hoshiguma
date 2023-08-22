@@ -1,6 +1,5 @@
-mod protocol;
-
 use clap::Parser;
+use koishi_telemetry_protocol as protocol;
 use std::{io::Read, time::Duration};
 use tracing::{debug, error, info, warn};
 
