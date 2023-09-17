@@ -1,5 +1,6 @@
 {
   inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs";
     ravedude.url = "github:Rahix/avr-hal?dir=ravedude";
   };
 
