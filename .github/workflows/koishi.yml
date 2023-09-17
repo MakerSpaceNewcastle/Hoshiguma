@@ -6,9 +6,11 @@ on:
     branches:
       - main
     paths:
+      - 'flake.*'
       - 'koishi/**'
   pull_request:
     paths:
+      - 'flake.*'
       - 'koishi/**'
 
 jobs:
