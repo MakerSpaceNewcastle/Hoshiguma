@@ -1,7 +1,7 @@
 {
     "DeviceList": [
         {
-            "Checklist": "",
+            "Checklist": "Start of job checklist:\n> Z height = Focused\n> Start From = Set Appropriately\n> Job Origin = Set Appropriately\n> Cut Selected Graphics = Disabled unless required\n> Use Selection Origin = Disabled unless required",
             "DefaultCutList": [
             ],
             "DefaultToolCutList": [
@@ -25,7 +25,7 @@
             "ReverseIntervalCompensation": false,
             "Settings": {
                 "AutoIncrementFilename": false,
-                "Checklist": false,
+                "Checklist": true,
                 "CutOrigin": 0,
                 "DisableStart": false,
                 "DockState_ArtBrowser": false,
