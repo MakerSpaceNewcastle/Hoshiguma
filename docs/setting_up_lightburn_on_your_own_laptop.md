@@ -6,9 +6,16 @@ If you have then you more than likely do not need this guide, can download the d
 1. Install LightBurn from [here](https://lightburnsoftware.com/).
 2. Download [`device_profile.lbdev`](../configs/device_profile.lbdev).
 3. Launch LightBurn.
-4. Either activate the trial or purchase your own license and activate that (see note below).
+4. Either activate the trial or purchase your own suitable license and activate that (see note below).
 5. When prompted to add a machine, import the file downloaded in step 2.
 6. You should now have a machine named Hoshiguma available, use this when you want to prepare or machine jobs on this laser.
+
+## License requirement
+
+Hoshiguma uses a Ruida controller, so is therefore a DSP machine in the eyes of LightBurn.
+
+You will need either a DSP or DSP + Galvo license, or purchase the DSP addon.
+If you are purchasing a license with the discount code (see below), you should purchase a DSP license.
 
 ## LightBurn discount
 
