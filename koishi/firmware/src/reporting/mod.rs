@@ -1,5 +1,3 @@
-#[cfg(feature = "reporting_debug")]
-mod debug;
 #[cfg(feature = "reporting_postcard")]
 mod postcard;
 mod protocol;
@@ -11,9 +9,6 @@ fn report<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX
     serial: &mut Usart<USART, TX, RX>,
     msg: &Message,
 ) {
-    #[cfg(feature = "reporting_debug")]
-    self::debug::report(serial, &msg);
-
     #[cfg(feature = "reporting_postcard")]
     self::postcard::report(serial, &msg);
 }
