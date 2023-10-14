@@ -5,6 +5,7 @@ fn extractor_override() {
     avr.run_for_ms(100);
 
     crate::door_interlock!(avr).set_high();
+    crate::external_enable!(avr).set_high();
     crate::extractor_override!(avr).set_high();
     crate::machine_status!(avr).set_low();
     crate::air_assist_demand!(avr).set_low();

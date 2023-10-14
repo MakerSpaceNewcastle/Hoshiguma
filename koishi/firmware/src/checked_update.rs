@@ -8,7 +8,7 @@ impl<T> Default for CheckedUpdate<T> {
     }
 }
 
-impl<T: PartialEq + ufmt::uDebug> CheckedUpdate<T> {
+impl<T: PartialEq> CheckedUpdate<T> {
     pub(crate) fn new(value: T) -> Self {
         Self { value: Some(value) }
     }

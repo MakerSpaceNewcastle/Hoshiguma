@@ -25,3 +25,10 @@ macro_rules! air_assist_demand {
         $crate::input5!($avr)
     };
 }
+
+#[macro_export]
+macro_rules! external_enable {
+    ($avr:expr) => {
+        $crate::input6!($avr)
+    };
+}
