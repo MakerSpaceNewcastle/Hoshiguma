@@ -13,9 +13,11 @@ pub(crate) enum ExtractionMode {
 #[derive(Clone, uDebug, Serialize, PartialEq)]
 pub(crate) struct Inputs {
     pub doors_closed: bool,
-    pub cooling_ok: bool,
+    pub external_enable: bool,
+
     pub machine_running: bool,
     pub air_pump_demand: bool,
+
     pub extraction_mode: ExtractionMode,
 }
 

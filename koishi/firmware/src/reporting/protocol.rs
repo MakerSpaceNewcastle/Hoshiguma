@@ -1,8 +1,7 @@
 use crate::hal::TimeMillis;
 use serde::Serialize;
-use ufmt::derive::uDebug;
 
-#[derive(uDebug, Serialize)]
+#[derive(Serialize)]
 pub(super) struct Message {
     time: TimeMillis,
     iteration_id: Option<u32>,
@@ -19,7 +18,7 @@ impl Message {
     }
 }
 
-#[derive(uDebug, Serialize)]
+#[derive(Serialize)]
 pub(crate) enum Payload {
     Boot(BootPayload),
     Panic(PanicPayload),

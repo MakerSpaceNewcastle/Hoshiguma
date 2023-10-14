@@ -1,8 +1,10 @@
+use super::StatusUpdate;
 use crate::{hal::TimeMillis, io::inputs::Inputs};
+use enumset::{EnumSet, EnumSetType};
 use serde::Serialize;
 use ufmt::derive::uDebug;
 
-#[derive(Clone, uDebug, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub(crate) enum MachineStatus {
     /// The machine is currently running a job.
     Running,
@@ -11,7 +13,7 @@ pub(crate) enum MachineStatus {
     Idle,
 
     /// The machine is not running, and cannot run for some reason.
-    Problem(MachineProblem),
+    Problem(EnumSet<MachineProblem>),
 }
 
 impl Default for MachineStatus {
@@ -20,25 +22,40 @@ impl Default for MachineStatus {
     }
 }
 
-impl super::StatusUpdate for MachineStatus {
+impl StatusUpdate for MachineStatus {
     fn update(&self, _: TimeMillis, current: &Inputs) -> Self {
+        // Assume the machine is idle
+        let mut state = Self::Idle;
+
+        // Check for fault conditions
+        let mut problems = EnumSet::new();
+
         if !current.doors_closed {
-            Self::Problem(MachineProblem::DoorOpen)
-        } else if !current.cooling_ok {
-            Self::Problem(MachineProblem::CoolingFault)
-        } else if current.machine_running {
-            Self::Running
-        } else {
-            Self::Idle
+            problems.insert(MachineProblem::DoorOpen);
         }
+
+        if !current.external_enable {
+            problems.insert(MachineProblem::External);
+        }
+
+        if !problems.is_empty() {
+            state = Self::Problem(problems);
+        }
+
+        // Check for running condition
+        if state == Self::Idle && current.machine_running {
+            state = Self::Running;
+        }
+
+        state
     }
 }
 
-#[derive(Clone, uDebug, PartialEq, Serialize)]
+#[derive(uDebug, Serialize, EnumSetType)]
 pub(crate) enum MachineProblem {
     /// Any door to a protected area is open.
     DoorOpen,
 
-    /// The laser tube cooling system has failed.
-    CoolingFault,
+    /// An external controller has indicated a fault condition.
+    External,
 }

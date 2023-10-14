@@ -1,10 +1,8 @@
 pub(crate) mod gpio_relays;
 
 use crate::logic::{
-    air_assist::AirAssistStatus,
-    extraction::ExtractionStatus,
-    machine::{MachineProblem, MachineStatus},
-    AlarmState, StatusLight,
+    air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus, AlarmState,
+    StatusLight,
 };
 use serde::Serialize;
 use ufmt::derive::uDebug;
@@ -42,17 +40,9 @@ impl Outputs {
                 air_pump: air_assist.active(),
                 extractor_fan: extraction.active(),
             },
-            MachineStatus::Problem(problem) => Outputs {
-                controller_machine_alarm: if *problem == MachineProblem::DoorOpen {
-                    AlarmState::Alarm
-                } else {
-                    AlarmState::Normal
-                },
-                controller_cooling_alarm: if *problem == MachineProblem::CoolingFault {
-                    AlarmState::Alarm
-                } else {
-                    AlarmState::Normal
-                },
+            MachineStatus::Problem(_) => Outputs {
+                controller_machine_alarm: AlarmState::Alarm,
+                controller_cooling_alarm: AlarmState::Normal,
                 laser_enable: false,
                 status_light: StatusLight::Red,
                 air_pump: air_assist.active(),

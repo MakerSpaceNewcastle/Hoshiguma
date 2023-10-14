@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use enumset::{EnumSetType, EnumSet};
 
 type TimeMillis = u32;
 
@@ -82,13 +83,13 @@ pub enum StatusLight {
 pub enum MachineStatus {
     Running,
     Idle,
-    Problem(MachineProblem),
+    Problem(EnumSet<MachineProblem>),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, EnumSetType)]
 pub enum MachineProblem {
     DoorOpen,
-    CoolingFault,
+    External,
 }
 
 #[derive(Debug, Deserialize)]
