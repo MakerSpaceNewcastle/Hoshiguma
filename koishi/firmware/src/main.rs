@@ -6,7 +6,7 @@ mod checked_update;
 mod hal;
 mod io;
 mod logic;
-#[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+#[cfg(feature = "reporting_postcard")]
 mod reporting;
 mod unwrap_simple;
 
@@ -30,7 +30,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     let dp = unsafe { atmega_hal::Peripherals::steal() };
     let pins = hal::Pins::with_mcu_pins(atmega_hal::pins!(dp));
 
-    #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+    #[cfg(feature = "reporting_postcard")]
     {
         let mut serial = serial!(dp, pins, 57600);
         serial.write_byte(0u8);
@@ -52,9 +52,9 @@ fn main() -> ! {
     hal::millis_init(dp.TC0);
     unsafe { avr_device::interrupt::enable() };
 
-    #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+    #[cfg(feature = "reporting_postcard")]
     let mut serial = serial!(dp, pins, 57600);
-    #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+    #[cfg(feature = "reporting_postcard")]
     reporting::boot(&mut serial);
 
     #[cfg(feature = "devkit")]
@@ -76,22 +76,22 @@ fn main() -> ! {
         let time = crate::hal::millis();
 
         if st_inputs.store(inputs.read()) {
-            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            #[cfg(feature = "reporting_postcard")]
             reporting::status(&mut serial, iteration_id, st_inputs.get());
         }
 
         if machine_status.store(machine_status.get().update(time, st_inputs.get())) {
-            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            #[cfg(feature = "reporting_postcard")]
             reporting::status(&mut serial, iteration_id, machine_status.get());
         }
 
         if extraction_status.store(extraction_status.get().update(time, st_inputs.get())) {
-            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            #[cfg(feature = "reporting_postcard")]
             reporting::status(&mut serial, iteration_id, extraction_status.get());
         }
 
         if air_assist_status.store(air_assist_status.get().update(time, st_inputs.get())) {
-            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            #[cfg(feature = "reporting_postcard")]
             reporting::status(&mut serial, iteration_id, air_assist_status.get());
         }
 
@@ -100,7 +100,7 @@ fn main() -> ! {
             extraction_status.get(),
             air_assist_status.get(),
         )) {
-            #[cfg(any(feature = "reporting_debug", feature = "reporting_postcard"))]
+            #[cfg(feature = "reporting_postcard")]
             reporting::status(&mut serial, iteration_id, st_outputs.get());
         }
 

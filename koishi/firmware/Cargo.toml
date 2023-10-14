@@ -6,7 +6,6 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [features]
-reporting_debug = []
 reporting_postcard = ["dep:postcard"]
 devkit = []
 simulator = []
