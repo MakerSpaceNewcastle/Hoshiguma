@@ -1,4 +1,5 @@
 use super::SensorReadAndUpdate;
+use crate::retry::retry;
 use ds18b20::Ds18b20;
 use embedded_hal::{
     blocking::delay::{DelayMs, DelayUs},
@@ -50,13 +51,13 @@ impl<
             bus,
             delay,
 
-            radiator_top: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
-            radiator_bottom: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
+            radiator_top: dallas_temperature_sensor!("9E3CE1E3803B3A28"), //TODO
+            radiator_bottom: dallas_temperature_sensor!("9E3CE1E3803B3A28"), //TODO
 
             coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
 
-            coolant_flow: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
-            coolant_return: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
+            coolant_flow: dallas_temperature_sensor!("703CE1E380A2E828"),
+            coolant_return: dallas_temperature_sensor!("523CE1E380B9B828"),
 
             laser_chamber_ambient: dallas_temperature_sensor!("8F3C53F649ABE528"),
             electronics_bay_ambient: dallas_temperature_sensor!("393CE1E3807F7528"),
@@ -72,10 +73,10 @@ impl<
 
         let mut search_state = None;
         loop {
-            match self
-                .bus
-                .device_search(search_state.as_ref(), false, &mut self.delay)
-            {
+            match retry::<5, _, _>(|| {
+                self.bus
+                    .device_search(search_state.as_ref(), false, &mut self.delay)
+            }) {
                 Ok(Some((device_address, state))) => {
                     search_state = Some(state);
 
@@ -84,9 +85,9 @@ impl<
                     if device_address.family_code() == ds18b20::FAMILY_CODE {
                         let sensor = Ds18b20::new::<E>(device_address).unwrap();
 
-                        if let Ok(sensor_data) = crate::retry::retry::<5, _, _>(|| {
-                            sensor.read_data(&mut self.bus, &mut self.delay)
-                        }) {
+                        if let Ok(sensor_data) =
+                            retry::<5, _, _>(|| sensor.read_data(&mut self.bus, &mut self.delay))
+                        {
                             info!(
                                 "Found DS18B20 at address {:?} with temperature {}°C",
                                 device_address, sensor_data.temperature
@@ -114,7 +115,7 @@ impl<
         name: &str,
     ) -> SensorReading<f32> {
         info!("Reading {name}...");
-        let sensor_data = crate::retry::retry::<5, _, _>(|| sensor.read_data(bus, delay))
+        let sensor_data = retry::<5, _, _>(|| sensor.read_data(bus, delay))
             .map_err(|_| SensorError::ReadFailed)?;
 
         let value = sensor_data.temperature;
