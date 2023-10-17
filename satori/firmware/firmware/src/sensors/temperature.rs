@@ -53,7 +53,7 @@ impl<
             radiator_top: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
             radiator_bottom: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
 
-            coolant_pump_case: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
+            coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
 
             coolant_flow: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
             coolant_return: dallas_temperature_sensor!("9E3CE1E3803B3A28"),
@@ -72,31 +72,37 @@ impl<
 
         let mut search_state = None;
         loop {
-            if let Some((device_address, state)) = self
+            match self
                 .bus
                 .device_search(search_state.as_ref(), false, &mut self.delay)
-                .unwrap()
             {
-                search_state = Some(state);
+                Ok(Some((device_address, state))) => {
+                    search_state = Some(state);
 
-                info!("Found device at address {:?}", device_address);
+                    info!("Found device at address {:?}", device_address);
 
-                if device_address.family_code() == ds18b20::FAMILY_CODE {
-                    let sensor = Ds18b20::new::<E>(device_address).unwrap();
+                    if device_address.family_code() == ds18b20::FAMILY_CODE {
+                        let sensor = Ds18b20::new::<E>(device_address).unwrap();
 
-                    if let Ok(sensor_data) = crate::retry::retry::<5, _, _>(|| {
-                        sensor.read_data(&mut self.bus, &mut self.delay)
-                    }) {
-                        info!(
-                            "Found DS18B20 at address {:?} with temperature {}°C",
-                            device_address, sensor_data.temperature
-                        );
-                    } else {
-                        error!("Failed to read sensor at {:?}", device_address);
+                        if let Ok(sensor_data) = crate::retry::retry::<5, _, _>(|| {
+                            sensor.read_data(&mut self.bus, &mut self.delay)
+                        }) {
+                            info!(
+                                "Found DS18B20 at address {:?} with temperature {}°C",
+                                device_address, sensor_data.temperature
+                            );
+                        } else {
+                            error!("Failed to read sensor at {:?}", device_address);
+                        }
                     }
                 }
-            } else {
-                break;
+                Err(e) => {
+                    error!("fuck {:?}", e);
+                    break;
+                }
+                _ => {
+                    break;
+                }
             }
         }
     }
