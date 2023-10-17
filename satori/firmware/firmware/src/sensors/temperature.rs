@@ -1,6 +1,6 @@
 use super::SensorReadAndUpdate;
 use crate::retry::retry;
-use ds18b20::Ds18b20;
+use ds18b20::{Ds18b20, Resolution};
 use embedded_hal::{
     blocking::delay::{DelayMs, DelayUs},
     digital::v2::{InputPin, OutputPin},
@@ -51,7 +51,7 @@ impl<
             bus,
             delay,
 
-            radiator_top: dallas_temperature_sensor!("9E3CE1E3803B3A28"), //TODO
+            radiator_top: dallas_temperature_sensor!("0D3CE1E3817D8828"),
             radiator_bottom: dallas_temperature_sensor!("9E3CE1E3803B3A28"), //TODO
 
             coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
@@ -69,11 +69,14 @@ impl<
         // TODO: better error handling
 
         info!("Scanning one wire bus");
-        ds18b20::start_simultaneous_temp_measurement(&mut self.bus, &mut self.delay).unwrap();
+
+        if self.begin_measurement().is_err() {
+            return;
+        }
 
         let mut search_state = None;
         loop {
-            match retry::<5, _, _>(|| {
+            match retry(5, || {
                 self.bus
                     .device_search(search_state.as_ref(), false, &mut self.delay)
             }) {
@@ -86,7 +89,7 @@ impl<
                         let sensor = Ds18b20::new::<E>(device_address).unwrap();
 
                         if let Ok(sensor_data) =
-                            retry::<5, _, _>(|| sensor.read_data(&mut self.bus, &mut self.delay))
+                            retry(5, || sensor.read_data(&mut self.bus, &mut self.delay))
                         {
                             info!(
                                 "Found DS18B20 at address {:?} with temperature {}°C",
@@ -108,6 +111,18 @@ impl<
         }
     }
 
+    fn begin_measurement(&mut self) -> Result<(), ()> {
+        if let Err(e) = ds18b20::start_simultaneous_temp_measurement(&mut self.bus, &mut self.delay)
+        {
+            error!("Failed to start temperature measurement ({:?})", e);
+            return Err(());
+        }
+
+        Resolution::Bits12.delay_for_measurement_time(&mut self.delay);
+
+        Ok(())
+    }
+
     fn read_sensor(
         bus: &mut OneWire<P>,
         delay: &mut D,
@@ -115,8 +130,8 @@ impl<
         name: &str,
     ) -> SensorReading<f32> {
         info!("Reading {name}...");
-        let sensor_data = retry::<5, _, _>(|| sensor.read_data(bus, delay))
-            .map_err(|_| SensorError::ReadFailed)?;
+        let sensor_data =
+            retry(5, || sensor.read_data(bus, delay)).map_err(|_| SensorError::ReadFailed)?;
 
         let value = sensor_data.temperature;
         info!("Sensor {name} reads {value}°C");
@@ -134,9 +149,7 @@ impl<
     fn read(&mut self) {
         info!("Starting temperature measurement");
 
-        if let Err(e) = ds18b20::start_simultaneous_temp_measurement(&mut self.bus, &mut self.delay)
-        {
-            error!("Failed to start temperature measurement ({:?})", e);
+        if self.begin_measurement().is_err() {
             return;
         }
 
