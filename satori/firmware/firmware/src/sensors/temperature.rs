@@ -52,7 +52,7 @@ impl<
             delay,
 
             radiator_top: dallas_temperature_sensor!("0D3CE1E3817D8828"),
-            radiator_bottom: dallas_temperature_sensor!("9E3CE1E3803B3A28"), //TODO
+            radiator_bottom: dallas_temperature_sensor!("953C1FF648A2F028"),
 
             coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
 
@@ -86,7 +86,8 @@ impl<
                     info!("Found device at address {:?}", device_address);
 
                     if device_address.family_code() == ds18b20::FAMILY_CODE {
-                        let sensor = Ds18b20::new::<E>(device_address).unwrap();
+                        let sensor = Ds18b20::new::<E>(device_address)
+                            .expect("device address should be valid for a DS18B20");
 
                         if let Ok(sensor_data) =
                             retry(5, || sensor.read_data(&mut self.bus, &mut self.delay))
