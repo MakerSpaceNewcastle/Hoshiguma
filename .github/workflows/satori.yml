@@ -44,7 +44,6 @@ jobs:
           distrobox enter hoshiguma-satori -- cargo clippy -- -Dwarnings
 
       - name: Build
-        working-directory: ./satori/firmware
         run: |
           eval "$(nix print-dev-env)"
           . $HOME/export-esp.sh
