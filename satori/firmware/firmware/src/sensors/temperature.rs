@@ -150,66 +150,66 @@ impl<
     fn read(&mut self) {
         info!("Starting temperature measurement");
 
-        if self.begin_measurement().is_err() {
-            return;
+        if self.begin_measurement().is_ok() {
+            let _radiator_top = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.radiator_top,
+                "radiator_top",
+            );
+
+            let _radiator_bottom = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.radiator_bottom,
+                "radiator_bottom",
+            );
+
+            let _coolant_pump_case = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.coolant_pump_case,
+                "coolant_pump_case",
+            );
+
+            let _coolant_flow = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.coolant_flow,
+                "coolant_flow",
+            );
+
+            let _coolant_return = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.coolant_return,
+                "coolant_return",
+            );
+
+            let _laser_chamber_ambient = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.laser_chamber_ambient,
+                "laser_chamber_ambient",
+            );
+
+            let _electronics_bay_ambient = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.electronics_bay_ambient,
+                "electronics_bay_ambient",
+            );
+
+            let _room_ambient = Self::read_sensor(
+                &mut self.bus,
+                &mut self.delay,
+                &self.room_ambient,
+                "room_ambient",
+            );
+
+            // TODO: update state
+        } else {
+            // TODO: update state
         }
-
-        let _radiator_top = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.radiator_top,
-            "radiator_top",
-        );
-
-        let _radiator_bottom = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.radiator_bottom,
-            "radiator_bottom",
-        );
-
-        let _coolant_pump_case = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.coolant_pump_case,
-            "coolant_pump_case",
-        );
-
-        let _coolant_flow = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.coolant_flow,
-            "coolant_flow",
-        );
-
-        let _coolant_return = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.coolant_return,
-            "coolant_return",
-        );
-
-        let _laser_chamber_ambient = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.laser_chamber_ambient,
-            "laser_chamber_ambient",
-        );
-
-        let _electronics_bay_ambient = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.electronics_bay_ambient,
-            "electronics_bay_ambient",
-        );
-
-        let _room_ambient = Self::read_sensor(
-            &mut self.bus,
-            &mut self.delay,
-            &self.room_ambient,
-            "room_ambient",
-        );
-
-        // TODO
     }
 }

@@ -1,7 +1,6 @@
 use super::SensorReadAndUpdate;
 use esp_idf_hal::gpio::PinDriver;
 use esp_idf_sys as _;
-// use satori_state::sensors::{CoolantLevel, CoolantLevelReading, SensorValue};
 
 pub(crate) struct CoolantLevelSensor<
     'a,
