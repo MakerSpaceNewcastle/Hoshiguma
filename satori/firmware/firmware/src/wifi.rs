@@ -4,6 +4,7 @@ use esp_idf_hal::peripheral;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     wifi::{BlockingWifi, EspWifi},
+    nvs::EspDefaultNvsPartition,
 };
 use log::info;
 
@@ -12,10 +13,12 @@ pub(crate) fn wifi(
     pass: &str,
     modem: impl peripheral::Peripheral<P = esp_idf_hal::modem::Modem> + 'static,
     sysloop: EspSystemEventLoop,
-) -> Result<Box<EspWifi<'static>>> {
-    let mut esp_wifi = EspWifi::new(modem, sysloop.clone(), None)?;
+) -> Result<Box<BlockingWifi<EspWifi<'static>>>> {
+let nvs = EspDefaultNvsPartition::take()?;
 
-    let mut wifi = BlockingWifi::wrap(&mut esp_wifi, sysloop)?;
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(modem, sysloop.clone(), Some(nvs))?,
+        sysloop)?;
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration::default()))?;
 
@@ -38,5 +41,5 @@ pub(crate) fn wifi(
     let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
     info!("DHCP info: {:?}", ip_info);
 
-    Ok(Box::new(esp_wifi))
+    Ok(Box::new(wifi))
 }
