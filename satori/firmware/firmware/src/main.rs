@@ -74,16 +74,7 @@ fn main() -> anyhow::Result<()> {
     pin.set_high().unwrap();
     Delay::delay_ms(1000);
 
-    let wifi = wifi::wifi("Maker Space", "donotbeonfire", peripherals.modem, sysloop);
-    match wifi {
-        Ok(_) => {
-            led.write([RGB8::new(0, 8, 0)].into_iter()).unwrap();
-        }
-        Err(e) => {
-            error!("WiFi setup failed: {:?}", e);
-            led.write([RGB8::new(8, 0, 0)].into_iter()).unwrap();
-        }
-    }
+    let wifi = wifi::setup("Maker Space", "donotbeonfire", peripherals.modem, sysloop);
 
     let mqtt = MqttService::new();
 
@@ -127,7 +118,9 @@ fn main() -> anyhow::Result<()> {
         )
         .expect("temperature sensor task should be spawned")
         .spawn_local_collect(demo_koishi_telemetry(koishi_telemetry_uart), &mut tasks)
-        .expect("koishi telemetry task should be spawned");
+        .expect("koishi telemetry task should be spawned")
+        .spawn_local_collect(wifi::task(wifi), &mut tasks)
+        .expect("wifi task should be spawned");
     executor.run_tasks(move || !QUIT.triggered(), tasks);
 
     Ok(())
