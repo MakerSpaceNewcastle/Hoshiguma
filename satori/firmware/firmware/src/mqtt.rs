@@ -17,7 +17,7 @@ impl Mqtt {
             "mqtt://broker.hivemq.com",
             &MqttClientConfiguration {
                 keep_alive_interval: Some(Duration::from_secs(3)),
-                reconnect_timeout: Some(Duration::from_secs(1)),
+                reconnect_timeout: Some(Duration::from_secs(10)),
                 lwt: Some(LwtConfiguration {
                     topic: satori_mqtt_config::TOPIC_ALIVE,
                     qos: QoS::ExactlyOnce,

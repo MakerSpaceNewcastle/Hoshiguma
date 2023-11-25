@@ -120,9 +120,9 @@ fn main() -> anyhow::Result<()> {
         )
         .expect("temperature sensor task should be spawned")
         .spawn_local_collect(demo_koishi_telemetry(koishi_telemetry_uart), &mut tasks)
-        .expect("koishi telemetry task should be spawned")
-        .spawn_local_collect(wifi::task(wifi, mqtt, led), &mut tasks)
-        .expect("wifi task should be spawned");
+        .expect("koishi telemetry task should be spawned");
+        // .spawn_local_collect(wifi::task(wifi, mqtt, led), &mut tasks)
+        // .expect("wifi task should be spawned");
     executor.run_tasks(move || !QUIT.triggered(), tasks);
 
     Ok(())
@@ -172,13 +172,11 @@ async fn task_coolant_level_sensor(mut sensors: impl SensorReadAndUpdate, _mqtt:
     }
 }
 
-async fn task_temperature_sensors(mut sensors: impl SensorReadAndUpdate, mqtt: Mqtt) {
+async fn task_temperature_sensors(mut sensors: impl SensorReadAndUpdate, _mqtt: Mqtt) {
     let mut ticker = Ticker::every(Duration::from_secs(5));
 
     loop {
         sensors.read();
-
-        mqtt.test();
 
         ticker.next().await;
     }

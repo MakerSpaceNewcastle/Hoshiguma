@@ -45,7 +45,7 @@ pub(crate) async fn task(
     mqtt: Mqtt,
     led: crate::led::Led,
 ) {
-    let mut ticker = Ticker::every(Duration::from_secs(15));
+    let mut ticker = Ticker::every(Duration::from_secs(60));
 
     loop {
         info!("WiFi");
