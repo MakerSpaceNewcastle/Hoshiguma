@@ -34,6 +34,7 @@ satori-mqtt-config = { path = "../mqtt-config" }
 smart-leds = "0.3.0"
 thiserror = "1.0.46"
 ws2812-esp32-rmt-driver = { version = "0.6.0", default-features = false, features = ["smart-leds-trait"] }
+git-version = "0.3.8"
 
 [build-dependencies]
 embuild = "0.31.2"

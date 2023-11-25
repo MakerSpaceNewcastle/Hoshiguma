@@ -2,6 +2,7 @@ mod retry;
 mod sensors;
 mod services;
 mod wifi;
+mod led;
 
 use crate::{
     sensors::{
@@ -25,8 +26,6 @@ use esp_idf_sys as _;
 use koishi_telemetry_protocol as protocol;
 use log::{error, info};
 use one_wire_bus::OneWire;
-use smart_leds::{SmartLedsWrite, RGB8};
-use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
 
 pub static QUIT: Notification = Notification::new();
 
@@ -38,7 +37,10 @@ fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take().unwrap();
     let sysloop = EspSystemEventLoop::take()?;
 
-    info!("Hello, world!");
+    info!("Satori Laser Cutter Telemetry and Protection System, v{} ({})",
+    env!("CARGO_PKG_VERSION"),
+    git_version::git_version!(),
+    );
 
     let koishi_telemetry_uart: uart::UartDriver = uart::UartDriver::new(
         peripherals.uart1,
@@ -48,16 +50,16 @@ fn main() -> anyhow::Result<()> {
         Option::<AnyIOPin>::None,
         &uart::config::Config::default().baudrate(Hertz(57600)),
     )
-    .expect("koishi telemetry UART should be configured");
+        .expect("koishi telemetry UART should be configured");
 
-    let mut led = Ws2812Esp32Rmt::new(0, 8).expect("WS2812 driver should be configured");
-    led.write([RGB8::new(8, 0, 0)].into_iter()).unwrap();
+    let led = led::Led::new();
+    led.set(led::RED);
     Delay::delay_ms(250);
-    led.write([RGB8::new(0, 8, 0)].into_iter()).unwrap();
+    led.set(led::GREEN);
     Delay::delay_ms(250);
-    led.write([RGB8::new(0, 0, 8)].into_iter()).unwrap();
+    led.set(led::BLUE);
     Delay::delay_ms(250);
-    led.write([RGB8::new(8, 8, 8)].into_iter()).unwrap();
+    led.set(led::BLACK);
 
     let mut pin =
         PinDriver::output(peripherals.pins.gpio18).expect("koishi enable pin should be configured");
