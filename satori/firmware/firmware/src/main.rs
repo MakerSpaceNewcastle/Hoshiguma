@@ -1,15 +1,15 @@
 mod led;
+mod mqtt;
 mod retry;
 mod sensors;
-mod services;
 mod wifi;
 
 use crate::{
+    mqtt::MqttService,
     sensors::{
         coolant_level::CoolantLevelSensor, frequency_counter::FrequencyCounter,
         temperature::TemperatureSensors, SensorReadAndUpdate,
     },
-    services::MqttService,
 };
 use channel_bridge::notification::Notification;
 use embassy_time::{Duration, Ticker, Timer};
