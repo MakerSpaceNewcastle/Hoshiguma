@@ -45,7 +45,7 @@ pub(crate) async fn task(
     mqtt: Mqtt,
     led: crate::led::Led,
 ) {
-    let mut ticker = Ticker::every(Duration::from_secs(1));
+    let mut ticker = Ticker::every(Duration::from_secs(15));
 
     loop {
         info!("WiFi");
@@ -54,15 +54,21 @@ pub(crate) async fn task(
             led.set(crate::led::RED);
 
             info!("WiFi disconnected, connecting");
-            if let Err(e) = wifi.connect() {
-                error!("WiFi connect failed: {:?}", e);
-                continue;
+            match wifi.connect() {
+                Ok(_) => info!("WiFi connected"),
+                Err(e) => {
+                    error!("WiFi connect failed: {:?}", e);
+                    continue;
+                }
             }
 
             info!("Waiting for network setup");
-            if let Err(e) = wifi.wait_netif_up() {
-                error!("Network setup failed: {:?}", e);
-                continue;
+            match wifi.wait_netif_up() {
+                Ok(_) => info!("Network is up"),
+                Err(e) => {
+                    error!("Network setup failed: {:?}", e);
+                    continue;
+                }
             }
 
             led.set(crate::led::GREEN);
