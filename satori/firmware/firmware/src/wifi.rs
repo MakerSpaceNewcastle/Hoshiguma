@@ -7,7 +7,7 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     wifi::{BlockingWifi, EspWifi},
 };
-use log::{info, warn};
+use log::{error, info};
 
 pub(crate) fn setup(
     ssid: &str,
@@ -55,13 +55,13 @@ pub(crate) async fn task(
 
             info!("WiFi disconnected, connecting");
             if let Err(e) = wifi.connect() {
-                warn!("WiFi connect failed: {:?}", e);
+                error!("WiFi connect failed: {:?}", e);
                 continue;
             }
 
             info!("Waiting for network setup");
             if let Err(e) = wifi.wait_netif_up() {
-                warn!("Network setup failed: {:?}", e);
+                error!("Network setup failed: {:?}", e);
                 continue;
             }
 
@@ -70,7 +70,7 @@ pub(crate) async fn task(
 
             match wifi.wifi().sta_netif().get_ip_info() {
                 Ok(info) => info!("DHCP info: {:?}", info),
-                Err(e) => warn!("Failed to get DHCP info: {:?}", e),
+                Err(e) => error!("Failed to get DHCP info: {:?}", e),
             }
         }
 
