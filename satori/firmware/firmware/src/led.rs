@@ -1,7 +1,7 @@
-use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
-use smart_leds::{SmartLedsWrite, RGB8};
-use std::sync::{Mutex, Arc};
 use log::error;
+use smart_leds::{SmartLedsWrite, RGB8};
+use std::sync::{Arc, Mutex};
+use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
 
 pub(crate) const BLACK: RGB8 = RGB8::new(0, 0, 0);
 pub(crate) const RED: RGB8 = RGB8::new(8, 0, 0);

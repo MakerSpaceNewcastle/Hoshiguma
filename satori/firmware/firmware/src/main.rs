@@ -1,8 +1,8 @@
+mod led;
 mod retry;
 mod sensors;
 mod services;
 mod wifi;
-mod led;
 
 use crate::{
     sensors::{
@@ -37,9 +37,10 @@ fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take().unwrap();
     let sysloop = EspSystemEventLoop::take()?;
 
-    info!("Satori Laser Cutter Telemetry and Protection System, v{} ({})",
-    env!("CARGO_PKG_VERSION"),
-    git_version::git_version!(),
+    info!(
+        "Satori Laser Cutter Telemetry and Protection System, v{} ({})",
+        env!("CARGO_PKG_VERSION"),
+        git_version::git_version!(),
     );
 
     let koishi_telemetry_uart: uart::UartDriver = uart::UartDriver::new(
@@ -50,7 +51,7 @@ fn main() -> anyhow::Result<()> {
         Option::<AnyIOPin>::None,
         &uart::config::Config::default().baudrate(Hertz(57600)),
     )
-        .expect("koishi telemetry UART should be configured");
+    .expect("koishi telemetry UART should be configured");
 
     let led = led::Led::new();
     led.set(led::RED);

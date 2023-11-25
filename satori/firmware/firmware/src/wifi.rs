@@ -6,7 +6,7 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     wifi::{BlockingWifi, EspWifi},
 };
-use log::{warn, info};
+use log::{info, warn};
 
 pub(crate) fn setup(
     ssid: &str,
@@ -20,7 +20,7 @@ pub(crate) fn setup(
         EspWifi::new(modem, sysloop.clone(), Some(nvs)).expect("should have wifi"),
         sysloop,
     )
-        .expect("should have wifi");
+    .expect("should have wifi");
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration::default()))
         .expect("empty wifi config should be set");
