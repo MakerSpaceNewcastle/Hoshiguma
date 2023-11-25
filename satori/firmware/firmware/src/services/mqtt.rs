@@ -1,6 +1,6 @@
 use embedded_svc::mqtt::client::QoS;
 use esp_idf_svc::mqtt::client::{EspMqttClient, LwtConfiguration, MqttClientConfiguration};
-use log::info;
+use log::{error, info};
 use std::{
     sync::{Arc, Mutex},
     time::Duration,
@@ -27,43 +27,36 @@ impl MqttService {
                 ..Default::default()
             },
             |event| {
+                // TODO
                 info!("mqtt: {:?}", event);
             },
         )
-        .unwrap();
+        .expect("client should be created");
 
-        let svc = Self {
+        Self {
             client: Arc::new(Mutex::new(client)),
-        };
-
-        svc.publish_online();
-
-        svc
+        }
     }
 
-    fn publish_online(&self) {
-        self.client
-            .lock()
-            .unwrap()
-            .publish(
-                satori_mqtt_config::TOPIC_ALIVE,
-                QoS::ExactlyOnce,
-                false,
-                satori_mqtt_config::ALIVE_PAYLOAD_ONLINE,
-            )
-            .unwrap();
+    pub(crate) fn publish_online(&self) {
+        if let Err(e) = self.client.lock().unwrap().publish(
+            satori_mqtt_config::TOPIC_ALIVE,
+            QoS::ExactlyOnce,
+            false,
+            satori_mqtt_config::ALIVE_PAYLOAD_ONLINE,
+        ) {
+            error!("publish online failed: {:?}", e);
+        }
     }
 
     pub(crate) fn test(&self) {
-        self.client
-            .lock()
-            .unwrap()
-            .publish(
-                satori_mqtt_config::TOPIC_STATUS,
-                QoS::ExactlyOnce,
-                false,
-                "doot".as_bytes(),
-            )
-            .unwrap();
+        if let Err(e) = self.client.lock().unwrap().publish(
+            satori_mqtt_config::TOPIC_STATUS,
+            QoS::ExactlyOnce,
+            false,
+            "doot".as_bytes(),
+        ) {
+            error!("publish todo failed: {:?}", e);
+        }
     }
 }
