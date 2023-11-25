@@ -1,3 +1,4 @@
+use crate::mqtt::Mqtt;
 use embassy_time::{Duration, Ticker};
 use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
 use esp_idf_hal::peripheral;
@@ -39,7 +40,11 @@ pub(crate) fn setup(
     Box::new(wifi)
 }
 
-pub(crate) async fn task(mut wifi: Box<BlockingWifi<EspWifi<'static>>>, led: crate::led::Led) {
+pub(crate) async fn task(
+    mut wifi: Box<BlockingWifi<EspWifi<'static>>>,
+    mqtt: Mqtt,
+    led: crate::led::Led,
+) {
     let mut ticker = Ticker::every(Duration::from_secs(1));
 
     loop {
@@ -61,6 +66,7 @@ pub(crate) async fn task(mut wifi: Box<BlockingWifi<EspWifi<'static>>>, led: cra
             }
 
             led.set(crate::led::GREEN);
+            mqtt.publish_online();
 
             match wifi.wifi().sta_netif().get_ip_info() {
                 Ok(info) => info!("DHCP info: {:?}", info),

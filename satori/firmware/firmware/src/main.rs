@@ -5,7 +5,7 @@ mod sensors;
 mod wifi;
 
 use crate::{
-    mqtt::MqttService,
+    mqtt::Mqtt,
     sensors::{
         coolant_level::CoolantLevelSensor, frequency_counter::FrequencyCounter,
         temperature::TemperatureSensors, SensorReadAndUpdate,
@@ -78,8 +78,7 @@ fn main() -> anyhow::Result<()> {
     Delay::delay_ms(1000);
 
     let wifi = wifi::setup("Maker Space", "donotbeonfire", peripherals.modem, sysloop);
-
-    let mqtt = MqttService::new();
+    let mqtt = Mqtt::new();
 
     let mut pin = PinDriver::input(peripherals.pins.gpio4)
         .expect("coolant flow sensor pin should be configured");
@@ -116,13 +115,13 @@ fn main() -> anyhow::Result<()> {
         )
         .expect("coolant level sensor task should be spawned")
         .spawn_local_collect(
-            task_temperature_sensors(temperature_sensors, mqtt),
+            task_temperature_sensors(temperature_sensors, mqtt.clone()),
             &mut tasks,
         )
         .expect("temperature sensor task should be spawned")
         .spawn_local_collect(demo_koishi_telemetry(koishi_telemetry_uart), &mut tasks)
         .expect("koishi telemetry task should be spawned")
-        .spawn_local_collect(wifi::task(wifi, led), &mut tasks)
+        .spawn_local_collect(wifi::task(wifi, mqtt, led), &mut tasks)
         .expect("wifi task should be spawned");
     executor.run_tasks(move || !QUIT.triggered(), tasks);
 
@@ -163,7 +162,7 @@ async fn task_coolant_pump_speed(counter: FrequencyCounter) {
     }
 }
 
-async fn task_coolant_level_sensor(mut sensors: impl SensorReadAndUpdate, _mqtt: MqttService) {
+async fn task_coolant_level_sensor(mut sensors: impl SensorReadAndUpdate, _mqtt: Mqtt) {
     let mut ticker = Ticker::every(Duration::from_secs(5));
 
     loop {
@@ -173,7 +172,7 @@ async fn task_coolant_level_sensor(mut sensors: impl SensorReadAndUpdate, _mqtt:
     }
 }
 
-async fn task_temperature_sensors(mut sensors: impl SensorReadAndUpdate, mqtt: MqttService) {
+async fn task_temperature_sensors(mut sensors: impl SensorReadAndUpdate, mqtt: Mqtt) {
     let mut ticker = Ticker::every(Duration::from_secs(5));
 
     loop {

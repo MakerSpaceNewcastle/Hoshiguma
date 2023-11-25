@@ -7,11 +7,11 @@ use std::{
 };
 
 #[derive(Clone)]
-pub(crate) struct MqttService {
+pub(crate) struct Mqtt {
     client: Arc<Mutex<EspMqttClient>>,
 }
 
-impl MqttService {
+impl Mqtt {
     pub(crate) fn new() -> Self {
         let client = EspMqttClient::new(
             "mqtt://broker.hivemq.com",
