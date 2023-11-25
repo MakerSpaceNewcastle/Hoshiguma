@@ -6,7 +6,7 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     wifi::{BlockingWifi, EspWifi},
 };
-use log::info;
+use log::{warn, info};
 
 pub(crate) fn setup(
     ssid: &str,
@@ -20,7 +20,7 @@ pub(crate) fn setup(
         EspWifi::new(modem, sysloop.clone(), Some(nvs)).expect("should have wifi"),
         sysloop,
     )
-    .expect("should have wifi");
+        .expect("should have wifi");
 
     wifi.set_configuration(&Configuration::Client(ClientConfiguration::default()))
         .expect("empty wifi config should be set");
@@ -39,19 +39,33 @@ pub(crate) fn setup(
     Box::new(wifi)
 }
 
-pub(crate) async fn task(mut wifi: Box<BlockingWifi<EspWifi<'static>>>) {
+pub(crate) async fn task(mut wifi: Box<BlockingWifi<EspWifi<'static>>>, led: crate::led::Led) {
     let mut ticker = Ticker::every(Duration::from_secs(1));
 
     loop {
+        info!("WiFi");
+
         if !wifi.is_connected().unwrap() {
+            led.set(crate::led::RED);
+
             info!("WiFi disconnected, connecting");
-            wifi.connect().unwrap();
+            if let Err(e) = wifi.connect() {
+                warn!("WiFi connect failed: {:?}", e);
+                continue;
+            }
 
-            info!("Waiting for DHCP lease");
-            wifi.wait_netif_up().unwrap();
+            info!("Waiting for network setup");
+            if let Err(e) = wifi.wait_netif_up() {
+                warn!("Network setup failed: {:?}", e);
+                continue;
+            }
 
-            let ip_info = wifi.wifi().sta_netif().get_ip_info().unwrap();
-            info!("DHCP info: {:?}", ip_info);
+            led.set(crate::led::GREEN);
+
+            match wifi.wifi().sta_netif().get_ip_info() {
+                Ok(info) => info!("DHCP info: {:?}", info),
+                Err(e) => warn!("Failed to get DHCP info: {:?}", e),
+            }
         }
 
         ticker.next().await;

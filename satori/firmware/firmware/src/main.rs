@@ -121,7 +121,7 @@ fn main() -> anyhow::Result<()> {
         .expect("temperature sensor task should be spawned")
         .spawn_local_collect(demo_koishi_telemetry(koishi_telemetry_uart), &mut tasks)
         .expect("koishi telemetry task should be spawned")
-        .spawn_local_collect(wifi::task(wifi), &mut tasks)
+        .spawn_local_collect(wifi::task(wifi, led), &mut tasks)
         .expect("wifi task should be spawned");
     executor.run_tasks(move || !QUIT.triggered(), tasks);
 
