@@ -1,0 +1,13 @@
+[build]
+target = "riscv32imc-esp-espidf"
+
+[target.riscv32imc-esp-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor --baud 256000"
+rustflags = ["--cfg", "espidf_time64", "-C", "default-linker-libraries"]
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+ESP_IDF_VERSION = "tag:v5.1.1"

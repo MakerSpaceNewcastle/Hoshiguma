@@ -1,9 +1,9 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use enumset::{EnumSetType, EnumSet};
 
 type TimeMillis = u32;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Message {
     time: TimeMillis,
@@ -11,7 +11,7 @@ pub struct Message {
     pub payload: Payload,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Payload {
     Boot(Boot),
     Panic(Panic),
@@ -24,14 +24,14 @@ pub enum Payload {
     ExtractionStatusChanged(ExtractionStatus),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Boot {
     name: String,
     pub git_revision: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Panic {
     file: Option<String>,
@@ -39,7 +39,7 @@ pub struct Panic {
     column: Option<u32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Inputs {
     doors_closed: bool,
@@ -49,13 +49,13 @@ pub struct Inputs {
     extraction_mode: ExtractionMode,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ExtractionMode {
     Normal,
     Run,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Outputs {
     controller_machine_alarm: AlarmState,
@@ -66,53 +66,53 @@ pub struct Outputs {
     extractor_fan: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum AlarmState {
     Normal,
     Alarm,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum StatusLight {
     Green,
     Amber,
     Red,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum MachineStatus {
     Running,
     Idle,
     Problem(EnumSet<MachineProblem>),
 }
 
-#[derive(Debug, Deserialize, EnumSetType)]
+#[derive(Debug, Serialize, Deserialize, EnumSetType)]
 pub enum MachineProblem {
     DoorOpen,
     External,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct AirAssistStatus {
     state: RunOnDelay,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct ExtractionStatus {
     state: RunOnDelay,
     r#override: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct RunOnDelay {
     delay: TimeMillis,
     state: RunOnDelayState,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub enum RunOnDelayState {
     Demand,
