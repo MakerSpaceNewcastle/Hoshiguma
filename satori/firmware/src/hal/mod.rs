@@ -2,9 +2,9 @@ mod pins;
 pub(crate) use self::pins::Pins;
 
 mod time;
-pub(crate) use self::time::{millis, millis_init, Delay, TimeMillis};
+pub(crate) use self::time::{millis, millis_init, Delay};
 
-pub(crate) type Clock = avr_hal_generic::clock::MHz8;
+pub(crate) type Clock = avr_hal_generic::clock::MHz16;
 
 #[allow(dead_code)]
 pub(crate) type Usart<USART, RX, TX> = atmega_hal::usart::Usart<USART, RX, TX, Clock>;
