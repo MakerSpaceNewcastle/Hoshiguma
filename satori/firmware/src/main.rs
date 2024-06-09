@@ -7,6 +7,7 @@ mod hal;
 mod unwrap_simple;
 
 use atmega_hal::prelude::*;
+use one_wire_bus::OneWire;
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
@@ -49,6 +50,16 @@ fn main() -> ! {
     dp.EXINT.pcmsk0.write(|w| w.bits(0b00000010));
 
     unsafe { avr_device::interrupt::enable() };
+
+    let mut delay = hal::Delay::new();
+
+    let one_wire_pin = pins.d4.into_opendrain();
+    let mut one_wire_bus = OneWire::new(one_wire_pin).unwrap();
+    for device_address in one_wire_bus.devices(false, &mut delay) {
+        let device_address = device_address.unwrap();
+
+        ufmt::uwriteln!(serial, "Found device at address {}", device_address.0).unwrap();
+    }
 
     let mut led = pins.led.into_output();
 
