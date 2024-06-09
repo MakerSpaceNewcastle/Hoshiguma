@@ -50,8 +50,6 @@ fn main() -> ! {
     // See datasheet: 13.3.1 Alternate Functions of Port B
     dp.EXINT.pcmsk0.write(|w| w.bits(0b00000010));
 
-    unsafe { avr_device::interrupt::enable() };
-
     let mut delay = hal::Delay::new();
 
     let one_wire_pin = pins.d4.into_opendrain();
