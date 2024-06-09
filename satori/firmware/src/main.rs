@@ -5,6 +5,7 @@
 mod checked_update;
 mod hal;
 mod unwrap_simple;
+mod status;
 
 use atmega_hal::prelude::*;
 use one_wire_bus::OneWire;
