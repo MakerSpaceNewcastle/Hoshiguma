@@ -17,6 +17,14 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     let dp = unsafe { atmega_hal::Peripherals::steal() };
     let pins = hal::Pins::with_mcu_pins(atmega_hal::pins!(dp));
 
+    // Disable machine
+    let mut machine_enable = pins.machine_enable.into_output();
+    machine_enable.set_low();
+
+    // Report panic over serial
+    // TODO
+
+    // Blink LED rapidly
     let mut led = pins.led.into_output();
     loop {
         led.toggle();
@@ -35,8 +43,10 @@ fn main() -> ! {
     let mut serial = serial!(dp, pins, 57600);
     serial.write_str("feck arse drink\n").unwrap();
 
-    let _d7 = pins.d7.into_pull_up_input();
-    let _d8 = pins.d8.into_pull_up_input();
+    let mut machine_enable = pins.machine_enable.into_output();
+
+    let _d7 = pins.rj45_pin4.into_pull_up_input();
+    let _d8 = pins.rj45_pin3.into_pull_up_input();
 
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
@@ -52,7 +62,7 @@ fn main() -> ! {
 
     let mut delay = hal::Delay::new();
 
-    let one_wire_pin = pins.d9.into_opendrain();
+    let one_wire_pin = pins.rj45_pin2.into_opendrain();
     let mut one_wire_bus = OneWire::new(one_wire_pin).unwrap();
     for device_address in one_wire_bus.devices(false, &mut delay) {
         let device_address = device_address.unwrap();
@@ -81,6 +91,7 @@ fn main() -> ! {
 
         // TODO
         led.toggle();
+        machine_enable.toggle();
         hal::Delay::new().delay_ms(500u16);
     }
 }
