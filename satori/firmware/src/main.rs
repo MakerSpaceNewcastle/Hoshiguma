@@ -41,15 +41,17 @@ fn main() -> ! {
     unsafe { avr_device::interrupt::enable() };
 
     let mut serial = serial!(dp, pins, 57600);
+    // TODO: boot message
     serial.write_str("feck arse drink\n").unwrap();
 
     let mut machine_enable = pins.machine_enable.into_output();
 
-    let _d7 = pins.rj45_pin4.into_pull_up_input();
-    let _d8 = pins.rj45_pin3.into_pull_up_input();
+    let _coolant_flow_sensor = pins.rj45_pin3.into_pull_up_input();
 
-    let _coolant_level_lower = pins.rj45_pin6.into_pull_up_input();
-    let _coolant_level_upper = pins.rj45_pin7.into_pull_up_input();
+    let _coolant_pump_speed_sensor = pins.rj45_pin4.into_pull_up_input();
+
+    let _coolant_level_lower = pins.rj45_pin5.into_pull_up_input();
+    let _coolant_level_upper = pins.rj45_pin6.into_pull_up_input();
 
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
