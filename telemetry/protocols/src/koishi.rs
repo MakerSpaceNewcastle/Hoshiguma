@@ -1,0 +1,97 @@
+use crate::TimeMillis;
+use enumset::{EnumSet, EnumSetType};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Payload {
+    Boot(crate::Boot),
+    Panic(crate::Panic),
+
+    InputsChanged(Inputs),
+    OutputsChanged(Outputs),
+
+    MachineStatusChanged(MachineStatus),
+    AirAssistStatusChanged(AirAssistStatus),
+    ExtractionStatusChanged(ExtractionStatus),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct Inputs {
+    pub doors_closed: bool,
+    pub cooling_ok: bool,
+    pub machine_running: bool,
+    pub air_pump_demand: bool,
+    pub extraction_mode: ExtractionMode,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ExtractionMode {
+    Normal,
+    Run,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct Outputs {
+    pub controller_machine_alarm: AlarmState,
+    pub controller_cooling_alarm: AlarmState,
+    pub laser_enable: bool,
+    pub status_light: StatusLight,
+    pub air_pump: bool,
+    pub extractor_fan: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum AlarmState {
+    Normal,
+    Alarm,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum StatusLight {
+    Green,
+    Amber,
+    Red,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum MachineStatus {
+    Running,
+    Idle,
+    Problem(EnumSet<MachineProblem>),
+}
+
+#[derive(Debug, Serialize, Deserialize, EnumSetType)]
+pub enum MachineProblem {
+    DoorOpen,
+    External,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct AirAssistStatus {
+    state: RunOnDelay,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct ExtractionStatus {
+    pub state: RunOnDelay,
+    pub r#override: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct RunOnDelay {
+    pub delay: TimeMillis,
+    pub state: RunOnDelayState,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub enum RunOnDelayState {
+    Demand,
+    RunOn { end: TimeMillis },
+    Idle,
+}
