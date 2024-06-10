@@ -1,20 +1,17 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs";
-    ravedude.url = "github:Rahix/avr-hal?dir=ravedude";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
   };
 
   outputs = {
     self,
     nixpkgs,
     flake-utils,
-    ravedude,
   }:
     flake-utils.lib.eachDefaultSystem (
       system: let
         pkgs = import nixpkgs {inherit system;};
-        ravedude' = ravedude.packages."${system}".default;
-      in rec {
+      in {
         devShell = pkgs.mkShell {
           packages = with pkgs; [
             # Code formatting tools
@@ -29,13 +26,12 @@
 
             # koishi firmware
             avrdude
-            ravedude'
-            pkgs.pkgsCross.avr.buildPackages.gcc
+            ravedude
+            pkgsCross.avr.buildPackages.gcc
 
             # koishi firmware in-simulator tests
             clang
             libelf
-            simavr
             zlib
 
             # koishi telemetry receiver demo
