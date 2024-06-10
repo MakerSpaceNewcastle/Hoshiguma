@@ -22,7 +22,7 @@ jobs:
         working-directory: ./koishi/firmware
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
 
       - name: Clippy
@@ -36,7 +36,7 @@ jobs:
         working-directory: ./koishi/firmware-tests
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
 
       - name: Clippy
@@ -50,7 +50,7 @@ jobs:
         working-directory: ./koishi/telemetry-receiver
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
 
       - name: Clippy
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
 
       - name: Build
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
 
       - name: Build
