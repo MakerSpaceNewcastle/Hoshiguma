@@ -1,6 +1,8 @@
 use enumset::{EnumSet, EnumSetType};
 use serde::Deserialize;
 
+type String = heapless::String<32>;
+type Vec<T> = heapless::Vec<T, 8>;
 type TimeMillis = u32;
 
 #[derive(Debug, Deserialize)]
@@ -40,8 +42,8 @@ struct Status {
     coolant_pump_rpm: f32,
     coolant_flow_rate: f32,
 
-    potential_problems: Vec<()>,
-    problems: Vec<()>,
+    potential_problems: EnumSet<MachineProblem>,
+    problems: EnumSet<MachineProblem>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -66,7 +68,7 @@ enum CoolantLevel {
     CriticallyLow,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, EnumSetType)]
 enum MachineProblem {
     CoolentLevelInsufficient,
     CoolantFlowRateInsufficient,
