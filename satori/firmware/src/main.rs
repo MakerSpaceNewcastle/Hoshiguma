@@ -48,6 +48,9 @@ fn main() -> ! {
     let _d7 = pins.rj45_pin4.into_pull_up_input();
     let _d8 = pins.rj45_pin3.into_pull_up_input();
 
+    let _coolant_level_lower = pins.rj45_pin6.into_pull_up_input();
+    let _coolant_level_upper = pins.rj45_pin7.into_pull_up_input();
+
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
     dp.EXINT.pcicr.write(|w| unsafe { w.bits(0b00000101) });
