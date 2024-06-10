@@ -1,5 +1,5 @@
+use enumset::{EnumSet, EnumSetType};
 use serde::Deserialize;
-use enumset::{EnumSetType, EnumSet};
 
 type TimeMillis = u32;
 
