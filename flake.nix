@@ -4,14 +4,25 @@
     ravedude.url = "github:Rahix/avr-hal?dir=ravedude";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ravedude }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
+  outputs = {
+    self,
+    nixpkgs,
+    flake-utils,
+    ravedude,
+  }:
+    flake-utils.lib.eachDefaultSystem (
+      system: let
+        pkgs = import nixpkgs {inherit system;};
         ravedude' = ravedude.packages."${system}".default;
       in rec {
         devShell = pkgs.mkShell {
           packages = with pkgs; [
+            # Code formatting tools
+            treefmt
+            alejandra
+            mdl
+            rustfmt
+
             # Common
             rustup
             pkg-config
