@@ -36,7 +36,7 @@ fn main() -> ! {
     serial.write_str("feck arse drink\n").unwrap();
 
     let _d7 = pins.d7.into_pull_up_input();
-    let _d9 = pins.d9.into_pull_up_input();
+    let _d8 = pins.d8.into_pull_up_input();
 
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
@@ -46,13 +46,13 @@ fn main() -> ! {
     // See datasheet: 13.3.3 Alternate Functions of Port D
     dp.EXINT.pcmsk2.write(|w| w.bits(0b10000000));
 
-    // Enable pin change interrupts on PCINT1 which is pin PB1 (= d9)
+    // Enable pin change interrupts on PCINT0 which is pin PB0 (= d8)
     // See datasheet: 13.3.1 Alternate Functions of Port B
-    dp.EXINT.pcmsk0.write(|w| w.bits(0b00000010));
+    dp.EXINT.pcmsk0.write(|w| w.bits(0b00000001));
 
     let mut delay = hal::Delay::new();
 
-    let one_wire_pin = pins.d4.into_opendrain();
+    let one_wire_pin = pins.d9.into_opendrain();
     let mut one_wire_bus = OneWire::new(one_wire_pin).unwrap();
     for device_address in one_wire_bus.devices(false, &mut delay) {
         let device_address = device_address.unwrap();
