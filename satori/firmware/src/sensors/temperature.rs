@@ -44,14 +44,14 @@ where
         Self {
             bus,
             delay,
-            radiator_top: dallas_temperature_sensor!(""),
-            radiator_bottom: dallas_temperature_sensor!(""),
-            coolant_pump_case: dallas_temperature_sensor!(""),
-            coolant_flow: dallas_temperature_sensor!(""),
-            coolant_return: dallas_temperature_sensor!(""),
-            laser_chamber_ambient: dallas_temperature_sensor!(""),
-            electronics_bay_ambient: dallas_temperature_sensor!(""),
-            room_ambient: dallas_temperature_sensor!(""),
+            radiator_top: dallas_temperature_sensor!("0D3CE1E3817D8828"),
+            radiator_bottom: dallas_temperature_sensor!("953C1FF648A2F028"),
+            coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
+            coolant_flow: dallas_temperature_sensor!("703CE1E380A2E828"),
+            coolant_return: dallas_temperature_sensor!("523CE1E380B9B828"),
+            laser_chamber_ambient: dallas_temperature_sensor!("8F3C53F649ABE528"),
+            electronics_bay_ambient: dallas_temperature_sensor!("BAFC5B5509646128"),
+            room_ambient: dallas_temperature_sensor!("F1561D5409646128"),
         }
     }
 
@@ -63,5 +63,9 @@ where
             }
             Err(_) => Err(()),
         }
+    }
+
+    pub(crate) fn read(&self) -> Option<crate::status::Temperatures> {
+        None
     }
 }

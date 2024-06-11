@@ -48,7 +48,7 @@ struct Status {
 }
 
 #[derive(Debug, Deserialize)]
-struct Temperatures {
+pub(crate) struct Temperatures {
     coolant_flow: f32,
     coolant_return: f32,
 
@@ -62,7 +62,7 @@ struct Temperatures {
     electronics_bay: f32,
 }
 
-#[derive(Debug, uDebug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub(crate) enum CoolantLevel {
     Full,
     Low,

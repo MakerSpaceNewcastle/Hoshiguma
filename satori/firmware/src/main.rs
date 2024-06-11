@@ -33,6 +33,8 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     }
 }
 
+use core::fmt::Write;
+
 #[avr_device::entry]
 fn main() -> ! {
     let dp = atmega_hal::Peripherals::take().unwrap();
@@ -69,18 +71,19 @@ fn main() -> ! {
     // See datasheet: 13.3.1 Alternate Functions of Port B
     dp.EXINT.pcmsk0.write(|w| w.bits(0b00000001));
 
-    let mut delay = hal::Delay::new();
+    let delay = hal::Delay::new();
 
-    let mut one_wire_bus = {
+    let one_wire_bus = {
         let pin = pins.rj45_pin2.into_opendrain();
         OneWire::new(pin).unwrap()
     };
 
-    for device_address in one_wire_bus.devices(false, &mut delay) {
-        let device_address = device_address.unwrap();
+    let temperature_sensors = crate::sensors::TemperatureSensors::new(one_wire_bus, delay);
 
-        ufmt::uwriteln!(serial, "Found device at address {}", device_address.0).unwrap();
-    }
+    // for device_address in one_wire_bus.devices(false, &mut delay) {
+    //     let device_address = device_address.unwrap();
+    //     ufmt::uwriteln!(serial, "Found device at address {}", device_address.0).unwrap();
+    // }
 
     let mut led = pins.led.into_output();
 
@@ -102,7 +105,13 @@ fn main() -> ! {
         ufmt::uwrite!(serial, "count 2 = {}\n", count_2).unwrap();
 
         let coolant_level = coolant_level_sensor.read();
-        ufmt::uwrite!(serial, "coolant level = {:?}\n", coolant_level).unwrap();
+
+        let mut bytes = heapless::Vec::<u8, 32>::new();
+        write!(&mut bytes, "coolant level = {:?}\n", coolant_level).unwrap();
+        for b in bytes {
+            serial.write_byte(b);
+        }
+        serial.flush();
 
         // TODO
         led.toggle();
