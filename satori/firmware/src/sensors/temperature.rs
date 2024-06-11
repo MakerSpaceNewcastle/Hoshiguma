@@ -29,9 +29,9 @@ where
 macro_rules! dallas_temperature_sensor {
     ( $address:expr ) => {
         Ds18b20::new::<()>(one_wire_bus::Address(
-            u64::from_str_radix($address, 16).expect("address should be valid hex"),
+            u64::from_str_radix($address, 16).unwrap(),
         ))
-        .expect("temperature sensor should be created from address")
+        .unwrap()
     };
 }
 

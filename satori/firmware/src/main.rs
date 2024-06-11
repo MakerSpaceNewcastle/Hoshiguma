@@ -71,8 +71,11 @@ fn main() -> ! {
 
     let mut delay = hal::Delay::new();
 
-    let one_wire_pin = pins.rj45_pin2.into_opendrain();
-    let mut one_wire_bus = OneWire::new(one_wire_pin).unwrap();
+    let mut one_wire_bus = {
+        let pin = pins.rj45_pin2.into_opendrain();
+        OneWire::new(pin).unwrap()
+    };
+
     for device_address in one_wire_bus.devices(false, &mut delay) {
         let device_address = device_address.unwrap();
 
