@@ -2,11 +2,11 @@
 #![no_main]
 #![feature(abi_avr_interrupt)]
 
-mod checked_update;
+// mod checked_update;
 mod hal;
 mod sensors;
 mod status;
-mod unwrap_simple;
+// mod unwrap_simple;
 
 use atmega_hal::prelude::*;
 use one_wire_bus::OneWire;
