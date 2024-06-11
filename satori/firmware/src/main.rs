@@ -49,15 +49,15 @@ fn main() -> ! {
 
     let mut machine_enable = pins.machine_enable.into_output();
 
+    let mut coolant_level_sensor = {
+        let top = pins.rj45_pin5.into_pull_up_input();
+        let bottom = pins.rj45_pin6.into_pull_up_input();
+        sensors::CoolantLevelSensor::new(top, bottom)
+    };
+
     let _coolant_flow_sensor = pins.rj45_pin3.into_pull_up_input();
 
     let _coolant_pump_speed_sensor = pins.rj45_pin4.into_pull_up_input();
-
-    let mut coolant_level_sensor = {
-        let bottom = pins.rj45_pin5.into_pull_up_input();
-        let top = pins.rj45_pin6.into_pull_up_input();
-        sensors::CoolantLevelSensor::new(top, bottom)
-    };
 
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
@@ -106,7 +106,7 @@ fn main() -> ! {
 
         let coolant_level = coolant_level_sensor.read();
 
-        let mut bytes = heapless::Vec::<u8, 32>::new();
+        let mut bytes = heapless::Vec::<u8, 64>::new();
         write!(&mut bytes, "coolant level = {:?}\n", coolant_level).unwrap();
         for b in bytes {
             serial.write_byte(b);

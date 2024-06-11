@@ -15,10 +15,10 @@ impl<PH: InputPin, PL: InputPin> CoolantLevelSensor<PH, PL> {
     }
 
     pub(crate) fn read(&mut self) -> Option<CoolantLevel> {
-        // If the sensor is submerged then the float is lifted up, closing the switch, hence the
-        // pin reads low.
-        let top_submerged = self.top_float_switch.is_low();
-        let bottom_submerged = self.bottom_float_switch.is_low();
+        // If the sensor is submerged then the float is lifted up, opening the switch, hence the
+        // pin reads high.
+        let top_submerged = self.top_float_switch.is_high();
+        let bottom_submerged = self.bottom_float_switch.is_high();
 
         if let Ok(top_submerged) = top_submerged {
             if let Ok(bottom_submerged) = bottom_submerged {
