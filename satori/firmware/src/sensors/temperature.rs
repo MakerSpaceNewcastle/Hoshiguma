@@ -61,7 +61,7 @@ where
                 Resolution::Bits12.delay_for_measurement_time(&mut self.delay);
                 Ok(())
             }
-            Err(_) => Err(()) 
+            Err(_) => Err(()),
         }
     }
 }
