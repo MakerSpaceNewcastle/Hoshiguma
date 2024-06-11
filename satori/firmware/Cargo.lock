@@ -368,6 +368,7 @@ dependencies = [
  "avr-device",
  "avr-hal-generic",
  "ds18b20",
+ "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
  "enumset",
  "git-version",
