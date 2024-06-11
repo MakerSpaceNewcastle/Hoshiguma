@@ -62,7 +62,7 @@ struct Temperatures {
 }
 
 #[derive(Debug, Deserialize)]
-enum CoolantLevel {
+pub(crate) enum CoolantLevel {
     Full,
     Low,
     CriticallyLow,
