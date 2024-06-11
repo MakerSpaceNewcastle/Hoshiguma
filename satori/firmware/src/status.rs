@@ -1,5 +1,6 @@
 use enumset::{EnumSet, EnumSetType};
 use serde::Deserialize;
+use ufmt::derive::uDebug;
 
 type String = heapless::String<32>;
 type Vec<T> = heapless::Vec<T, 8>;
@@ -61,7 +62,7 @@ struct Temperatures {
     electronics_bay: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, uDebug, Deserialize)]
 pub(crate) enum CoolantLevel {
     Full,
     Low,

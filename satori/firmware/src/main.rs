@@ -51,11 +51,11 @@ fn main() -> ! {
 
     let _coolant_pump_speed_sensor = pins.rj45_pin4.into_pull_up_input();
 
-    let coolant_level_lower = pins.rj45_pin5.into_pull_up_input();
-    let coolant_level_upper = pins.rj45_pin6.into_pull_up_input();
-
-    let coolant_level_sensor =
-        sensors::CoolantLevelSensor::new(coolant_level_upper, coolant_level_lower);
+    let mut coolant_level_sensor = {
+        let bottom = pins.rj45_pin5.into_pull_up_input();
+        let top = pins.rj45_pin6.into_pull_up_input();
+        sensors::CoolantLevelSensor::new(top, bottom)
+    };
 
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
@@ -97,6 +97,9 @@ fn main() -> ! {
             count
         });
         ufmt::uwrite!(serial, "count 2 = {}\n", count_2).unwrap();
+
+        let coolant_level = coolant_level_sensor.read();
+        ufmt::uwrite!(serial, "coolant level = {:?}\n", coolant_level).unwrap();
 
         // TODO
         led.toggle();
