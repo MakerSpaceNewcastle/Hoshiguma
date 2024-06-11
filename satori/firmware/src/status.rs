@@ -48,17 +48,17 @@ struct Status {
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Temperatures {
-    coolant_flow: f32,
-    coolant_return: f32,
+    pub coolant_flow: f32,
+    pub coolant_return: f32,
 
-    coolant_resevoir_upper: f32,
-    coolant_resevoir_lower: f32,
+    pub coolant_resevoir_upper: f32,
+    pub coolant_resevoir_lower: f32,
 
-    coolant_pump: f32,
+    pub coolant_pump: f32,
 
-    room_ambient: f32,
-    laser_bay: f32,
-    electronics_bay: f32,
+    pub room_ambient: f32,
+    pub laser_bay: f32,
+    pub electronics_bay: f32,
 }
 
 #[derive(Debug, Deserialize)]
