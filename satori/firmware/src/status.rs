@@ -1,6 +1,5 @@
 use enumset::{EnumSet, EnumSetType};
 use serde::Deserialize;
-use ufmt::derive::uDebug;
 
 type String = heapless::String<32>;
 type Vec<T> = heapless::Vec<T, 8>;

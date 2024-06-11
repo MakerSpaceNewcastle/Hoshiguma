@@ -9,7 +9,21 @@ mod status;
 // mod unwrap_simple;
 
 use atmega_hal::prelude::*;
+use core::fmt::Write;
 use one_wire_bus::OneWire;
+
+macro_rules! serial_format{
+    ( $serial:expr, $buffer_len:expr, $($arg:tt)* ) => {
+        let mut bytes = heapless::Vec::<u8, $buffer_len>::new();
+
+        write!(&mut bytes, $($arg)*).unwrap();
+
+        for b in bytes {
+            $serial.write_byte(b);
+        }
+        $serial.flush();
+    };
+}
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
@@ -32,8 +46,6 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
         hal::Delay::new().delay_ms(50u16);
     }
 }
-
-use core::fmt::Write;
 
 #[avr_device::entry]
 fn main() -> ! {
@@ -106,12 +118,7 @@ fn main() -> ! {
 
         let coolant_level = coolant_level_sensor.read();
 
-        let mut bytes = heapless::Vec::<u8, 64>::new();
-        write!(&mut bytes, "coolant level = {:?}\n", coolant_level).unwrap();
-        for b in bytes {
-            serial.write_byte(b);
-        }
-        serial.flush();
+        serial_format!(serial, 64, "coolant level = {:?}\n", coolant_level);
 
         // TODO
         led.toggle();
