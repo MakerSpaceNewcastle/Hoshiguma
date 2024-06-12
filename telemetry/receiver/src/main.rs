@@ -3,7 +3,7 @@ use std::{io::Read, time::Duration};
 use telemetry_protocols;
 use tracing::{debug, error, info, warn};
 
-/// Tool to receive data from the koishi coprocessor via the postcard protocol.
+/// Tool to receive data from coprocessors via the postcard protocol.
 #[derive(Parser)]
 struct Cli {
     /// Serial port
@@ -34,20 +34,9 @@ fn main() {
                 if b == 0 {
                     debug!("Received {} bytes: {:?}", rx_buffer.len(), rx_buffer);
 
-                    match postcard::from_bytes_cobs::<
-                        telemetry_protocols::Message<telemetry_protocols::koishi::Payload>,
-                    >(&mut rx_buffer)
-                    {
-                        Ok(msg) => {
-                            info!("Received {:#?}", msg);
-                            if let telemetry_protocols::koishi::Payload::Boot(msg) = msg.payload {
-                                check_firmware_version(&msg);
-                            }
-                        }
-                        Err(e) => {
-                            warn!("Failed to parse message: {}", e);
-                        }
-                    }
+                    try_parse_and_print_payload::<telemetry_protocols::koishi::Payload>(
+                        &mut rx_buffer,
+                    );
 
                     rx_buffer.clear();
                 }
@@ -56,6 +45,22 @@ fn main() {
         Err(e) => {
             error!("Failed to open port: {}", e);
             ::std::process::exit(1);
+        }
+    }
+}
+
+fn try_parse_and_print_payload<P: for<'de> serde::de::Deserialize<'de> + std::fmt::Debug>(
+    rx_buffer: &mut [u8],
+) {
+    match postcard::from_bytes_cobs::<telemetry_protocols::Message<P>>(rx_buffer) {
+        Ok(msg) => {
+            info!("Received {:#?}", msg);
+            if let telemetry_protocols::Payload::Boot(msg) = msg.payload {
+                check_firmware_version(&msg);
+            }
+        }
+        Err(e) => {
+            warn!("Failed to parse message: {}", e);
         }
     }
 }

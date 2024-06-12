@@ -10,7 +10,14 @@ pub type TimeMillis = u32;
 pub struct Message<P> {
     pub time: TimeMillis,
     pub iteration_id: Option<u32>,
-    pub payload: P,
+    pub payload: Payload<P>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Payload<P> {
+    Boot(Boot),
+    Panic(Panic),
+    Application(P),
 }
 
 #[derive(Debug, Serialize, Deserialize)]

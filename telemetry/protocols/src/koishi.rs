@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Payload {
-    Boot(crate::Boot),
-    Panic(crate::Panic),
-
     InputsChanged(Inputs),
     OutputsChanged(Outputs),
 
