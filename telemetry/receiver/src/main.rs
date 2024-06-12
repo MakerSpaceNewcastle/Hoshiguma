@@ -37,6 +37,9 @@ fn main() {
                     try_parse_and_print_payload::<telemetry_protocols::koishi::Payload>(
                         &mut rx_buffer,
                     );
+                    try_parse_and_print_payload::<telemetry_protocols::satori::Payload>(
+                        &mut rx_buffer,
+                    );
 
                     rx_buffer.clear();
                 }
