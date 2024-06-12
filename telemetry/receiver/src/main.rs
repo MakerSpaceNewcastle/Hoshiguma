@@ -1,6 +1,6 @@
 use clap::Parser;
-use koishi_telemetry_protocol as protocol;
 use std::{io::Read, time::Duration};
+use telemetry_protocols;
 use tracing::{debug, error, info, warn};
 
 /// Tool to receive data from the koishi coprocessor via the postcard protocol.
@@ -34,10 +34,13 @@ fn main() {
                 if b == 0 {
                     debug!("Received {} bytes: {:?}", rx_buffer.len(), rx_buffer);
 
-                    match postcard::from_bytes_cobs::<protocol::Message>(&mut rx_buffer) {
+                    match postcard::from_bytes_cobs::<
+                        telemetry_protocols::Message<telemetry_protocols::koishi::Payload>,
+                    >(&mut rx_buffer)
+                    {
                         Ok(msg) => {
                             info!("Received {:#?}", msg);
-                            if let protocol::Payload::Boot(msg) = msg.payload {
+                            if let telemetry_protocols::koishi::Payload::Boot(msg) = msg.payload {
                                 check_firmware_version(&msg);
                             }
                         }
@@ -57,7 +60,7 @@ fn main() {
     }
 }
 
-fn check_firmware_version(msg: &protocol::Boot) {
+fn check_firmware_version(msg: &telemetry_protocols::Boot) {
     let our_version = git_version::git_version!();
     let their_version = &msg.git_revision;
 
