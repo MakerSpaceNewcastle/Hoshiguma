@@ -4,6 +4,7 @@ use embedded_hal_p2::{
     digital::v2::{InputPin, OutputPin},
 };
 use one_wire_bus::OneWire;
+use telemetry_protocols::satori::Temperatures;
 
 pub(crate) struct TemperatureSensors<P, E, D>
 where
@@ -65,7 +66,8 @@ where
         }
     }
 
-    pub(crate) fn read(&self) -> Option<crate::status::Temperatures> {
+    pub(crate) fn read(&self) -> Option<Temperatures> {
+        // TODO
         None
     }
 }

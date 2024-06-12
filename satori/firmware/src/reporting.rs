@@ -1,3 +1,6 @@
+use crate::hal::Usart;
+use telemetry_protocols::{Boot, Message, Panic, Payload};
+
 pub(super) fn report<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX>(
     serial: &mut Usart<USART, TX, RX>,
     msg: &Message,
@@ -13,10 +16,7 @@ pub(super) fn report<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, 
 pub(crate) fn boot<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX>(
     serial: &mut Usart<USART, TX, RX>,
 ) {
-    report(
-        serial,
-        &Message::new(None, Payload::Boot(BootPayload::default())),
-    );
+    report(serial, &Message::new(None, Payload::Boot(Boot::default())));
 }
 
 pub(crate) fn panic<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX>(
@@ -25,7 +25,7 @@ pub(crate) fn panic<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, R
 ) {
     report(
         serial,
-        &Message::new(None, Payload::Panic(PanicPayload::from(info))),
+        &Message::new(None, Payload::Panic(Panic::from(info))),
     );
 }
 
@@ -39,7 +39,3 @@ pub(crate) fn status<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, 
     let msg = Message::new(Some(iteration_id), status_payload.into());
     report(serial, &msg);
 }
-
-
-
-

@@ -4,8 +4,8 @@
 
 // mod checked_update;
 mod hal;
-mod sensors;
 mod reporting;
+mod sensors;
 // mod unwrap_simple;
 
 use atmega_hal::prelude::*;
@@ -84,7 +84,6 @@ fn main() -> ! {
     }
 
     let temperature_sensors = crate::sensors::TemperatureSensors::new(one_wire_bus, delay);
-
 
     let mut led = pins.led.into_output();
 
