@@ -35,10 +35,23 @@ pub struct Boot {
     pub git_revision: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Panic {
     pub file: Option<String>,
     pub line: Option<u32>,
     pub column: Option<u32>,
+}
+
+impl From<&core::panic::PanicInfo<'_>> for Panic {
+    fn from(info: &core::panic::PanicInfo) -> Self {
+        match info.location() {
+            None => Panic::default(),
+            Some(loc) => Self {
+                file: loc.file().try_into().ok(),
+                line: Some(loc.line()),
+                column: Some(loc.column()),
+            },
+        }
+    }
 }

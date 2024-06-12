@@ -12,7 +12,7 @@ use atmega_hal::prelude::*;
 use one_wire_bus::OneWire;
 
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
+fn panic(info: &core::panic::PanicInfo) -> ! {
     avr_device::interrupt::disable();
 
     let dp = unsafe { atmega_hal::Peripherals::steal() };
@@ -23,7 +23,9 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     machine_enable.set_low();
 
     // Report panic over serial
-    // TODO
+    let mut serial = serial!(dp, pins, 57600);
+    serial.write_byte(0u8);
+    reporting::panic(&mut serial, info);
 
     // Blink LED rapidly
     let mut led = pins.led.into_output();
