@@ -67,15 +67,6 @@ pub(crate) struct BootPayload {
     git_revision: &'static str,
 }
 
-impl ufmt::uDebug for BootPayload {
-    fn fmt<W>(&self, f: &mut ufmt::Formatter<'_, W>) -> Result<(), W::Error>
-    where
-        W: ufmt::uWrite + ?Sized,
-    {
-        ufmt::uwrite!(f, "{} {}", self.name, self.git_revision)
-    }
-}
-
 impl Default for BootPayload {
     fn default() -> Self {
         Self {
@@ -90,25 +81,6 @@ pub(crate) struct PanicPayload {
     file: Option<heapless::String<32>>,
     line: Option<u32>,
     column: Option<u32>,
-}
-
-impl ufmt::uDebug for PanicPayload {
-    fn fmt<W>(&self, f: &mut ufmt::Formatter<'_, W>) -> Result<(), W::Error>
-    where
-        W: ufmt::uWrite + ?Sized,
-    {
-        if self.file.is_some() && self.line.is_some() && self.column.is_some() {
-            ufmt::uwrite!(
-                f,
-                "at {}:{}:{}",
-                self.file.as_ref().unwrap().as_str(),
-                self.line.unwrap(),
-                self.column.unwrap(),
-            )
-        } else {
-            ufmt::uwrite!(f, "at unknown location")
-        }
-    }
 }
 
 impl From<&core::panic::PanicInfo<'_>> for PanicPayload {
