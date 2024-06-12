@@ -1,5 +1,3 @@
-#[cfg(feature = "reporting_postcard")]
-mod postcard;
 mod protocol;
 
 use self::protocol::{BootPayload, Message, PanicPayload, Payload};
@@ -9,8 +7,12 @@ fn report<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX
     serial: &mut Usart<USART, TX, RX>,
     msg: &Message,
 ) {
-    #[cfg(feature = "reporting_postcard")]
-    self::postcard::report(serial, &msg);
+    let data = postcard::to_vec_cobs::<Message, 128>(&msg).unwrap();
+
+    for i in data {
+        serial.write_byte(i);
+    }
+    serial.flush();
 }
 
 pub(crate) fn boot<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX>(

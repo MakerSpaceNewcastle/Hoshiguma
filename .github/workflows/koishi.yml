@@ -69,7 +69,7 @@ jobs:
         run: |
           # Build as intended for hardware first
           nix develop --command cargo build --release
-          nix develop --command cargo build --release --features reporting_postcard
+          nix develop --command cargo build --release --features telemetry
           # Build for simulator tests
           nix develop --command cargo build --release --features simulator
 
