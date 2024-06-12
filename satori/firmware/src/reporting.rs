@@ -1,7 +1,7 @@
 use crate::hal::Usart;
 use telemetry_protocols::{Boot, Message, Panic, Payload};
 
-pub(super) fn report<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX>(
+fn report<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX>(
     serial: &mut Usart<USART, TX, RX>,
     msg: &Message,
 ) {
