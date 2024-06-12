@@ -13,7 +13,6 @@ pub enum Payload {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct Inputs {
     pub doors_closed: bool,
     pub cooling_ok: bool,
@@ -29,7 +28,6 @@ pub enum ExtractionMode {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct Outputs {
     pub controller_machine_alarm: AlarmState,
     pub controller_cooling_alarm: AlarmState,
@@ -66,27 +64,23 @@ pub enum MachineProblem {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct AirAssistStatus {
     state: RunOnDelay,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct ExtractionStatus {
     pub state: RunOnDelay,
     pub r#override: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub struct RunOnDelay {
     pub delay: TimeMillis,
     pub state: RunOnDelayState,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
 pub enum RunOnDelayState {
     Demand,
     RunOn { end: TimeMillis },
