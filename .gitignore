@@ -4,6 +4,7 @@
 
 # FreeCAD
 *.FCStd1
+*.FCBak
 
 
 # For PCBs designed using KiCad: https://www.kicad.org/
