@@ -5,7 +5,7 @@
 // mod checked_update;
 mod hal;
 mod sensors;
-mod status;
+// mod status;
 // mod unwrap_simple;
 
 use atmega_hal::prelude::*;

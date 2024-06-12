@@ -23,7 +23,7 @@ heapless = { version = "0.8.0", features = ["serde"] }
 nb = "1.1.0"
 one-wire-bus = "0.1.1"
 postcard = { version = "1.0.8", optional = true }
-serde = { version = "1.0.203", default-features = false, features = ["derive"] }
+telemetry-protocols = { path = "../../telemetry/protocols/", default-features = false }
 ufmt = "0.2.0"
 
 [profile.dev]

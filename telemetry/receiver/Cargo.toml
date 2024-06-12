@@ -7,7 +7,7 @@ license.workspace = true
 [dependencies]
 clap = { version = "4.3.18", features = ["derive"] }
 git-version = "0.3.5"
-postcard.workspace = true
+postcard = { workspace = true, features = ["use-std"] }
 serde.workspace = true
 serialport = "4.2.1"
 telemetry-protocols = { path = "../protocols" }
