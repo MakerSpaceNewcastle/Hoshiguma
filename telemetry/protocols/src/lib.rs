@@ -1,9 +1,17 @@
+#![cfg(not(std))]
+#![no_std]
+
 pub mod koishi;
 pub mod satori;
 
 use serde::{Deserialize, Serialize};
 
 pub type TimeMillis = u32;
+
+#[cfg(std)]
+pub type String = std::string::String;
+#[cfg(not(std))]
+pub type String = heapless::String<64>;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[allow(dead_code)]
