@@ -14,7 +14,7 @@ use crate::{
     checked_update::CheckedUpdate,
     io::{
         inputs::ReadInputs,
-        outputs::WriteOutputs,
+        outputs::{OutputsExt, WriteOutputs},
     },
     logic::{
         air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus,

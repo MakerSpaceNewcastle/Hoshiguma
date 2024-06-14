@@ -49,15 +49,11 @@ pub(crate) fn status<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, 
 ) where
     telemetry_protocols::koishi::Payload: From<T>,
 {
-    // let msg = Message::new(Some(iteration_id), status_payload.into());
-    // report(serial, &msg);
-}
+    let msg = Message {
+        time: crate::hal::millis(),
+        iteration_id: Some(iteration_id),
+        payload: telemetry_protocols::Payload::Application(status_payload.into()),
+    };
 
-impl From<&crate::io::outputs::Outputs> for telemetry_protocols::koishi::Payload {
-    fn from(outputs: &crate::io::outputs::Outputs) -> Self {
-        Self::OutputsChanged(telemetry_protocols::koishi::Outputs {
-            air_pump: outputs.air_pump,
-            controller_cooling_alarm: outputs.controller_cooling_alarm,
-        })
-    }
+    report(serial, &msg);
 }
