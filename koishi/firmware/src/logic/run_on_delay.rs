@@ -6,7 +6,9 @@ pub(crate) trait RunOnDelayExt<T> {
     fn should_run(&self) -> bool;
 }
 
-impl<T: PartialEq + PartialOrd + core::ops::Add<Output = T>> RunOnDelayExt<T> for RunOnDelay<T> {
+impl<T: PartialEq + PartialOrd + core::ops::Add<Output = T> + Copy> RunOnDelayExt<T>
+    for RunOnDelay<T>
+{
     fn new(delay: T) -> Self {
         Self {
             delay,
