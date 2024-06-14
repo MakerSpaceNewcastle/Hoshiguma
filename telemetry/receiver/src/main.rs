@@ -34,12 +34,9 @@ fn main() {
                 if b == 0 {
                     debug!("Received {} bytes: {:?}", rx_buffer.len(), rx_buffer);
 
-                    try_parse_and_print_payload::<telemetry_protocols::koishi::Payload>(
-                        &mut rx_buffer,
-                    );
-                    try_parse_and_print_payload::<telemetry_protocols::satori::Payload>(
-                        &mut rx_buffer,
-                    );
+                    if let Some(msg) = parsicles(&rx_buffer) {
+                        info!("Received:\n{:#?}", msg);
+                    }
 
                     rx_buffer.clear();
                 }
@@ -52,18 +49,38 @@ fn main() {
     }
 }
 
-fn try_parse_and_print_payload<P: for<'de> serde::de::Deserialize<'de> + std::fmt::Debug>(
-    rx_buffer: &mut [u8],
-) {
-    match postcard::from_bytes_cobs::<telemetry_protocols::Message<P>>(rx_buffer) {
+fn parsicles(rx_buffer: &[u8]) -> Option<Box<dyn std::fmt::Debug>> {
+    if let Some(msg) =
+        try_parse_and_print_payload::<telemetry_protocols::koishi::Payload>(rx_buffer.to_vec())
+    {
+        return Some(msg);
+    }
+
+    if let Some(msg) =
+        try_parse_and_print_payload::<telemetry_protocols::satori::Payload>(rx_buffer.to_vec())
+    {
+        return Some(msg);
+    }
+
+    None
+}
+
+fn try_parse_and_print_payload<
+    P: for<'de> serde::de::Deserialize<'de> + std::fmt::Debug + Clone + 'static,
+>(
+    mut rx_buffer: Vec<u8>,
+) -> Option<Box<dyn std::fmt::Debug>> {
+    debug!("Receive buffer: {:?} (len {})", rx_buffer, rx_buffer.len());
+    match postcard::from_bytes_cobs::<telemetry_protocols::Message<P>>(&mut rx_buffer) {
         Ok(msg) => {
-            info!("Received {:#?}", msg);
-            if let telemetry_protocols::Payload::Boot(msg) = msg.payload {
+            if let telemetry_protocols::Payload::Boot(ref msg) = msg.payload {
                 check_firmware_version(&msg);
             }
+            Some(Box::new(msg))
         }
         Err(e) => {
-            warn!("Failed to parse message: {}", e);
+            warn!("Failed to parse message: {e}");
+            None
         }
     }
 }

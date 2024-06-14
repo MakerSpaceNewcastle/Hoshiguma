@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 use enumset::{EnumSet, EnumSetType};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
     StateChanged(Status),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Status {
     temperature: Temperatures,
     coolant_level: CoolantLevel,
@@ -17,7 +17,7 @@ pub struct Status {
     problems: EnumSet<MachineProblem>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Temperatures {
     pub coolant_flow: f32,
     pub coolant_return: f32,
@@ -32,7 +32,7 @@ pub struct Temperatures {
     pub electronics_bay: f32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum CoolantLevel {
     Full,
     Low,
