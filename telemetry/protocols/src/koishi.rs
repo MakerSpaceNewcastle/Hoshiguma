@@ -1,6 +1,6 @@
-use crate::TimeMillis;
 use enumset::{EnumSet, EnumSetType};
 use serde::{Deserialize, Serialize};
+use crate::TimeMillis;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Payload {
@@ -91,7 +91,7 @@ pub enum MachineProblem {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct AirAssistStatus {
-    state: RunOnDelay,
+    pub state: run_on_delay::RunOnDelay<TimeMillis>,
 }
 
 impl From<&AirAssistStatus> for Payload {
@@ -102,7 +102,7 @@ impl From<&AirAssistStatus> for Payload {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct ExtractionStatus {
-    pub state: RunOnDelay,
+    pub state: run_on_delay::RunOnDelay<TimeMillis>,
     pub r#override: bool,
 }
 
@@ -112,15 +112,19 @@ impl From<&ExtractionStatus> for Payload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct RunOnDelay {
-    pub delay: TimeMillis,
-    pub state: RunOnDelayState,
-}
+pub mod run_on_delay {
+    use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub enum RunOnDelayState {
-    Demand,
-    RunOn { end: TimeMillis },
-    Idle,
+    #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+    pub struct RunOnDelay <T: PartialEq>{
+        pub delay: T,
+        pub state: State<T>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+    pub enum State<T> {
+        Demand,
+        RunOn { end: T},
+        Idle,
+    }
 }

@@ -84,8 +84,8 @@ fn main() -> ! {
         }
 
         if extraction_status.store(extraction_status.get().update(time, st_inputs.get())) {
-            // #[cfg(feature = "telemetry")]
-            // reporting::status(&mut serial, iteration_id, extraction_status.get());
+            #[cfg(feature = "telemetry")]
+            reporting::status(&mut serial, iteration_id, extraction_status.get());
         }
 
         if air_assist_status.store(air_assist_status.get().update(time, st_inputs.get())) {
