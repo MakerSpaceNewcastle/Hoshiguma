@@ -34,7 +34,7 @@ fn main() {
                 if b == 0 {
                     debug!("Received {} bytes: {:?}", rx_buffer.len(), rx_buffer);
 
-                    if let Some(msg) = parsicles(&rx_buffer) {
+                    if let Some(msg) = try_parse_any_payload(&rx_buffer) {
                         info!("Received:\n{:#?}", msg);
                     }
 
@@ -49,15 +49,13 @@ fn main() {
     }
 }
 
-fn parsicles(rx_buffer: &[u8]) -> Option<Box<dyn std::fmt::Debug>> {
-    if let Some(msg) =
-        try_parse_and_print_payload::<telemetry_protocols::koishi::Payload>(rx_buffer.to_vec())
+fn try_parse_any_payload(rx_buffer: &[u8]) -> Option<Box<dyn std::fmt::Debug>> {
+    if let Some(msg) = try_parse_payload::<telemetry_protocols::koishi::Payload>(rx_buffer.to_vec())
     {
         return Some(msg);
     }
 
-    if let Some(msg) =
-        try_parse_and_print_payload::<telemetry_protocols::satori::Payload>(rx_buffer.to_vec())
+    if let Some(msg) = try_parse_payload::<telemetry_protocols::satori::Payload>(rx_buffer.to_vec())
     {
         return Some(msg);
     }
@@ -65,12 +63,13 @@ fn parsicles(rx_buffer: &[u8]) -> Option<Box<dyn std::fmt::Debug>> {
     None
 }
 
-fn try_parse_and_print_payload<
+fn try_parse_payload<
     P: for<'de> serde::de::Deserialize<'de> + std::fmt::Debug + Clone + 'static,
 >(
     mut rx_buffer: Vec<u8>,
 ) -> Option<Box<dyn std::fmt::Debug>> {
     debug!("Receive buffer: {:?} (len {})", rx_buffer, rx_buffer.len());
+
     match postcard::from_bytes_cobs::<telemetry_protocols::Message<P>>(&mut rx_buffer) {
         Ok(msg) => {
             if let telemetry_protocols::Payload::Boot(ref msg) = msg.payload {
