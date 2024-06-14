@@ -64,14 +64,28 @@ pub enum StatusLight {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum MachineStatus {
+    /// The machine is currently running a job.
     Running,
+
+    /// The machine is not running, but is ready to run a job.
     Idle,
+
+    /// The machine is not running, and cannot run for some reason.
     Problem(EnumSet<MachineProblem>),
+}
+
+impl From<&MachineStatus> for Payload {
+    fn from(value: &MachineStatus) -> Self {
+        Self::MachineStatusChanged(value.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, EnumSetType)]
 pub enum MachineProblem {
+    /// Any door to a protected area is open.
     DoorOpen,
+
+    /// An external controller has indicated a fault condition.
     External,
 }
 
@@ -80,10 +94,22 @@ pub struct AirAssistStatus {
     state: RunOnDelay,
 }
 
+impl From<&AirAssistStatus> for Payload {
+    fn from(value: &AirAssistStatus) -> Self {
+        Self::AirAssistStatusChanged(value.clone())
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct ExtractionStatus {
     pub state: RunOnDelay,
     pub r#override: bool,
+}
+
+impl From<&ExtractionStatus> for Payload {
+    fn from(value: &ExtractionStatus) -> Self {
+        Self::ExtractionStatusChanged(value.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]

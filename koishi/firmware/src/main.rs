@@ -16,13 +16,10 @@ use crate::{
         inputs::ReadInputs,
         outputs::{OutputsExt, WriteOutputs},
     },
-    logic::{
-        air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus,
-        StatusUpdate,
-    },
+    logic::{air_assist::AirAssistStatus, extraction::ExtractionStatus, StatusUpdate},
 };
 use atmega_hal::prelude::*;
-use telemetry_protocols::koishi::Outputs;
+use telemetry_protocols::koishi::{MachineStatus, Outputs};
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
@@ -66,7 +63,7 @@ fn main() -> ! {
     let mut outputs = gpio_relay_outputs!(pins);
 
     let mut st_inputs = CheckedUpdate::default();
-    let mut machine_status = CheckedUpdate::new(MachineStatus::default());
+    let mut machine_status = CheckedUpdate::new(MachineStatus::Idle);
     let mut extraction_status = CheckedUpdate::new(ExtractionStatus::default());
     let mut air_assist_status = CheckedUpdate::new(AirAssistStatus::default());
     let mut st_outputs = CheckedUpdate::default();
@@ -82,8 +79,8 @@ fn main() -> ! {
         }
 
         if machine_status.store(machine_status.get().update(time, st_inputs.get())) {
-            // #[cfg(feature = "telemetry")]
-            // reporting::status(&mut serial, iteration_id, machine_status.get());
+            #[cfg(feature = "telemetry")]
+            reporting::status(&mut serial, iteration_id, machine_status.get());
         }
 
         if extraction_status.store(extraction_status.get().update(time, st_inputs.get())) {

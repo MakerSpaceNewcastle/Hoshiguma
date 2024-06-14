@@ -1,9 +1,7 @@
 pub(crate) mod gpio_relays;
 
-use crate::logic::{
-    air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus,
-};
-use telemetry_protocols::koishi::{AlarmState, Outputs, StatusLight};
+use crate::logic::{air_assist::AirAssistStatus, extraction::ExtractionStatus};
+use telemetry_protocols::koishi::{AlarmState, MachineStatus, Outputs, StatusLight};
 
 pub(crate) trait OutputsExt {
     fn new(

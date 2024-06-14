@@ -1,27 +1,7 @@
 use super::StatusUpdate;
 use crate::hal::TimeMillis;
-use enumset::{EnumSet, EnumSetType};
-use serde::Serialize;
-use telemetry_protocols::koishi::Inputs;
-use ufmt::derive::uDebug;
-
-#[derive(Clone, PartialEq, Serialize)]
-pub(crate) enum MachineStatus {
-    /// The machine is currently running a job.
-    Running,
-
-    /// The machine is not running, but is ready to run a job.
-    Idle,
-
-    /// The machine is not running, and cannot run for some reason.
-    Problem(EnumSet<MachineProblem>),
-}
-
-impl Default for MachineStatus {
-    fn default() -> Self {
-        Self::Idle
-    }
-}
+use enumset::EnumSet;
+use telemetry_protocols::koishi::{Inputs, MachineProblem, MachineStatus};
 
 impl StatusUpdate for MachineStatus {
     fn update(&self, _: TimeMillis, current: &Inputs) -> Self {
@@ -50,13 +30,4 @@ impl StatusUpdate for MachineStatus {
 
         state
     }
-}
-
-#[derive(uDebug, Serialize, EnumSetType)]
-pub(crate) enum MachineProblem {
-    /// Any door to a protected area is open.
-    DoorOpen,
-
-    /// An external controller has indicated a fault condition.
-    External,
 }
