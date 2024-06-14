@@ -1,6 +1,6 @@
+use crate::TimeMillis;
 use enumset::{EnumSet, EnumSetType};
 use serde::{Deserialize, Serialize};
-use crate::TimeMillis;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Payload {
@@ -116,7 +116,7 @@ pub mod run_on_delay {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-    pub struct RunOnDelay <T: PartialEq>{
+    pub struct RunOnDelay<T: PartialEq> {
         pub delay: T,
         pub state: State<T>,
     }
@@ -124,7 +124,7 @@ pub mod run_on_delay {
     #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
     pub enum State<T> {
         Demand,
-        RunOn { end: T},
+        RunOn { end: T },
         Idle,
     }
 }

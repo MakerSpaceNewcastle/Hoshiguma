@@ -1,6 +1,6 @@
 use clap::Parser;
+use hoshiguma_foundational_data;
 use std::{io::Read, time::Duration};
-use telemetry_protocols;
 use tracing::{debug, error, info, warn};
 
 /// Tool to receive data from coprocessors via the postcard protocol.
@@ -50,12 +50,14 @@ fn main() {
 }
 
 fn try_parse_any_payload(rx_buffer: &[u8]) -> Option<Box<dyn std::fmt::Debug>> {
-    if let Some(msg) = try_parse_payload::<telemetry_protocols::koishi::Payload>(rx_buffer.to_vec())
+    if let Some(msg) =
+        try_parse_payload::<hoshiguma_foundational_data::koishi::Payload>(rx_buffer.to_vec())
     {
         return Some(msg);
     }
 
-    if let Some(msg) = try_parse_payload::<telemetry_protocols::satori::Payload>(rx_buffer.to_vec())
+    if let Some(msg) =
+        try_parse_payload::<hoshiguma_foundational_data::satori::Payload>(rx_buffer.to_vec())
     {
         return Some(msg);
     }
@@ -70,9 +72,9 @@ fn try_parse_payload<
 ) -> Option<Box<dyn std::fmt::Debug>> {
     debug!("Receive buffer: {:?} (len {})", rx_buffer, rx_buffer.len());
 
-    match postcard::from_bytes_cobs::<telemetry_protocols::Message<P>>(&mut rx_buffer) {
+    match postcard::from_bytes_cobs::<hoshiguma_foundational_data::Message<P>>(&mut rx_buffer) {
         Ok(msg) => {
-            if let telemetry_protocols::Payload::Boot(ref msg) = msg.payload {
+            if let hoshiguma_foundational_data::Payload::Boot(ref msg) = msg.payload {
                 check_firmware_version(&msg);
             }
             Some(Box::new(msg))
@@ -84,7 +86,7 @@ fn try_parse_payload<
     }
 }
 
-fn check_firmware_version(msg: &telemetry_protocols::Boot) {
+fn check_firmware_version(msg: &hoshiguma_foundational_data::Boot) {
     let our_version = git_version::git_version!();
     let their_version = &msg.git_revision;
 

@@ -1,8 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-  "protocols",
-  "receiver",
+  "foundational-data",
+  "telemetry-receiver",
 ]
 
 [workspace.package]

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use enumset::{EnumSet, EnumSetType};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
