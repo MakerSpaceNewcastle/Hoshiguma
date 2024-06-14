@@ -1,16 +1,3 @@
-#[derive(Serialize)]
-pub(crate) enum Payload {
-    Boot(BootPayload),
-    Panic(PanicPayload),
-
-    InputsChanged(crate::io::inputs::Inputs),
-    OutputsChanged(crate::io::outputs::Outputs),
-
-    MachineStatusChanged(crate::logic::machine::MachineStatus),
-    AirAssistStatusChanged(crate::logic::air_assist::AirAssistStatus),
-    ExtractionStatusChanged(crate::logic::extraction::ExtractionStatus),
-}
-
 impl From<&crate::io::inputs::Inputs> for Payload {
     fn from(inputs: &crate::io::inputs::Inputs) -> Payload {
         Payload::InputsChanged(inputs.clone())

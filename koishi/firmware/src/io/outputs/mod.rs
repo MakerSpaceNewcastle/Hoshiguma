@@ -1,24 +1,20 @@
 pub(crate) mod gpio_relays;
 
 use crate::logic::{
-    air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus, AlarmState,
-    StatusLight,
+    air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus,
 };
-use serde::Serialize;
-use ufmt::derive::uDebug;
+use telemetry_protocols::koishi::{AlarmState, Outputs, StatusLight};
 
-#[derive(Clone, uDebug, Serialize, PartialEq)]
-pub(crate) struct Outputs {
-    pub controller_machine_alarm: AlarmState,
-    pub controller_cooling_alarm: AlarmState,
-    pub laser_enable: bool,
-    pub status_light: StatusLight,
-    pub air_pump: bool,
-    pub extractor_fan: bool,
+pub(crate) trait OutputsExt {
+    fn new(
+        machine: &MachineStatus,
+        extraction: &ExtractionStatus,
+        air_assist: &AirAssistStatus,
+    ) -> Self;
 }
 
-impl Outputs {
-    pub(crate) fn new(
+impl OutputsExt for Outputs {
+    fn new(
         machine: &MachineStatus,
         extraction: &ExtractionStatus,
         air_assist: &AirAssistStatus,

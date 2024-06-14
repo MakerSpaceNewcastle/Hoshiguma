@@ -14,13 +14,14 @@ use crate::{
     checked_update::CheckedUpdate,
     io::{
         inputs::ReadInputs,
-        outputs::{Outputs, WriteOutputs},
+        outputs::WriteOutputs,
     },
     logic::{
         air_assist::AirAssistStatus, extraction::ExtractionStatus, machine::MachineStatus,
         StatusUpdate,
     },
 };
+use telemetry_protocols::koishi::Outputs;
 use atmega_hal::prelude::*;
 
 #[panic_handler]
@@ -76,23 +77,23 @@ fn main() -> ! {
         let time = crate::hal::millis();
 
         if st_inputs.store(inputs.read()) {
-            #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, st_inputs.get());
+            // #[cfg(feature = "telemetry")]
+            // reporting::status(&mut serial, iteration_id, st_inputs.get());
         }
 
         if machine_status.store(machine_status.get().update(time, st_inputs.get())) {
-            #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, machine_status.get());
+            // #[cfg(feature = "telemetry")]
+            // reporting::status(&mut serial, iteration_id, machine_status.get());
         }
 
         if extraction_status.store(extraction_status.get().update(time, st_inputs.get())) {
-            #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, extraction_status.get());
+            // #[cfg(feature = "telemetry")]
+            // reporting::status(&mut serial, iteration_id, extraction_status.get());
         }
 
         if air_assist_status.store(air_assist_status.get().update(time, st_inputs.get())) {
-            #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, air_assist_status.get());
+            // #[cfg(feature = "telemetry")]
+            // reporting::status(&mut serial, iteration_id, air_assist_status.get());
         }
 
         if st_outputs.store(Outputs::new(
