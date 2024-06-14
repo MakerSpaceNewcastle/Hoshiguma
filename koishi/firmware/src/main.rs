@@ -7,7 +7,7 @@ mod hal;
 mod io;
 mod logic;
 #[cfg(feature = "telemetry")]
-mod reporting;
+mod telemetry;
 mod unwrap_simple;
 
 use crate::{
@@ -22,7 +22,7 @@ use atmega_hal::prelude::*;
 use telemetry_protocols::koishi::{AirAssistStatus, ExtractionStatus, MachineStatus, Outputs};
 
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
+fn panic(info: &core::panic::PanicInfo) -> ! {
     avr_device::interrupt::disable();
 
     let dp = unsafe { atmega_hal::Peripherals::steal() };
@@ -32,7 +32,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     {
         let mut serial = serial!(dp, pins, 57600);
         serial.write_byte(0u8);
-        reporting::panic(&mut serial, _info);
+        telemetry::panic(&mut serial, info);
     }
 
     let mut led = pins.d13.into_output();
@@ -53,7 +53,7 @@ fn main() -> ! {
     #[cfg(feature = "telemetry")]
     let mut serial = serial!(dp, pins, 57600);
     #[cfg(feature = "telemetry")]
-    reporting::boot(&mut serial);
+    telemetry::boot(&mut serial);
 
     #[cfg(feature = "devkit")]
     let inputs = gpio_debug_inputs!(pins);
@@ -75,22 +75,22 @@ fn main() -> ! {
 
         if st_inputs.store(inputs.read()) {
             #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, st_inputs.get());
+            telemetry::status(&mut serial, iteration_id, st_inputs.get());
         }
 
         if machine_status.store(machine_status.get().update(time, st_inputs.get())) {
             #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, machine_status.get());
+            telemetry::status(&mut serial, iteration_id, machine_status.get());
         }
 
         if extraction_status.store(extraction_status.get().update(time, st_inputs.get())) {
             #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, extraction_status.get());
+            telemetry::status(&mut serial, iteration_id, extraction_status.get());
         }
 
         if air_assist_status.store(air_assist_status.get().update(time, st_inputs.get())) {
             #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, air_assist_status.get());
+            telemetry::status(&mut serial, iteration_id, air_assist_status.get());
         }
 
         if st_outputs.store(Outputs::new(
@@ -99,7 +99,7 @@ fn main() -> ! {
             air_assist_status.get(),
         )) {
             #[cfg(feature = "telemetry")]
-            reporting::status(&mut serial, iteration_id, st_outputs.get());
+            telemetry::status(&mut serial, iteration_id, st_outputs.get());
         }
 
         outputs.write(st_outputs.get());
