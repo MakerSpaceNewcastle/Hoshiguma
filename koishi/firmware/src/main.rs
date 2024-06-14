@@ -16,10 +16,10 @@ use crate::{
         inputs::ReadInputs,
         outputs::{OutputsExt, WriteOutputs},
     },
-    logic::{air_assist::AirAssistStatus, extraction::ExtractionStatus, StatusUpdate},
+    logic::{air_assist::AirAssistStatus, extraction::ExtractionStatusExt, StatusUpdate},
 };
 use atmega_hal::prelude::*;
-use telemetry_protocols::koishi::{MachineStatus, Outputs};
+use telemetry_protocols::koishi::{ExtractionStatus, MachineStatus, Outputs};
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {

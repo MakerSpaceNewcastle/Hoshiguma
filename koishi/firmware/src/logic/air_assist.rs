@@ -1,6 +1,6 @@
 use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
 use serde::Serialize;
-use telemetry_protocols::koishi::{Inputs, run_on_delay::RunOnDelay};
+use telemetry_protocols::koishi::{run_on_delay::RunOnDelay, Inputs};
 
 const AIR_ASSIST_RUN_ON_DELAY: TimeMillis = 500;
 
