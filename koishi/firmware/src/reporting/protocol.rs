@@ -1,23 +1,3 @@
-use crate::hal::TimeMillis;
-use serde::Serialize;
-
-#[derive(Serialize)]
-pub(super) struct Message {
-    time: TimeMillis,
-    iteration_id: Option<u32>,
-    payload: Payload,
-}
-
-impl Message {
-    pub(super) fn new(iteration_id: Option<u32>, payload: Payload) -> Self {
-        Self {
-            time: crate::hal::millis(),
-            iteration_id,
-            payload,
-        }
-    }
-}
-
 #[derive(Serialize)]
 pub(crate) enum Payload {
     Boot(BootPayload),
@@ -58,40 +38,5 @@ impl From<&crate::logic::air_assist::AirAssistStatus> for Payload {
 impl From<&crate::logic::extraction::ExtractionStatus> for Payload {
     fn from(status: &crate::logic::extraction::ExtractionStatus) -> Payload {
         Payload::ExtractionStatusChanged(status.clone())
-    }
-}
-
-#[derive(Serialize)]
-pub(crate) struct BootPayload {
-    name: &'static str,
-    git_revision: &'static str,
-}
-
-impl Default for BootPayload {
-    fn default() -> Self {
-        Self {
-            name: "koishi",
-            git_revision: git_version::git_version!(),
-        }
-    }
-}
-
-#[derive(Default, Serialize)]
-pub(crate) struct PanicPayload {
-    file: Option<heapless::String<32>>,
-    line: Option<u32>,
-    column: Option<u32>,
-}
-
-impl From<&core::panic::PanicInfo<'_>> for PanicPayload {
-    fn from(info: &core::panic::PanicInfo) -> Self {
-        match info.location() {
-            None => PanicPayload::default(),
-            Some(loc) => Self {
-                file: Some(loc.file().into()),
-                line: Some(loc.line()),
-                column: Some(loc.column()),
-            },
-        }
     }
 }
