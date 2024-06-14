@@ -21,8 +21,8 @@ use crate::{
         StatusUpdate,
     },
 };
-use telemetry_protocols::koishi::Outputs;
 use atmega_hal::prelude::*;
+use telemetry_protocols::koishi::Outputs;
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {

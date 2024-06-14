@@ -2,7 +2,7 @@ use crate::TimeMillis;
 use enumset::{EnumSet, EnumSetType};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Payload {
     InputsChanged(Inputs),
     OutputsChanged(Outputs),
@@ -12,7 +12,7 @@ pub enum Payload {
     ExtractionStatusChanged(ExtractionStatus),
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Inputs {
     pub doors_closed: bool,
     pub cooling_ok: bool,
@@ -21,7 +21,7 @@ pub struct Inputs {
     pub extraction_mode: ExtractionMode,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum ExtractionMode {
     Normal,
     Run,
@@ -56,7 +56,7 @@ pub enum StatusLight {
     Red,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum MachineStatus {
     Running,
     Idle,
@@ -69,24 +69,24 @@ pub enum MachineProblem {
     External,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct AirAssistStatus {
     state: RunOnDelay,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct ExtractionStatus {
     pub state: RunOnDelay,
     pub r#override: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct RunOnDelay {
     pub delay: TimeMillis,
     pub state: RunOnDelayState,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum RunOnDelayState {
     Demand,
     RunOn { end: TimeMillis },
