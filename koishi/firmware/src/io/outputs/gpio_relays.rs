@@ -1,7 +1,7 @@
 use super::{Outputs, WriteOutputs};
 use crate::unwrap_simple::UnwrapSimple;
 use embedded_hal::digital::v2::OutputPin;
-use telemetry_protocols::koishi::{AlarmState, StatusLight};
+use hoshiguma_foundational_data::koishi::{AlarmState, StatusLight};
 
 pub(crate) struct GpioRelayOutputs<
     A: OutputPin,

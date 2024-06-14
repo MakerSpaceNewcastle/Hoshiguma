@@ -1,7 +1,7 @@
 use super::StatusUpdate;
 use crate::hal::TimeMillis;
 use enumset::EnumSet;
-use telemetry_protocols::koishi::{Inputs, MachineProblem, MachineStatus};
+use hoshiguma_foundational_data::koishi::{Inputs, MachineProblem, MachineStatus};
 
 impl StatusUpdate for MachineStatus {
     fn update(&self, _: TimeMillis, current: &Inputs) -> Self {

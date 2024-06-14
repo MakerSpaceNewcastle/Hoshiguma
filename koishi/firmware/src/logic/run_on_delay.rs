@@ -1,4 +1,4 @@
-use telemetry_protocols::koishi::run_on_delay::{RunOnDelay, State};
+use hoshiguma_foundational_data::koishi::run_on_delay::{RunOnDelay, State};
 
 pub(crate) trait RunOnDelayExt<T> {
     fn new(delay: T) -> Self;

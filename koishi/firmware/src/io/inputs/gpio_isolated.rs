@@ -1,7 +1,7 @@
 use super::ReadInputs;
 use crate::unwrap_simple::UnwrapSimple;
 use embedded_hal::digital::v2::InputPin;
-use telemetry_protocols::koishi::{ExtractionMode, Inputs};
+use hoshiguma_foundational_data::koishi::{ExtractionMode, Inputs};
 
 pub(crate) struct GpioIsolatedInputs<
     A: InputPin,

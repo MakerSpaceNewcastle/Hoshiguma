@@ -1,5 +1,5 @@
 use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
-use telemetry_protocols::koishi::{run_on_delay::RunOnDelay, AirAssistStatus, Inputs};
+use hoshiguma_foundational_data::koishi::{run_on_delay::RunOnDelay, AirAssistStatus, Inputs};
 
 const AIR_ASSIST_RUN_ON_DELAY: TimeMillis = 500;
 

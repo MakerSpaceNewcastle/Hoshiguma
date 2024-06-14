@@ -245,6 +245,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "hoshiguma-foundational-data"
+version = "0.1.0"
+dependencies = [
+ "enumset",
+ "heapless 0.8.0",
+ "postcard",
+ "serde",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -261,10 +271,10 @@ dependencies = [
  "enumset",
  "git-version",
  "heapless 0.7.16",
+ "hoshiguma-foundational-data",
  "nb 0.1.3",
  "postcard",
  "serde",
- "telemetry-protocols",
  "ufmt",
 ]
 
@@ -416,16 +426,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "telemetry-protocols"
-version = "0.1.0"
-dependencies = [
- "enumset",
- "heapless 0.8.0",
- "postcard",
- "serde",
 ]
 
 [[package]]

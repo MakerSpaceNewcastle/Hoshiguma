@@ -19,7 +19,7 @@ use crate::{
     logic::{air_assist::AirAssistStatusExt, extraction::ExtractionStatusExt, StatusUpdate},
 };
 use atmega_hal::prelude::*;
-use telemetry_protocols::koishi::{AirAssistStatus, ExtractionStatus, MachineStatus, Outputs};
+use hoshiguma_foundational_data::koishi::{AirAssistStatus, ExtractionStatus, MachineStatus, Outputs};
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {

@@ -1,5 +1,5 @@
 use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
-use telemetry_protocols::koishi::{
+use hoshiguma_foundational_data::koishi::{
     run_on_delay::RunOnDelay, ExtractionMode, ExtractionStatus, Inputs,
 };
 
