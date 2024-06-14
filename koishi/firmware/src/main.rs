@@ -77,8 +77,8 @@ fn main() -> ! {
         let time = crate::hal::millis();
 
         if st_inputs.store(inputs.read()) {
-            // #[cfg(feature = "telemetry")]
-            // reporting::status(&mut serial, iteration_id, st_inputs.get());
+            #[cfg(feature = "telemetry")]
+            reporting::status(&mut serial, iteration_id, st_inputs.get());
         }
 
         if machine_status.store(machine_status.get().update(time, st_inputs.get())) {

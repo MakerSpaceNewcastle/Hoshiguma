@@ -1,6 +1,7 @@
-use super::{ExtractionMode, Inputs, ReadInputs};
+use super::ReadInputs;
 use crate::unwrap_simple::UnwrapSimple;
 use embedded_hal::digital::v2::InputPin;
+use telemetry_protocols::koishi::{ExtractionMode, Inputs};
 
 pub(crate) struct GpioDebugInputs<A: InputPin, B: InputPin, C: InputPin, D: InputPin, E: InputPin> {
     pub door_switches: A,

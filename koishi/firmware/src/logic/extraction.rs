@@ -1,9 +1,6 @@
-use crate::{
-    hal::TimeMillis,
-    io::inputs::{ExtractionMode, Inputs},
-    logic::run_on_delay::RunOnDelay,
-};
+use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelay};
 use serde::Serialize;
+use telemetry_protocols::koishi::{ExtractionMode, Inputs};
 use ufmt::derive::uDebug;
 
 const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {

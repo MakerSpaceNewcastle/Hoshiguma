@@ -3,7 +3,8 @@ pub(crate) mod extraction;
 pub(crate) mod machine;
 mod run_on_delay;
 
-use crate::{hal::TimeMillis, io::inputs::Inputs};
+use crate::hal::TimeMillis;
+use telemetry_protocols::koishi::Inputs;
 
 pub(crate) trait StatusUpdate {
     fn update(&self, time: TimeMillis, current: &Inputs) -> Self;

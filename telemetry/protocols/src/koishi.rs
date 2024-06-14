@@ -15,10 +15,16 @@ pub enum Payload {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Inputs {
     pub doors_closed: bool,
-    pub cooling_ok: bool,
+    pub external_enable: bool,
     pub machine_running: bool,
     pub air_pump_demand: bool,
     pub extraction_mode: ExtractionMode,
+}
+
+impl From<&Inputs> for Payload {
+    fn from(value: &Inputs) -> Self {
+        Self::InputsChanged(value.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]

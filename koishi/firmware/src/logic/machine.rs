@@ -1,7 +1,8 @@
 use super::StatusUpdate;
-use crate::{hal::TimeMillis, io::inputs::Inputs};
+use crate::hal::TimeMillis;
 use enumset::{EnumSet, EnumSetType};
 use serde::Serialize;
+use telemetry_protocols::koishi::Inputs;
 use ufmt::derive::uDebug;
 
 #[derive(Clone, PartialEq, Serialize)]
