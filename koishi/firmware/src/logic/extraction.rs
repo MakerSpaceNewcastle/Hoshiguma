@@ -1,7 +1,6 @@
-use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelay};
+use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
 use serde::Serialize;
-use telemetry_protocols::koishi::{ExtractionMode, Inputs};
-use ufmt::derive::uDebug;
+use telemetry_protocols::koishi::{ExtractionMode, Inputs, run_on_delay::RunOnDelay};
 
 const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
     500
@@ -10,7 +9,7 @@ const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
     45_000
 };
 
-#[derive(uDebug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub(crate) struct ExtractionStatus {
     state: RunOnDelay<TimeMillis>,
     r#override: bool,

@@ -1,22 +1,20 @@
-use core::ops::Add;
-use serde::Serialize;
-use telemetry_protocols::koishi::run_on_delay::State;
+use telemetry_protocols::koishi::run_on_delay::{RunOnDelay, State};
 
-#[derive(Clone, PartialEq, Serialize)]
-pub(crate) struct RunOnDelay<T: PartialEq> {
-    delay: T,
-    state: State<T>,
+pub(crate) trait RunOnDelayExt<T> {
+    fn new(delay: T) -> Self;
+    fn update(&mut self, time: T, demand: bool);
+    fn should_run(&self) -> bool;
 }
 
-impl<T: Copy + PartialEq + PartialOrd + Add<Output = T>> RunOnDelay<T> {
-    pub(crate) fn new(delay: T) -> Self {
+impl<T: PartialEq + PartialOrd + core::ops::Add<Output = T>> RunOnDelayExt<T> for RunOnDelay<T> {
+    fn new(delay: T) -> Self {
         Self {
             delay,
             state: State::Idle,
         }
     }
 
-    pub(crate) fn update(&mut self, time: T, demand: bool) {
+    fn update(&mut self, time: T, demand: bool) {
         self.state = if demand {
             State::Demand
         } else {
@@ -37,7 +35,7 @@ impl<T: Copy + PartialEq + PartialOrd + Add<Output = T>> RunOnDelay<T> {
         };
     }
 
-    pub(crate) fn should_run(&self) -> bool {
+    fn should_run(&self) -> bool {
         self.state != State::Idle
     }
 }

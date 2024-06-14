@@ -1,11 +1,10 @@
-use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelay};
+use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
 use serde::Serialize;
-use telemetry_protocols::koishi::Inputs;
-use ufmt::derive::uDebug;
+use telemetry_protocols::koishi::{Inputs, run_on_delay::RunOnDelay};
 
 const AIR_ASSIST_RUN_ON_DELAY: TimeMillis = 500;
 
-#[derive(uDebug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub(crate) struct AirAssistStatus {
     state: RunOnDelay<TimeMillis>,
 }
