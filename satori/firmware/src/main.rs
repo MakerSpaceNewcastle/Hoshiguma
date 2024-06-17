@@ -9,6 +9,7 @@ mod telemetry;
 // mod unwrap_simple;
 
 use atmega_hal::prelude::*;
+use hoshiguma_foundational_data::satori::Status;
 use one_wire_bus::OneWire;
 
 #[panic_handler]
@@ -85,6 +86,8 @@ fn main() -> ! {
 
     let mut led = pins.led.into_output();
 
+    let mut iteration_id: u32 = 0;
+
     loop {
         let _time = crate::hal::millis();
 
@@ -93,22 +96,34 @@ fn main() -> ! {
             COUNT_0.store(0, Ordering::SeqCst);
             count
         });
-        ufmt::uwriteln!(serial, "count 0 = {}", count_0).unwrap();
 
         let count_2 = avr_device::interrupt::free(|_cs| {
             let count = COUNT_2.load(Ordering::SeqCst);
             COUNT_2.store(0, Ordering::SeqCst);
             count
         });
-        ufmt::uwriteln!(serial, "count 2 = {}", count_2).unwrap();
 
         let coolant_level = coolant_level_sensor.read();
-        let temperatures = temperature_sensors.read();
+        let temperature = temperature_sensors.read();
+
+        let status = Status {
+            temperature,
+            coolant_level,
+            // TODO
+            coolant_pump_rpm: 0.0,
+            coolant_flow_rate: 0.0,
+        };
+
+        telemetry::status(&mut serial, iteration_id, &status);
+
+        // TODO
+        // machine_enable.toggle();
 
         // TODO
         led.toggle();
-        machine_enable.toggle();
         hal::Delay::new().delay_ms(500u16);
+
+        iteration_id = iteration_id.wrapping_add(1);
     }
 }
 

@@ -1,4 +1,4 @@
-use enumset::{EnumSet, EnumSetType};
+use enumset::EnumSetType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -8,13 +8,19 @@ pub enum Payload {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Status {
-    temperature: Temperatures,
-    coolant_level: CoolantLevel,
-    coolant_pump_rpm: f32,
-    coolant_flow_rate: f32,
+    pub temperature: Temperatures,
+    pub coolant_level: Option<CoolantLevel>,
+    pub coolant_pump_rpm: f32,
+    pub coolant_flow_rate: f32,
+    // TODO
+    // potential_problems: EnumSet<MachineProblem>,
+    // problems: EnumSet<MachineProblem>,
+}
 
-    potential_problems: EnumSet<MachineProblem>,
-    problems: EnumSet<MachineProblem>,
+impl From<&Status> for Payload {
+    fn from(value: &Status) -> Self {
+        Self::StateChanged(value.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
