@@ -19,17 +19,17 @@ pub struct Status {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Temperatures {
-    pub coolant_flow: f32,
-    pub coolant_return: f32,
+    pub coolant_flow: Option<f32>,
+    pub coolant_return: Option<f32>,
 
-    pub coolant_resevoir_upper: f32,
-    pub coolant_resevoir_lower: f32,
+    pub coolant_resevoir_upper: Option<f32>,
+    pub coolant_resevoir_lower: Option<f32>,
 
-    pub coolant_pump: f32,
+    pub coolant_pump: Option<f32>,
 
-    pub room_ambient: f32,
-    pub laser_bay: f32,
-    pub electronics_bay: f32,
+    pub room_ambient: Option<f32>,
+    pub laser_bay: Option<f32>,
+    pub electronics_bay: Option<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

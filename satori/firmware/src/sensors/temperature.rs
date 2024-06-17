@@ -66,8 +66,7 @@ where
         }
     }
 
-    pub(crate) fn read(&self) -> Option<Temperatures> {
-        // TODO
-        None
+    pub(crate) fn read(&self) -> Temperatures {
+        todo!();
     }
 }
