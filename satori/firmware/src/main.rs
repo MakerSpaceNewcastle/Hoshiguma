@@ -44,8 +44,7 @@ fn main() -> ! {
     unsafe { avr_device::interrupt::enable() };
 
     let mut serial = serial!(dp, pins, 57600);
-    // TODO: boot message
-    serial.write_str("feck arse drink\n").unwrap();
+    telemetry::boot(&mut serial);
 
     let mut machine_enable = pins.machine_enable.into_output();
 
