@@ -66,7 +66,27 @@ where
         }
     }
 
-    pub(crate) fn read(&self) -> Temperatures {
-        todo!();
+    pub(crate) fn read(&mut self) -> Temperatures {
+        Temperatures {
+            coolant_flow: read_sensor(&mut self.bus, &mut self.delay, &self.coolant_flow),
+            coolant_return: read_sensor(&mut self.bus, &mut self.delay, &self.coolant_return),
+            coolant_resevoir_upper: todo!(),
+            coolant_resevoir_lower: todo!(),
+            coolant_pump: todo!(),
+            room_ambient: todo!(),
+            laser_bay: todo!(),
+            electronics_bay: todo!(),
+        }
+    }
+}
+
+fn read_sensor<P: InputPin<Error = E> + OutputPin<Error = E>, E, D: DelayMs<u16> + DelayUs<u16>>(
+    bus: &mut OneWire<P>,
+    delay: &mut D,
+    sensor: &Ds18b20,
+) -> Option<f32> {
+    match sensor.read_data(bus, delay) {
+        Ok(r) => Some(r.temperature),
+        Err(_) => None,
     }
 }

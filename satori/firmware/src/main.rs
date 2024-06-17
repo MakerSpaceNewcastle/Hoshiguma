@@ -77,12 +77,12 @@ fn main() -> ! {
         OneWire::new(pin).unwrap()
     };
 
-    for device_address in one_wire_bus.devices(false, &mut delay) {
-        let device_address = device_address.unwrap();
-        ufmt::uwriteln!(serial, "Found onewire device: {} (dec)", device_address.0).unwrap();
-    }
+    // for device_address in one_wire_bus.devices(false, &mut delay) {
+    //     let device_address = device_address.unwrap();
+    //     ufmt::uwriteln!(serial, "Found onewire device: {} (dec)", device_address.0).unwrap();
+    // }
 
-    let temperature_sensors = crate::sensors::TemperatureSensors::new(one_wire_bus, delay);
+    let mut temperature_sensors = crate::sensors::TemperatureSensors::new(one_wire_bus, delay);
 
     let mut led = pins.led.into_output();
 
