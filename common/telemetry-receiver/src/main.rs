@@ -50,11 +50,11 @@ fn main() {
 }
 
 fn try_parse_any_payload(rx_buffer: &[u8]) -> Option<Box<dyn std::fmt::Debug>> {
-    if let Some(msg) =
-        try_parse_payload::<hoshiguma_foundational_data::koishi::Payload>(rx_buffer.to_vec())
-    {
-        return Some(msg);
-    }
+    // if let Some(msg) =
+    //     try_parse_payload::<hoshiguma_foundational_data::koishi::Payload>(rx_buffer.to_vec())
+    // {
+    //     return Some(msg);
+    // }
 
     if let Some(msg) =
         try_parse_payload::<hoshiguma_foundational_data::satori::Payload>(rx_buffer.to_vec())
