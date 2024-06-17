@@ -4,7 +4,7 @@
 
 // mod checked_update;
 mod hal;
-mod reporting;
+mod telemetry;
 mod sensors;
 // mod unwrap_simple;
 
