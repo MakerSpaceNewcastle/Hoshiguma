@@ -1,3 +1,4 @@
+use crate::read_temperature_sensor;
 use ds18b20::{Ds18b20, Resolution};
 use embedded_hal_p2::{
     blocking::delay::{DelayMs, DelayUs},
@@ -14,8 +15,8 @@ where
     bus: OneWire<P>,
     delay: D,
 
-    radiator_top: Ds18b20,
-    radiator_bottom: Ds18b20,
+    coolant_radiator_upper: Ds18b20,
+    coolant_radiator_lower: Ds18b20,
 
     coolant_pump_case: Ds18b20,
 
@@ -45,8 +46,8 @@ where
         Self {
             bus,
             delay,
-            radiator_top: dallas_temperature_sensor!("0D3CE1E3817D8828"),
-            radiator_bottom: dallas_temperature_sensor!("953C1FF648A2F028"),
+            coolant_radiator_upper: dallas_temperature_sensor!("0D3CE1E3817D8828"),
+            coolant_radiator_lower: dallas_temperature_sensor!("953C1FF648A2F028"),
             coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
             coolant_flow: dallas_temperature_sensor!("703CE1E380A2E828"),
             coolant_return: dallas_temperature_sensor!("523CE1E380B9B828"),
@@ -67,26 +68,28 @@ where
     }
 
     pub(crate) fn read(&mut self) -> Temperatures {
-        Temperatures {
-            coolant_flow: read_sensor(&mut self.bus, &mut self.delay, &self.coolant_flow),
-            coolant_return: read_sensor(&mut self.bus, &mut self.delay, &self.coolant_return),
-            coolant_resevoir_upper: todo!(),
-            coolant_resevoir_lower: todo!(),
-            coolant_pump: todo!(),
-            room_ambient: todo!(),
-            laser_bay: todo!(),
-            electronics_bay: todo!(),
+        match self.begin_measurement() {
+            Ok(_) => Temperatures {
+                coolant_flow: read_temperature_sensor!(self, self.coolant_flow),
+                coolant_return: read_temperature_sensor!(self, self.coolant_return),
+                coolant_resevoir_upper: read_temperature_sensor!(self, self.coolant_radiator_upper),
+                coolant_resevoir_lower: read_temperature_sensor!(self, self.coolant_radiator_lower),
+                coolant_pump: read_temperature_sensor!(self, self.coolant_pump_case),
+                room_ambient: read_temperature_sensor!(self, self.room_ambient),
+                laser_bay: read_temperature_sensor!(self, self.laser_chamber_ambient),
+                electronics_bay: read_temperature_sensor!(self, self.electronics_bay_ambient),
+            },
+            Err(_) => Temperatures::default(),
         }
     }
 }
 
-fn read_sensor<P: InputPin<Error = E> + OutputPin<Error = E>, E, D: DelayMs<u16> + DelayUs<u16>>(
-    bus: &mut OneWire<P>,
-    delay: &mut D,
-    sensor: &Ds18b20,
-) -> Option<f32> {
-    match sensor.read_data(bus, delay) {
-        Ok(r) => Some(r.temperature),
-        Err(_) => None,
-    }
+#[macro_export]
+macro_rules! read_temperature_sensor {
+    ($self: expr, $sensor: expr) => {
+        match $sensor.read_data(&mut $self.bus, &mut $self.delay) {
+            Ok(r) => Some(r.temperature),
+            Err(_) => None,
+        }
+    };
 }

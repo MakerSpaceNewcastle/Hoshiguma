@@ -23,7 +23,7 @@ impl From<&Status> for Payload {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Temperatures {
     pub coolant_flow: Option<f32>,
     pub coolant_return: Option<f32>,
