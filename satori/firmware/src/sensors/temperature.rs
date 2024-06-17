@@ -3,8 +3,8 @@ use embedded_hal_p2::{
     blocking::delay::{DelayMs, DelayUs},
     digital::v2::{InputPin, OutputPin},
 };
+use hoshiguma_foundational_data::satori::Temperatures;
 use one_wire_bus::OneWire;
-use telemetry_protocols::satori::Temperatures;
 
 pub(crate) struct TemperatureSensors<P, E, D>
 where

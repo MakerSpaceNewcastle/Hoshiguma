@@ -4,8 +4,8 @@
 
 // mod checked_update;
 mod hal;
-mod telemetry;
 mod sensors;
+mod telemetry;
 // mod unwrap_simple;
 
 use atmega_hal::prelude::*;
@@ -25,7 +25,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     // Report panic over serial
     let mut serial = serial!(dp, pins, 57600);
     serial.write_byte(0u8);
-    reporting::panic(&mut serial, info);
+    telemetry::panic(&mut serial, info);
 
     // Blink LED rapidly
     let mut led = pins.led.into_output();

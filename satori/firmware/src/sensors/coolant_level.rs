@@ -1,5 +1,5 @@
 use embedded_hal::digital::InputPin;
-use telemetry_protocols::satori::CoolantLevel;
+use hoshiguma_foundational_data::satori::CoolantLevel;
 
 pub(crate) struct CoolantLevelSensor<PH: InputPin, PL: InputPin> {
     top_float_switch: PH,
