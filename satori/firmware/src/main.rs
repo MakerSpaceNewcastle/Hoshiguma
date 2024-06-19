@@ -49,7 +49,7 @@ fn main() -> ! {
 
     ufmt::uwriteln!(serial, "test").unwrap();
 
-    let mut machine_enable = pins.machine_enable.into_output();
+    let machine_enable = pins.machine_enable.into_output();
 
     let mut coolant_level_sensor = {
         let top = pins.rj45_pin5.into_pull_up_input();
@@ -72,8 +72,10 @@ fn main() -> ! {
     // See datasheet: 13.3.1 Alternate Functions of Port B
     dp.EXINT.pcmsk0.write(|w| w.bits(0b00000001));
 
+    #[allow(unused_mut)]
     let mut delay = hal::Delay::new();
 
+    #[allow(unused_mut)]
     let mut onewire_bus = {
         let pin = pins.rj45_pin2.into_opendrain();
         OneWire::new(pin).unwrap()
