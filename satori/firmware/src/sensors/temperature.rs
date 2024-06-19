@@ -1,48 +1,58 @@
-use crate::read_temperature_sensor;
-use ds18b20::{Ds18b20, Resolution};
-use embedded_hal_p2::{
-    blocking::delay::{DelayMs, DelayUs},
-    digital::v2::{InputPin, OutputPin},
-};
+use embedded_hal_p2::blocking::delay::{DelayMs, DelayUs};
 use hoshiguma_foundational_data::satori::Temperatures;
-use onewire::OneWire;
-
-pub(crate) struct TemperatureSensors<P, E, D>
-where
-    P: InputPin<Error = E> + OutputPin<Error = E>,
-    D: DelayMs<u16> + DelayUs<u16>,
-{
-    bus: OneWire<P>,
-    delay: D,
-
-    coolant_radiator_upper: Ds18b20,
-    coolant_radiator_lower: Ds18b20,
-
-    coolant_pump_case: Ds18b20,
-
-    coolant_flow: Ds18b20,
-    coolant_return: Ds18b20,
-
-    laser_chamber_ambient: Ds18b20,
-    electronics_bay_ambient: Ds18b20,
-    room_ambient: Ds18b20,
-}
+use onewire::{Device, OneWire, DS18B20};
 
 macro_rules! dallas_temperature_sensor {
-    ( $address:expr ) => {
-        Ds18b20::new::<()>(one_wire_bus::Address(
-            u64::from_str_radix($address, 16).unwrap(),
-        ))
-        .unwrap()
-    };
+    ( $address:expr ) => {{
+        let device = Device::from_str($address).unwrap();
+        let sensor = DS18B20::new::<E>(device).unwrap();
+        sensor
+    }};
 }
 
-impl<P, E, D> TemperatureSensors<P, E, D>
+macro_rules! read_temperature_sensor {
+    ($self: expr, $sensor: expr) => {{
+        match $sensor.measure_temperature(&mut $self.bus, &mut $self.delay) {
+            Ok(resolution) => {
+                $self.delay.delay_ms(resolution.time_ms());
+
+                match $sensor.read_temperature(&mut $self.bus, &mut $self.delay) {
+                    Ok(result) => Some(result as f32),
+                    Err(_) => None,
+                }
+            }
+            Err(_) => None,
+        }
+    }};
+}
+
+pub(crate) struct TemperatureSensors<'a, E, D>
 where
-    P: InputPin<Error = E> + OutputPin<Error = E>,
+    E: core::fmt::Debug,
     D: DelayMs<u16> + DelayUs<u16>,
 {
-    pub(crate) fn new(bus: OneWire<P>, delay: D) -> Self {
+    bus: OneWire<'a, E>,
+    delay: D,
+
+    coolant_radiator_upper: DS18B20,
+    coolant_radiator_lower: DS18B20,
+
+    coolant_pump_case: DS18B20,
+
+    coolant_flow: DS18B20,
+    coolant_return: DS18B20,
+
+    laser_chamber_ambient: DS18B20,
+    electronics_bay_ambient: DS18B20,
+    room_ambient: DS18B20,
+}
+
+impl<'a, E, D> TemperatureSensors<'a, E, D>
+where
+    E: core::fmt::Debug,
+    D: DelayMs<u16> + DelayUs<u16>,
+{
+    pub(crate) fn new(bus: OneWire<'a, E>, delay: D) -> Self {
         Self {
             bus,
             delay,
@@ -57,41 +67,16 @@ where
         }
     }
 
-    fn begin_measurement(&mut self) -> Result<(), ()> {
-        match ds18b20::start_simultaneous_temp_measurement(&mut self.bus, &mut self.delay) {
-            Ok(_) => {
-                Resolution::Bits12.delay_for_measurement_time(&mut self.delay);
-                Ok(())
-            }
-            Err(_) => Err(()),
-        }
-    }
-
     pub(crate) fn read(&mut self) -> Temperatures {
-        // TODO: see https://github.com/Rahix/avr-hal/issues/541
-        // match self.begin_measurement() {
-        //     Ok(_) => Temperatures {
-        //         coolant_flow: read_temperature_sensor!(self, self.coolant_flow),
-        //         coolant_return: read_temperature_sensor!(self, self.coolant_return),
-        //         coolant_resevoir_upper: read_temperature_sensor!(self, self.coolant_radiator_upper),
-        //         coolant_resevoir_lower: read_temperature_sensor!(self, self.coolant_radiator_lower),
-        //         coolant_pump: read_temperature_sensor!(self, self.coolant_pump_case),
-        //         room_ambient: read_temperature_sensor!(self, self.room_ambient),
-        //         laser_bay: read_temperature_sensor!(self, self.laser_chamber_ambient),
-        //         electronics_bay: read_temperature_sensor!(self, self.electronics_bay_ambient),
-        //     },
-        //     Err(_) => Temperatures::default(),
-        // }
-        Temperatures::default()
-    }
-}
-
-#[macro_export]
-macro_rules! read_temperature_sensor {
-    ($self: expr, $sensor: expr) => {
-        match $sensor.read_data(&mut $self.bus, &mut $self.delay) {
-            Ok(r) => Some(r.temperature),
-            Err(_) => None,
+        Temperatures {
+            coolant_flow: read_temperature_sensor!(self, self.coolant_flow),
+            coolant_return: read_temperature_sensor!(self, self.coolant_return),
+            coolant_resevoir_upper: read_temperature_sensor!(self, self.coolant_radiator_upper),
+            coolant_resevoir_lower: read_temperature_sensor!(self, self.coolant_radiator_lower),
+            coolant_pump: read_temperature_sensor!(self, self.coolant_pump_case),
+            room_ambient: read_temperature_sensor!(self, self.room_ambient),
+            laser_bay: read_temperature_sensor!(self, self.laser_chamber_ambient),
+            electronics_bay: read_temperature_sensor!(self, self.electronics_bay_ambient),
         }
-    };
+    }
 }

@@ -1,5 +1,4 @@
 mod coolant_level;
-// mod temperature;
+mod temperature;
 
-// pub(crate) use self::{coolant_level::CoolantLevelSensor, temperature::TemperatureSensors};
-pub(crate) use self::coolant_level::CoolantLevelSensor;
+pub(crate) use self::{coolant_level::CoolantLevelSensor, temperature::TemperatureSensors};

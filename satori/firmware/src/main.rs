@@ -9,7 +9,7 @@ mod telemetry;
 // mod unwrap_simple;
 
 use atmega_hal::prelude::*;
-use hoshiguma_foundational_data::satori::{Status, Temperatures};
+use hoshiguma_foundational_data::satori::Status;
 use onewire::OneWire;
 
 #[panic_handler]
@@ -76,12 +76,15 @@ fn main() -> ! {
     let mut onewire_bus = OneWire::new(&mut onewire_pin, false);
     onewire_bus.reset(&mut delay).unwrap();
 
-    let mut search = onewire::DeviceSearch::new();
-    while let Some(device) = onewire_bus.search_next(&mut search, &mut delay).unwrap() {
-        ufmt::uwriteln!(serial, "Found onewire device: {:?} (dec)", device.address).unwrap();
+    {
+        let mut search = onewire::DeviceSearch::new();
+        while let Some(device) = onewire_bus.search_next(&mut search, &mut delay).unwrap() {
+            let address = u64::from_ne_bytes(device.address);
+            ufmt::uwriteln!(serial, "Found onewire device: {} (dec)", address).unwrap();
+        }
     }
 
-    // let mut temperature_sensors = crate::sensors::TemperatureSensors::new(one_wire_bus, delay);
+    let mut temperature_sensors = crate::sensors::TemperatureSensors::new(onewire_bus, delay);
 
     let mut led = pins.led.into_output();
 
@@ -103,8 +106,7 @@ fn main() -> ! {
         });
 
         let coolant_level = coolant_level_sensor.read();
-        // let temperature = temperature_sensors.read();
-        let temperature = Temperatures::default();
+        let temperature = temperature_sensors.read();
 
         let status = Status {
             temperature,
