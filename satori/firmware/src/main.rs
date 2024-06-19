@@ -47,6 +47,8 @@ fn main() -> ! {
     let mut serial = serial!(dp, pins, 57600);
     telemetry::boot(&mut serial);
 
+    ufmt::uwriteln!(serial, "test").unwrap();
+
     let mut machine_enable = pins.machine_enable.into_output();
 
     let mut coolant_level_sensor = {
@@ -76,6 +78,7 @@ fn main() -> ! {
     let mut onewire_bus = OneWire::new(&mut onewire_pin, false);
     onewire_bus.reset(&mut delay).unwrap();
 
+    #[cfg(feature = "debug-output")]
     {
         let mut search = onewire::DeviceSearch::new();
         while let Some(device) = onewire_bus.search_next(&mut search, &mut delay).unwrap() {
