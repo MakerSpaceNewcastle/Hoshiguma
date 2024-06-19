@@ -126,9 +126,8 @@ fn main() -> ! {
         // TODO
         // machine_enable.toggle();
 
-        // TODO
         led.toggle();
-        hal::Delay::new().delay_ms(500u16);
+        hal::Delay::new().delay_ms(250u16);
 
         iteration_id = iteration_id.wrapping_add(1);
     }
