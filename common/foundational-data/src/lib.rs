@@ -1,4 +1,4 @@
-#![cfg(not(std))]
+#![cfg(not(feature = "std"))]
 #![no_std]
 
 pub mod koishi;
@@ -6,9 +6,9 @@ pub mod satori;
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(std)]
+#[cfg(feature = "std")]
 pub type String = std::string::String;
-#[cfg(not(std))]
+#[cfg(not(feature = "std"))]
 pub type String = heapless::String<64>;
 
 pub type TimeMillis = u32;
