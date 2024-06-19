@@ -19,6 +19,7 @@ bench = false
 atmega-hal = { git = "https://github.com/rahix/avr-hal", rev = "38549cc4142881d302374535b3621578ffccaff2", features = ["atmega328p"] }
 avr-device = { version = "0.5.4", features = ["rt", "atmega328p"] }
 avr-hal-generic = { git = "https://github.com/rahix/avr-hal", rev = "38549cc4142881d302374535b3621578ffccaff2" }
+ds18b20 = "0.1.1"
 embedded-hal = { package = "embedded-hal", version = "1.0.0" }
 embedded-hal-p2 = { package = "embedded-hal", version = "0.2.0" }
 enumset = { version = "1.1.3", features = ["serde"] }
@@ -26,7 +27,7 @@ git-version = "0.3.9"
 heapless = { version = "0.8.0", features = ["serde"] }
 hoshiguma-foundational-data = { path = "../../common/foundational-data", default-features = false }
 nb = "1.1.0"
-onewire = "0.3.13"
+one-wire-bus = "0.1.1"
 postcard = { version = "1.0.8", optional = true }
 ufmt = "0.2.0"
 

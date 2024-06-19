@@ -10,7 +10,7 @@ mod telemetry;
 
 use atmega_hal::prelude::*;
 use hoshiguma_foundational_data::satori::Status;
-use onewire::OneWire;
+use one_wire_bus::OneWire;
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
@@ -74,16 +74,16 @@ fn main() -> ! {
 
     let mut delay = hal::Delay::new();
 
-    let mut onewire_pin = pins.rj45_pin2.into_opendrain();
-    let mut onewire_bus = OneWire::new(&mut onewire_pin, false);
-    onewire_bus.reset(&mut delay).unwrap();
+    let mut onewire_bus = {
+        let pin = pins.rj45_pin2.into_opendrain();
+        OneWire::new(pin).unwrap()
+    };
 
     #[cfg(feature = "debug-output")]
     {
-        let mut search = onewire::DeviceSearch::new();
-        while let Some(device) = onewire_bus.search_next(&mut search, &mut delay).unwrap() {
-            let address = u64::from_ne_bytes(device.address);
-            ufmt::uwriteln!(serial, "Found onewire device: {} (dec)", address).unwrap();
+        for device_address in onewire_bus.devices(false, &mut delay) {
+            let device_address = device_address.unwrap();
+            ufmt::uwriteln!(serial, "Found onewire device: {} (dec)", device_address.0).unwrap();
         }
     }
 
