@@ -138,16 +138,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ds18b20"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9cd37ace0416c30c2874cd67135508de493e34135c67878b01e13aba91b53ce"
-dependencies = [
- "embedded-hal 0.2.7",
- "one-wire-bus",
-]
-
-[[package]]
 name = "embedded-hal"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -312,11 +302,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d5439c4ad607c3c23abf66de8c8bf57ba8adcd1f129e699851a6e43935d339d"
 
 [[package]]
-name = "one-wire-bus"
-version = "0.1.1"
+name = "onewire"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9761e13074f8f916702c1a1dbe0eda3fb8478704db00493f5a5c27ed5847710"
+checksum = "73be67dc9e140c0963625510b4a09c07edf2c07c9dab53134d863e4d302c9ea1"
 dependencies = [
+ "byteorder",
  "embedded-hal 0.2.7",
 ]
 
@@ -377,7 +368,6 @@ dependencies = [
  "atmega-hal",
  "avr-device",
  "avr-hal-generic",
- "ds18b20",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
  "enumset",
@@ -385,7 +375,7 @@ dependencies = [
  "heapless 0.8.0",
  "hoshiguma-foundational-data",
  "nb 1.1.0",
- "one-wire-bus",
+ "onewire",
  "postcard",
  "ufmt",
 ]
