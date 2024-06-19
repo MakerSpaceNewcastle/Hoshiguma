@@ -4,7 +4,19 @@ use onewire::{Device, OneWire, DS18B20};
 
 macro_rules! dallas_temperature_sensor {
     ( $address:expr ) => {{
-        let device = Device::from_str($address).unwrap();
+        let device = Device {
+            address: [
+                u8::from_str_radix(&$address[0..2], 16).unwrap(),
+                u8::from_str_radix(&$address[2..4], 16).unwrap(),
+                u8::from_str_radix(&$address[4..6], 16).unwrap(),
+                u8::from_str_radix(&$address[6..8], 16).unwrap(),
+                u8::from_str_radix(&$address[8..10], 16).unwrap(),
+                u8::from_str_radix(&$address[10..12], 16).unwrap(),
+                u8::from_str_radix(&$address[12..14], 16).unwrap(),
+                u8::from_str_radix(&$address[14..16], 16).unwrap(),
+            ],
+        };
+
         let sensor = DS18B20::new::<E>(device).unwrap();
         sensor
     }};
@@ -17,7 +29,7 @@ macro_rules! read_temperature_sensor {
                 $self.delay.delay_ms(resolution.time_ms());
 
                 match $sensor.read_temperature(&mut $self.bus, &mut $self.delay) {
-                    Ok(result) => Some(result as f32),
+                    Ok(result) => Some(0.0),
                     Err(_) => None,
                 }
             }
