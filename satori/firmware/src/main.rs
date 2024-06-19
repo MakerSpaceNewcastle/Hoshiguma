@@ -47,8 +47,6 @@ fn main() -> ! {
     let mut serial = serial!(dp, pins, 57600);
     telemetry::boot(&mut serial);
 
-    ufmt::uwriteln!(serial, "test").unwrap();
-
     let machine_enable = pins.machine_enable.into_output();
 
     let mut coolant_level_sensor = {
