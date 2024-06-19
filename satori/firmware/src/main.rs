@@ -72,21 +72,16 @@ fn main() -> ! {
     // See datasheet: 13.3.1 Alternate Functions of Port B
     dp.EXINT.pcmsk0.write(|w| w.bits(0b00000001));
 
-    #[allow(unused_mut)]
     let mut delay = hal::Delay::new();
 
-    #[allow(unused_mut)]
     let mut onewire_bus = {
         let pin = pins.rj45_pin2.into_opendrain();
         OneWire::new(pin).unwrap()
     };
 
-    #[cfg(feature = "debug-output")]
-    {
-        for device_address in onewire_bus.devices(false, &mut delay) {
-            let device_address = device_address.unwrap();
-            ufmt::uwriteln!(serial, "Found onewire device: {} (dec)", device_address.0).unwrap();
-        }
+    for device_address in onewire_bus.devices(false, &mut delay) {
+        let device_address = device_address.unwrap();
+        telemetry::found_onewire_device(&mut serial, device_address.0);
     }
 
     let mut temperature_sensors = crate::sensors::TemperatureSensors::new(onewire_bus, delay);

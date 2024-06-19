@@ -1,3 +1,5 @@
+use hoshiguma_foundational_data::satori::Payload;
+
 use crate::hal::Usart;
 
 type Message = hoshiguma_foundational_data::Message<hoshiguma_foundational_data::satori::Payload>;
@@ -37,6 +39,27 @@ pub(crate) fn panic<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, R
         time: crate::hal::millis(),
         iteration_id: None,
         payload: hoshiguma_foundational_data::Payload::Panic(info.into()),
+    };
+
+    report(serial, &msg);
+}
+
+pub(crate) fn found_onewire_device<
+    USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>,
+    TX,
+    RX,
+>(
+    serial: &mut Usart<USART, TX, RX>,
+    device_address: u64,
+) {
+    let msg = Message {
+        time: crate::hal::millis(),
+        iteration_id: None,
+        payload: hoshiguma_foundational_data::Payload::Application(
+            Payload::DiscoveredOneWireDevice {
+                address: device_address,
+            },
+        ),
     };
 
     report(serial, &msg);
