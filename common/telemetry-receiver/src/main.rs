@@ -77,7 +77,7 @@ fn try_parse_payload<
     match postcard::from_bytes_cobs::<Message<P>>(&mut rx_buffer) {
         Ok(msg) => {
             if let Payload::Boot(ref msg) = msg.payload {
-                check_firmware_version(&msg);
+                check_firmware_version(msg);
             }
             Some(Box::new(msg))
         }
