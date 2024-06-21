@@ -47,6 +47,7 @@ impl From<&core::panic::PanicInfo<'_>> for Panic {
         match info.location() {
             None => Panic::default(),
             Some(loc) => Self {
+                #[allow(clippy::unnecessary_fallible_conversions)]
                 file: loc.file().try_into().ok(),
                 line: Some(loc.line()),
                 column: Some(loc.column()),
