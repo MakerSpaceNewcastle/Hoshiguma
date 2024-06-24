@@ -2,11 +2,9 @@
 #![no_main]
 #![feature(abi_avr_interrupt)]
 
-// mod checked_update;
 mod hal;
 mod sensors;
 mod telemetry;
-// mod unwrap_simple;
 
 use atmega_hal::prelude::*;
 use hoshiguma_foundational_data::satori::Status;
