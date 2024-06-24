@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]
-pub type Vec<T> = std::vec::Vec<T>;
+pub type Vec<T, const N: usize> = std::vec::Vec<T>;
 #[cfg(not(feature = "std"))]
-pub type Vec<T> = heapless::Vec<T, 16>;
+pub type Vec<T, const N: usize> = heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
@@ -21,8 +21,8 @@ pub struct Status {
 
     pub coolant_flow_rate: f32,
 
-    pub potential_problems: Vec<PotentialMachineProblem>,
-    pub problems: Vec<MachineProblem>,
+    pub potential_problems: Vec<PotentialMachineProblem, 4>,
+    pub problems: Vec<MachineProblem, 8>,
 }
 
 impl From<&Status> for Payload {
