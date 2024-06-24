@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "std")]
+pub type Vec<T> = std::vec::Vec<T>;
+#[cfg(not(feature = "std"))]
+pub type Vec<T> = heapless::Vec<T, 16>;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
     DiscoveredOneWireDevice{address: u64},
