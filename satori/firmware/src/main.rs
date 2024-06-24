@@ -3,7 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 mod hal;
-mod fequency_counter;
+// mod fequency_counter;
 mod sensors;
 mod telemetry;
 
