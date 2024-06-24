@@ -9,8 +9,11 @@ pub enum Payload {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Status {
     pub temperature: Temperatures,
+
     pub coolant_level: Option<CoolantLevel>,
+
     pub coolant_pump_rpm: f32,
+
     pub coolant_flow_rate: f32,
 
     pub potential_problems: Vec<PotentialMachineProblem>,
