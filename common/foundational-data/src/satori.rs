@@ -1,9 +1,8 @@
-use enumset::EnumSetType;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
-    DiscoveredOneWireDevice{address: u64,},
+    DiscoveredOneWireDevice{address: u64},
     StateChanged(Status),
 }
 
@@ -13,9 +12,9 @@ pub struct Status {
     pub coolant_level: Option<CoolantLevel>,
     pub coolant_pump_rpm: f32,
     pub coolant_flow_rate: f32,
-    // TODO
-    // potential_problems: EnumSet<MachineProblem>,
-    // problems: EnumSet<MachineProblem>,
+
+    pub potential_problems: Vec<PotentialMachineProblem>,
+    pub problems: Vec<MachineProblem>,
 }
 
 impl From<&Status> for Payload {
@@ -46,10 +45,36 @@ pub enum CoolantLevel {
     CriticallyLow,
 }
 
-#[derive(Debug, Serialize, Deserialize, EnumSetType)]
-pub enum MachineProblem {
-    CoolentLevelInsufficient,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MachineProblem {
+    pub kind: ProblemKind,
+    pub severity: ProblemSeverity,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PotentialMachineProblem {
+    pub problem: MachineProblem,
+    pub since: super::TimeMillis,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProblemSeverity{
+    Warning,
+    Critical,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProblemKind {
+    CoolantLevelSensorFault,
+    CoolantLevelInsufficient,
+
+    CoolantFlowRateSensorFault,
     CoolantFlowRateInsufficient,
+
+    CoolantPumpSpeedSensorFault,
+    CoolantPumpSpeedOutOfSpec,
+
+    TemperatureSensorFault,
     CoolantFlowOvertemperature,
     CoolantReturnOvertemperature,
     ElectronicsBayOvertemperature,
