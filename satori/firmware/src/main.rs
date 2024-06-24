@@ -112,6 +112,8 @@ fn main() -> ! {
             // TODO
             coolant_pump_rpm: 0.0,
             coolant_flow_rate: 0.0,
+            potential_problems: heapless::Vec::new(),
+            problems: heapless::Vec::new(),
         };
 
         telemetry::status(&mut serial, iteration_id, &status);
