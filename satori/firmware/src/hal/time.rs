@@ -6,7 +6,7 @@ pub(crate) type Delay = avr_hal_generic::delay::Delay<super::Clock>;
 const PRESCALER: u32 = 1024;
 const TIMER_COUNTS: u32 = 125;
 
-const MILLIS_INCREMENT: u32 = PRESCALER * TIMER_COUNTS / 8000;
+const MILLIS_INCREMENT: u32 = PRESCALER * TIMER_COUNTS / 16000;
 
 static MILLIS_COUNTER: Mutex<Cell<u32>> = Mutex::new(Cell::new(0));
 

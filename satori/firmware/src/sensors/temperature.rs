@@ -6,13 +6,12 @@ use embedded_hal_p2::{
 use hoshiguma_foundational_data::satori::Temperatures;
 use one_wire_bus::OneWire;
 
-macro_rules! dallas_temperature_sensor {
-    ( $address:expr ) => {
-        Ds18b20::new::<()>(one_wire_bus::Address(
-            u64::from_str_radix($address, 16).unwrap(),
-        ))
-        .unwrap()
-    };
+fn sensor_from_address (address: &str) -> Ds18b20 {
+    // TODO
+    let address = 953885588342016040; //u64::from_str_radix(address, 16).unwrap();
+    let address = one_wire_bus::Address(address);
+    let sensor = Ds18b20::new::<()>(address).unwrap();
+    sensor
 }
 
 macro_rules! read_temperature_sensor {
@@ -54,14 +53,14 @@ where
         Self {
             bus,
             delay,
-            coolant_radiator_upper: dallas_temperature_sensor!("0D3CE1E3817D8828"),
-            coolant_radiator_lower: dallas_temperature_sensor!("953C1FF648A2F028"),
-            coolant_pump_case: dallas_temperature_sensor!("783CE1E3801EA628"),
-            coolant_flow: dallas_temperature_sensor!("703CE1E380A2E828"),
-            coolant_return: dallas_temperature_sensor!("523CE1E380B9B828"),
-            laser_chamber_ambient: dallas_temperature_sensor!("8F3C53F649ABE528"),
-            electronics_bay_ambient: dallas_temperature_sensor!("BAFC5B5509646128"),
-            room_ambient: dallas_temperature_sensor!("F1561D5409646128"),
+            coolant_radiator_upper: sensor_from_address("0D3CE1E3817D8828"),
+            coolant_radiator_lower: sensor_from_address("953C1FF648A2F028"),
+            coolant_pump_case:      sensor_from_address("783CE1E3801EA628"),
+            coolant_flow:           sensor_from_address("703CE1E380A2E828"),
+            coolant_return:         sensor_from_address("523CE1E380B9B828"),
+            laser_chamber_ambient:  sensor_from_address("8F3C53F649ABE528"),
+            electronics_bay_ambient:sensor_from_address("BAFC5B5509646128"),
+            room_ambient:           sensor_from_address("F1561D5409646128"),
         }
     }
 
