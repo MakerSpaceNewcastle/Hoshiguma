@@ -7,8 +7,7 @@ use hoshiguma_foundational_data::satori::Temperatures;
 use one_wire_bus::OneWire;
 
 fn sensor_from_address (address: &str) -> Ds18b20 {
-    // TODO
-    let address = 953885588342016040; //u64::from_str_radix(address, 16).unwrap();
+    let address = u64::from_str_radix(address, 16).unwrap();
     let address = one_wire_bus::Address(address);
     let sensor = Ds18b20::new::<()>(address).unwrap();
     sensor
