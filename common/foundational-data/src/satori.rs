@@ -7,7 +7,7 @@ pub type Vec<T> = heapless::Vec<T, 16>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
-    DiscoveredOneWireDevice{address: u64},
+    DiscoveredOneWireDevice { address: u64 },
     StateChanged(Status),
 }
 
@@ -66,7 +66,7 @@ pub struct PotentialMachineProblem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ProblemSeverity{
+pub enum ProblemSeverity {
     Warning,
     Critical,
 }
