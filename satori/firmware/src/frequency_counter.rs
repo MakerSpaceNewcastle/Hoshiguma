@@ -7,10 +7,7 @@ pub(crate) struct FrequencyCounter {
 }
 
 impl FrequencyCounter {
-    pub fn new
-        (
-        counts_per_x: f32,
-    ) -> Self {
+    pub fn new(counts_per_x: f32) -> Self {
         let counts = Arc::new(AtomicU32::new(0));
 
         Self {
