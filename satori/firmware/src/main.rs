@@ -100,8 +100,8 @@ fn main() -> ! {
             count
         });
 
-        let coolant_level = coolant_level_sensor.read();
         let temperature = temperature_sensors.read();
+        let coolant_level = coolant_level_sensor.read();
 
         let status = Status {
             temperature,
