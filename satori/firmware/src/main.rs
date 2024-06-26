@@ -88,8 +88,6 @@ fn main() -> ! {
     let mut iteration_id: u32 = 0;
 
     loop {
-        let _time = crate::hal::millis();
-
         let count_0 = avr_device::interrupt::free(|_cs| {
             let count = COUNT_0.load(Ordering::SeqCst);
             COUNT_0.store(0, Ordering::SeqCst);
