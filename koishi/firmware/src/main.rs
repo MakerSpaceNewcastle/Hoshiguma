@@ -33,7 +33,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     #[cfg(feature = "telemetry")]
     {
         let mut serial = serial!(dp, pins, 57600);
-        serial.write_byte(0u8);
+        serial.write_byte(0);
         telemetry::panic(&mut serial, info);
     }
 

@@ -1,9 +1,7 @@
 use atmega_hal::port::Pin;
 
 avr_hal_generic::renamed_pins! {
-    type Pin = Pin;
-
-    pub struct Pins from atmega_hal::Pins {
+    pub struct Pins {
         pub relay1: atmega_hal::port::PC3 = pc3, /// A3
         pub relay2: atmega_hal::port::PC2 = pc2, /// A2
         pub relay3: atmega_hal::port::PC1 = pc1, /// A1
@@ -26,5 +24,10 @@ avr_hal_generic::renamed_pins! {
         pub d1: atmega_hal::port::PD1 = pd1,
         pub d8: atmega_hal::port::PB0 = pb0,
         pub d13: atmega_hal::port::PB5 = pb5,
+    }
+
+    impl Pins {
+        type Pin = Pin;
+        type McuPins = atmega_hal::Pins;
     }
 }
