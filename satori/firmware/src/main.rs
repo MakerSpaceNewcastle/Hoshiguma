@@ -2,8 +2,8 @@
 #![no_main]
 #![feature(abi_avr_interrupt)]
 
-mod hal;
 mod frequency_counter;
+mod hal;
 mod sensors;
 mod telemetry;
 
@@ -46,7 +46,7 @@ fn main() -> ! {
     let mut serial = serial!(dp, pins, 57600);
     telemetry::boot(&mut serial);
 
-    let machine_enable = pins.machine_enable.into_output();
+    let _machine_enable = pins.machine_enable.into_output();
 
     let mut coolant_level_sensor = {
         let top = pins.rj45_pin5.into_pull_up_input();
@@ -54,8 +54,8 @@ fn main() -> ! {
         sensors::CoolantLevelSensor::new(top, bottom)
     };
 
-    let coolant_flow_sensor = pins.rj45_pin3.into_pull_up_input();
-    let coolant_pump_speed_sensor = pins.rj45_pin4.into_pull_up_input();
+    let _coolant_flow_sensor = pins.rj45_pin3.into_pull_up_input();
+    let _coolant_pump_speed_sensor = pins.rj45_pin4.into_pull_up_input();
 
     // Enable the PCINT0 and PCINT2 interrupts
     // See datasheet: 12.2.4 PCICR - Pin Change Interrupt Control Register
@@ -88,15 +88,15 @@ fn main() -> ! {
     let mut iteration_id: u32 = 0;
 
     loop {
-        let count_0 = avr_device::interrupt::free(|_cs| {
-            let count = COUNT_0.load(Ordering::SeqCst);
-            COUNT_0.store(0, Ordering::SeqCst);
+        let count_0 = avr_device::interrupt::free(|_| unsafe {
+            let count = COUNT_0;
+            COUNT_0 = 0;
             count
         });
 
-        let count_2 = avr_device::interrupt::free(|_cs| {
-            let count = COUNT_2.load(Ordering::SeqCst);
-            COUNT_2.store(0, Ordering::SeqCst);
+        let count_2 = avr_device::interrupt::free(|_| unsafe {
+            let count = COUNT_2;
+            COUNT_2 = 0;
             count
         });
 
@@ -107,8 +107,8 @@ fn main() -> ! {
             temperature,
             coolant_level,
             // TODO
-            coolant_pump_rpm: 0.0,
-            coolant_flow_rate: 0.0,
+            coolant_pump_rpm: count_0,
+            coolant_flow_rate: count_2,
             potential_problems: heapless::Vec::new(),
             problems: heapless::Vec::new(),
         };
@@ -125,23 +125,25 @@ fn main() -> ! {
     }
 }
 
-use core::sync::atomic::{AtomicU8, Ordering};
-
-static COUNT_0: AtomicU8 = AtomicU8::new(0);
-static COUNT_2: AtomicU8 = AtomicU8::new(0);
+static mut COUNT_0: u32 = 0;
+static mut COUNT_2: u32 = 0;
 
 #[avr_device::interrupt(atmega328p)]
 #[allow(non_snake_case)]
 fn PCINT0() {
-    let mut count = COUNT_0.load(Ordering::SeqCst);
-    count += 1;
-    COUNT_0.store(count, Ordering::SeqCst);
+    avr_device::interrupt::free(|_| {
+        unsafe {
+            COUNT_0 = COUNT_0.saturating_add(1);
+        };
+    });
 }
 
 #[avr_device::interrupt(atmega328p)]
 #[allow(non_snake_case)]
 fn PCINT2() {
-    let mut count = COUNT_2.load(Ordering::SeqCst);
-    count += 1;
-    COUNT_2.store(count, Ordering::SeqCst);
+    avr_device::interrupt::free(|_| {
+        unsafe {
+            COUNT_2 = COUNT_2.saturating_add(1);
+        };
+    });
 }

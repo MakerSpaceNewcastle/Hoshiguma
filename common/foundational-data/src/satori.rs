@@ -17,9 +17,11 @@ pub struct Status {
 
     pub coolant_level: Option<CoolantLevel>,
 
-    pub coolant_pump_rpm: f32,
+    // pub coolant_pump_rpm: f32,
+    pub coolant_pump_rpm: u32,
 
-    pub coolant_flow_rate: f32,
+    // pub coolant_flow_rate: f32,
+    pub coolant_flow_rate: u32,
 
     pub potential_problems: Vec<PotentialMachineProblem, 4>,
     pub problems: Vec<MachineProblem, 8>,

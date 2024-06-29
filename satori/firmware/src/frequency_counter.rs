@@ -1,4 +1,3 @@
-
 #[derive(Clone)]
 pub(crate) struct FrequencyCounter {
     counts: u32,
@@ -6,9 +5,7 @@ pub(crate) struct FrequencyCounter {
 
 impl FrequencyCounter {
     pub fn new() -> Self {
-        Self {
-            counts: 0,
-        }
+        Self { counts: 0 }
     }
 
     pub fn count(&mut self) {
