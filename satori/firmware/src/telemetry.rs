@@ -1,4 +1,4 @@
-use hoshiguma_foundational_data::satori::Payload;
+use hoshiguma_foundational_data::{satori::Payload, TimeMillis};
 
 use crate::hal::Usart;
 
@@ -67,13 +67,14 @@ pub(crate) fn found_onewire_device<
 
 pub(crate) fn status<USART: atmega_hal::usart::UsartOps<atmega_hal::Atmega, TX, RX>, TX, RX, T>(
     serial: &mut Usart<USART, TX, RX>,
+    time: TimeMillis,
     iteration_id: u32,
     status_payload: T,
 ) where
     hoshiguma_foundational_data::satori::Payload: From<T>,
 {
     let msg = Message {
-        time: crate::hal::millis(),
+        time,
         iteration_id: Some(iteration_id),
         payload: hoshiguma_foundational_data::Payload::Application(status_payload.into()),
     };

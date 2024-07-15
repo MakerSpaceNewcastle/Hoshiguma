@@ -92,6 +92,8 @@ fn main() -> ! {
     let mut last_potential_problems = Vec::new();
 
     loop {
+        let now = crate::hal::millis();
+
         let count_0 = avr_device::interrupt::free(|_| unsafe {
             let count = COUNT_0;
             COUNT_0 = 0;
@@ -120,9 +122,10 @@ fn main() -> ! {
 
         let potential_problems = Vec::new();
         let problems = Vec::new();
+
         problems::evaluate_rules(
             &observed,
-            0,
+            now,
             &last_potential_problems,
             &potential_problems,
             &problems,
@@ -142,7 +145,7 @@ fn main() -> ! {
             })
             .unwrap();
 
-        telemetry::status(&mut serial, iteration_id, &status);
+        telemetry::status(&mut serial, now, iteration_id, &status);
 
         led.toggle();
         hal::Delay::new().delay_ms(250u16);
