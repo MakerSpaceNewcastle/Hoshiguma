@@ -8,6 +8,7 @@ mod sensors;
 mod telemetry;
 
 use atmega_hal::prelude::*;
+use embedded_hal::digital::{OutputPin, PinState};
 use hoshiguma_foundational_data::satori::Status;
 use one_wire_bus::OneWire;
 
@@ -46,7 +47,7 @@ fn main() -> ! {
     let mut serial = serial!(dp, pins, 57600);
     telemetry::boot(&mut serial);
 
-    let _machine_enable = pins.machine_enable.into_output();
+    let mut machine_enable = pins.machine_enable.into_output();
 
     let mut coolant_level_sensor = {
         let top = pins.rj45_pin5.into_pull_up_input();
@@ -86,6 +87,7 @@ fn main() -> ! {
     let mut led = pins.led.into_output();
 
     let mut iteration_id: u32 = 0;
+    let mut last_potential_problems = heapless::Vec::new();
 
     loop {
         let count_0 = avr_device::interrupt::free(|_| unsafe {
@@ -93,35 +95,45 @@ fn main() -> ! {
             COUNT_0 = 0;
             count
         });
+        // TODO
+        let coolant_pump_rpm = count_0;
 
         let count_2 = avr_device::interrupt::free(|_| unsafe {
             let count = COUNT_2;
             COUNT_2 = 0;
             count
         });
+        // TODO
+        let coolant_flow_rate = count_2;
 
         let temperature = temperature_sensors.read();
         let coolant_level = coolant_level_sensor.read();
 
+        // TODO
+        let potential_problems = heapless::Vec::new();
+        let problems = heapless::Vec::new();
+
         let status = Status {
             temperature,
             coolant_level,
-            // TODO
-            coolant_pump_rpm: count_0,
-            coolant_flow_rate: count_2,
-            potential_problems: heapless::Vec::new(),
-            problems: heapless::Vec::new(),
+            coolant_pump_rpm,
+            coolant_flow_rate,
+            potential_problems,
+            problems,
         };
 
-        telemetry::status(&mut serial, iteration_id, &status);
+        let _ = machine_enable.set_state(match status.problems.is_empty() {
+            true => PinState::High,
+            false => PinState::Low,
+        });
 
-        // TODO
-        // machine_enable.toggle();
+        telemetry::status(&mut serial, iteration_id, &status);
 
         led.toggle();
         hal::Delay::new().delay_ms(250u16);
 
         iteration_id = iteration_id.wrapping_add(1);
+        last_potential_problems = status.potential_problems;
     }
 }
 
