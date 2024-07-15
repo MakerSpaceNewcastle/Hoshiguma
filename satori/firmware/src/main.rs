@@ -4,6 +4,7 @@
 
 mod frequency_counter;
 mod hal;
+mod problems;
 mod sensors;
 mod telemetry;
 
@@ -110,16 +111,22 @@ fn main() -> ! {
         let temperature = temperature_sensors.read();
         let coolant_level = coolant_level_sensor.read();
 
-        let observed = ObservedState{
+        let observed = ObservedState {
             temperature,
             coolant_level,
             coolant_pump_rpm,
             coolant_flow_rate,
         };
 
-        // TODO
         let potential_problems = Vec::new();
         let problems = Vec::new();
+        problems::evaluate_rules(
+            &observed,
+            0,
+            &last_potential_problems,
+            &potential_problems,
+            &problems,
+        );
 
         let status = Status {
             observed,

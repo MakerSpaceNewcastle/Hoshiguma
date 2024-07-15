@@ -11,11 +11,14 @@ pub enum Payload {
     StateChanged(Status),
 }
 
+pub type PotentialMachineProblems = Vec<PotentialMachineProblem, 4>;
+pub type MachineProblems = Vec<MachineProblem, 8>;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Status {
     pub observed: ObservedState,
-    pub potential_problems: Vec<PotentialMachineProblem, 4>,
-    pub problems: Vec<MachineProblem, 8>,
+    pub potential_problems: PotentialMachineProblems,
+    pub problems: MachineProblems,
 }
 
 impl From<&Status> for Payload {
