@@ -9,7 +9,8 @@ mod telemetry;
 
 use atmega_hal::prelude::*;
 use embedded_hal::digital::{OutputPin, PinState};
-use hoshiguma_foundational_data::satori::Status;
+use heapless::Vec;
+use hoshiguma_foundational_data::satori::{ObservedState, Status};
 use one_wire_bus::OneWire;
 
 #[panic_handler]
@@ -87,7 +88,7 @@ fn main() -> ! {
     let mut led = pins.led.into_output();
 
     let mut iteration_id: u32 = 0;
-    let mut last_potential_problems = heapless::Vec::new();
+    let mut last_potential_problems = Vec::new();
 
     loop {
         let count_0 = avr_device::interrupt::free(|_| unsafe {
@@ -109,19 +110,24 @@ fn main() -> ! {
         let temperature = temperature_sensors.read();
         let coolant_level = coolant_level_sensor.read();
 
-        // TODO
-        let potential_problems = heapless::Vec::new();
-        let problems = heapless::Vec::new();
-
-        let status = Status {
+        let observed = ObservedState{
             temperature,
             coolant_level,
             coolant_pump_rpm,
             coolant_flow_rate,
+        };
+
+        // TODO
+        let potential_problems = Vec::new();
+        let problems = Vec::new();
+
+        let status = Status {
+            observed,
             potential_problems,
             problems,
         };
 
+        // Allow the machine to operate when there are no problems, otherwise disable it
         machine_enable
             .set_state(match status.problems.is_empty() {
                 true => PinState::High,

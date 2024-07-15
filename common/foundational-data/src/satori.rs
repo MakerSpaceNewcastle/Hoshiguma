@@ -13,6 +13,19 @@ pub enum Payload {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Status {
+    pub observed: ObservedState,
+    pub potential_problems: Vec<PotentialMachineProblem, 4>,
+    pub problems: Vec<MachineProblem, 8>,
+}
+
+impl From<&Status> for Payload {
+    fn from(value: &Status) -> Self {
+        Self::StateChanged(value.clone())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ObservedState {
     pub temperature: Temperatures,
 
     pub coolant_level: Option<CoolantLevel>,
@@ -22,15 +35,6 @@ pub struct Status {
 
     // pub coolant_flow_rate: f32,
     pub coolant_flow_rate: u32,
-
-    pub potential_problems: Vec<PotentialMachineProblem, 4>,
-    pub problems: Vec<MachineProblem, 8>,
-}
-
-impl From<&Status> for Payload {
-    fn from(value: &Status) -> Self {
-        Self::StateChanged(value.clone())
-    }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
