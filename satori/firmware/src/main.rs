@@ -122,10 +122,12 @@ fn main() -> ! {
             problems,
         };
 
-        let _ = machine_enable.set_state(match status.problems.is_empty() {
-            true => PinState::High,
-            false => PinState::Low,
-        });
+        machine_enable
+            .set_state(match status.problems.is_empty() {
+                true => PinState::High,
+                false => PinState::Low,
+            })
+            .unwrap();
 
         telemetry::status(&mut serial, iteration_id, &status);
 
