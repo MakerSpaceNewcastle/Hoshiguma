@@ -7,9 +7,9 @@ use hoshiguma_foundational_data::satori::{
 ///
 /// Resolutions:
 ///     - full: no problems
-///     - low: potential problem, promote to problem in 5 minutes
+///     - low: potential problem, promote to problem in 10 seconds
 ///     - empty: immediate problem
-///     - unknown: potential problem, promote to problem in 5 minutes
+///     - fault: potential problem, promote to problem in 10 seconds
 pub(super) fn coolant_level(ctx: &mut RuleEvaluationContext) {
     let sensor_potential_problem = ctx
         .potential_problems
