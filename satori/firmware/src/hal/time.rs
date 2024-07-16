@@ -1,3 +1,5 @@
+use hoshiguma_foundational_data::TimeMillis;
+
 pub(crate) type Delay = avr_hal_generic::delay::Delay<super::Clock>;
 
 const PRESCALER: u32 = 1024;
@@ -5,7 +7,7 @@ const TIMER_COUNTS: u32 = 125;
 
 const MILLIS_INCREMENT: u32 = PRESCALER * TIMER_COUNTS / 16000;
 
-static mut MILLIS_COUNTER_SHITE: u32 = 0;
+static mut MILLIS_COUNTER: TimeMillis = 0;
 
 pub(crate) fn millis_init(tc0: atmega_hal::pac::TC0) {
     // Configure the timer for the above interval (in CTC mode)
@@ -25,16 +27,12 @@ pub(crate) fn millis_init(tc0: atmega_hal::pac::TC0) {
 #[avr_device::interrupt(atmega328p)]
 fn TIMER0_COMPA() {
     avr_device::interrupt::free(|_cs| {
-        // TODO
         unsafe {
-            MILLIS_COUNTER_SHITE = MILLIS_COUNTER_SHITE.wrapping_add(MILLIS_INCREMENT);
+            MILLIS_COUNTER = MILLIS_COUNTER.wrapping_add(MILLIS_INCREMENT);
         }
     })
 }
 
-pub(crate) type TimeMillis = u32;
-
 pub(crate) fn millis() -> TimeMillis {
-    // TODO
-    unsafe { MILLIS_COUNTER_SHITE }
+    unsafe { MILLIS_COUNTER }
 }
