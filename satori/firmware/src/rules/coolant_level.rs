@@ -29,21 +29,20 @@ pub(super) fn coolant_level(ctx: &mut RuleEvaluationContext) {
             }
             CoolantLevel::Low => {
                 match level_potential_problem {
-                    Some(problem) => {
+                    Some(potential_problem) => {
                         // Low coolant level was a problem before and still is a problem.
                         // Check how long it has been a potential problem.
-                        if ctx.now.wrapping_sub(problem.since) > 500 {
+                        if ctx.now.wrapping_sub(potential_problem.since) > 5000 {
                             // Has been a potential problem long enough to now be an actual problem.
                             ctx.problems
-                                .push(MachineProblem {
-                                    kind: ProblemKind::CoolantLevelInsufficient,
-                                    severity: ProblemSeverity::Critical,
-                                })
+                                .push(potential_problem.problem.clone())
                                 .unwrap();
                         } else {
                             // Not long enough to be too concerned, yet...
                             // Just continue with the existing potential problem.
-                            ctx.potential_problems.push(problem.clone()).unwrap();
+                            ctx.potential_problems
+                                .push(potential_problem.clone())
+                                .unwrap();
                         }
                     }
                     None => {
@@ -73,7 +72,37 @@ pub(super) fn coolant_level(ctx: &mut RuleEvaluationContext) {
             }
         },
         None => {
-            // TODO
+            match sensor_potential_problem {
+                Some(potential_problem) => {
+                    // Coolant level sensor failure was a problem before and still is a problem.
+                    // Check how long it has been a potential problem.
+                    if ctx.now.wrapping_sub(potential_problem.since) > 5000 {
+                        // Has been a potential problem long enough to now be an actual problem.
+                        ctx.problems
+                            .push(potential_problem.problem.clone())
+                            .unwrap();
+                    } else {
+                        // Not long enough to be too concerned, yet...
+                        // Just continue with the existing potential problem.
+                        ctx.potential_problems
+                            .push(potential_problem.clone())
+                            .unwrap();
+                    }
+                }
+                None => {
+                    // Sensor failure was not a probelm before but is now.
+                    // Add a new potential problem.
+                    ctx.potential_problems
+                        .push(PotentialMachineProblem {
+                            problem: MachineProblem {
+                                kind: ProblemKind::CoolantLevelSensorFault,
+                                severity: ProblemSeverity::Critical,
+                            },
+                            since: ctx.now,
+                        })
+                        .unwrap();
+                }
+            }
         }
     }
 }
