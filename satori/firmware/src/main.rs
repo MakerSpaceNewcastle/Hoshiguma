@@ -4,7 +4,7 @@
 
 mod frequency_counter;
 mod hal;
-mod problems;
+mod rules;
 mod sensors;
 mod telemetry;
 
@@ -13,6 +13,7 @@ use embedded_hal::digital::{OutputPin, PinState};
 use heapless::Vec;
 use hoshiguma_foundational_data::satori::{ObservedState, Status};
 use one_wire_bus::OneWire;
+use rules::RuleEvaluationContext;
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
@@ -123,13 +124,13 @@ fn main() -> ! {
         let potential_problems = Vec::new();
         let problems = Vec::new();
 
-        problems::evaluate_rules(
-            &observed,
+        crate::rules::evaluate(&RuleEvaluationContext {
+            state: &observed,
             now,
-            &last_potential_problems,
-            &potential_problems,
-            &problems,
-        );
+            last_potential_problems: &last_potential_problems,
+            potential_problems: &potential_problems,
+            problems: &problems,
+        });
 
         let status = Status {
             observed,
