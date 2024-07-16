@@ -69,18 +69,18 @@ pub struct MachineProblem {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PotentialMachineProblem {
-    pub problem: MachineProblem,
-    pub since: super::TimeMillis,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ProblemSeverity {
     Warning,
     Critical,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PotentialMachineProblem {
+    pub problem: MachineProblem,
+    pub since: super::TimeMillis,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ProblemKind {
     CoolantLevelSensorFault,
     CoolantLevelInsufficient,

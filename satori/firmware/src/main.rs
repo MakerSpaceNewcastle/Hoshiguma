@@ -121,15 +121,15 @@ fn main() -> ! {
             coolant_flow_rate,
         };
 
-        let potential_problems = Vec::new();
-        let problems = Vec::new();
+        let mut potential_problems = Vec::new();
+        let mut problems = Vec::new();
 
-        crate::rules::evaluate(&RuleEvaluationContext {
+        crate::rules::evaluate(RuleEvaluationContext {
             state: &observed,
             now,
             last_potential_problems: &last_potential_problems,
-            potential_problems: &potential_problems,
-            problems: &problems,
+            potential_problems: &mut potential_problems,
+            problems: &mut problems,
         });
 
         let status = Status {
