@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+mod sensors;
+
 use bsp::{
     entry,
     hal::{
@@ -52,7 +54,7 @@ fn main() -> ! {
     loop {
         info!("on!");
         led_pin.set_high().unwrap();
-        delay.delay_ms(500);
+        delay.delay_ms(100);
         info!("off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
@@ -64,7 +66,6 @@ fn main() -> ! {
 // mod frequency_counter;
 // mod hal;
 // mod rules;
-// mod sensors;
 // mod telemetry;
 
 // use atmega_hal::prelude::*;
