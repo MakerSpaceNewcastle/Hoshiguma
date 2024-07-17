@@ -12,11 +12,20 @@ use bsp::{
         watchdog::Watchdog,
     },
 };
-use defmt::*;
+use cortex_m::delay::Delay;
+use defmt::info;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
+#[cfg(panic_probe)]
 use panic_probe as _;
 use rp_pico as bsp;
+
+// #[cfg(not(panic_probe))]
+// #[panic_handler]
+// fn panic(info: &core::panic::PanicInfo) -> ! {
+//     loop {
+//     }
+// }
 
 #[entry]
 fn main() -> ! {
@@ -26,7 +35,6 @@ fn main() -> ! {
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
     let sio = Sio::new(pac.SIO);
 
-    // External high-speed crystal on the pico board is 12Mhz
     let external_xtal_freq_hz = 12_000_000u32;
     let clocks = init_clocks_and_plls(
         external_xtal_freq_hz,
@@ -40,7 +48,7 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
+    let mut delay = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
     let pins = bsp::Pins::new(
         pac.IO_BANK0,
@@ -58,6 +66,8 @@ fn main() -> ! {
         info!("off!");
         led_pin.set_low().unwrap();
         delay.delay_ms(500);
+
+        panic!("test");
     }
 }
 

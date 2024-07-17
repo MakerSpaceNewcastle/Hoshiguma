@@ -8,6 +8,7 @@ license = "MIT"
 [features]
 default = ["telemetry"]
 telemetry = ["dep:postcard"]
+panic_probe = ["dep:panic-probe"]
 
 [dependencies]
 ds18b20 = "0.1.1"
@@ -25,7 +26,7 @@ cortex-m-rt = "0.7"
 
 defmt = "0.3"
 defmt-rtt = "0.4"
-panic-probe = { version = "0.3", features = ["print-defmt"] }
+panic-probe = { version = "0.3", features = ["print-defmt"], optional = true }
 
 rp-pico = "0.9"
 
