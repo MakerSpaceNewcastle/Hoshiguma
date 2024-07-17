@@ -8,7 +8,7 @@ license = "MIT"
 [features]
 default = ["telemetry"]
 telemetry = ["dep:postcard"]
-panic_probe = ["dep:panic-probe"]
+panic-probe = ["dep:panic-probe"]
 
 [dependencies]
 ds18b20 = "0.1.1"

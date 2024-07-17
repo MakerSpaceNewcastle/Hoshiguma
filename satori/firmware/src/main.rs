@@ -16,16 +16,16 @@ use cortex_m::delay::Delay;
 use defmt::info;
 use defmt_rtt as _;
 use embedded_hal::digital::OutputPin;
-#[cfg(panic_probe)]
+#[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use rp_pico as bsp;
 
-// #[cfg(not(panic_probe))]
-// #[panic_handler]
-// fn panic(info: &core::panic::PanicInfo) -> ! {
-//     loop {
-//     }
-// }
+#[cfg(not(feature = "panic-probe"))]
+#[panic_handler]
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    loop {
+    }
+}
 
 #[entry]
 fn main() -> ! {
