@@ -26,10 +26,8 @@ pub(crate) fn millis_init(tc0: atmega_hal::pac::TC0) {
 
 #[avr_device::interrupt(atmega328p)]
 fn TIMER0_COMPA() {
-    avr_device::interrupt::free(|_cs| {
-        unsafe {
-            MILLIS_COUNTER = MILLIS_COUNTER.wrapping_add(MILLIS_INCREMENT);
-        }
+    avr_device::interrupt::free(|_cs| unsafe {
+        MILLIS_COUNTER = MILLIS_COUNTER.wrapping_add(MILLIS_INCREMENT);
     })
 }
 

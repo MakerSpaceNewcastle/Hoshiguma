@@ -37,7 +37,11 @@
             libelf
             zlib
 
-            # koishi telemetry receiver demo
+            # satori firmware
+            flip-link
+            probe-rs
+
+            # telemetry receiver
             systemd
           ];
 
