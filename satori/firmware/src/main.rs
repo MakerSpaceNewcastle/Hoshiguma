@@ -61,13 +61,6 @@ fn main() -> ! {
     }
 }
 
-// #![feature(abi_avr_interrupt)]
-
-// mod frequency_counter;
-// mod hal;
-// mod rules;
-// mod telemetry;
-
 // use atmega_hal::prelude::*;
 // use embedded_hal::digital::{OutputPin, PinState};
 // use heapless::Vec;
@@ -214,27 +207,4 @@ fn main() -> ! {
 //         iteration_id = iteration_id.wrapping_add(1);
 //         last_potential_problems = status.potential_problems;
 //     }
-// }
-
-// static mut COUNT_0: u32 = 0;
-// static mut COUNT_2: u32 = 0;
-
-// #[avr_device::interrupt(atmega328p)]
-// #[allow(non_snake_case)]
-// fn PCINT0() {
-//     avr_device::interrupt::free(|_| {
-//         unsafe {
-//             COUNT_0 = COUNT_0.saturating_add(1);
-//         };
-//     });
-// }
-
-// #[avr_device::interrupt(atmega328p)]
-// #[allow(non_snake_case)]
-// fn PCINT2() {
-//     avr_device::interrupt::free(|_| {
-//         unsafe {
-//             COUNT_2 = COUNT_2.saturating_add(1);
-//         };
-//     });
 // }

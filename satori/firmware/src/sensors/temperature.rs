@@ -74,20 +74,18 @@ where
     }
 
     pub(crate) fn read(&mut self) -> Temperatures {
-        // TODO: see https://github.com/Rahix/avr-hal/issues/541
-        // match self.begin_measurement() {
-        //     Ok(_) => Temperatures {
-        //         coolant_flow: read_temperature_sensor!(self, self.coolant_flow),
-        //         coolant_return: read_temperature_sensor!(self, self.coolant_return),
-        //         coolant_resevoir_upper: read_temperature_sensor!(self, self.coolant_radiator_upper),
-        //         coolant_resevoir_lower: read_temperature_sensor!(self, self.coolant_radiator_lower),
-        //         coolant_pump: read_temperature_sensor!(self, self.coolant_pump_case),
-        //         room_ambient: read_temperature_sensor!(self, self.room_ambient),
-        //         laser_bay: read_temperature_sensor!(self, self.laser_chamber_ambient),
-        //         electronics_bay: read_temperature_sensor!(self, self.electronics_bay_ambient),
-        //     },
-        //     Err(_) => Temperatures::default(),
-        // }
-        Temperatures::default()
+        match self.begin_measurement() {
+            Ok(_) => Temperatures {
+                coolant_flow: read_temperature_sensor!(self, self.coolant_flow),
+                coolant_return: read_temperature_sensor!(self, self.coolant_return),
+                coolant_resevoir_upper: read_temperature_sensor!(self, self.coolant_radiator_upper),
+                coolant_resevoir_lower: read_temperature_sensor!(self, self.coolant_radiator_lower),
+                coolant_pump: read_temperature_sensor!(self, self.coolant_pump_case),
+                room_ambient: read_temperature_sensor!(self, self.room_ambient),
+                laser_bay: read_temperature_sensor!(self, self.laser_chamber_ambient),
+                electronics_bay: read_temperature_sensor!(self, self.electronics_bay_ambient),
+            },
+            Err(_) => Temperatures::default(),
+        }
     }
 }
