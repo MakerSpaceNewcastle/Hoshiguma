@@ -8,9 +8,9 @@ use crate::rules::RuleEvaluationContext;
 use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
-use embassy_rp::{self as _, gpio::{Level, Output}};
+use embassy_rp::gpio::{Input, Level, Output, OutputOpenDrain, Pull};
 use embassy_time::{Duration, Timer};
-use embedded_hal::digital::{OutputPin, PinState, StatefulOutputPin};
+use embedded_hal::digital::{OutputPin, PinState};
 use heapless::Vec;
 use hoshiguma_foundational_data::satori::{ObservedState, Status};
 use one_wire_bus::OneWire;
@@ -34,30 +34,30 @@ async fn main(_spawner: Spawner) {
     // TODO: serial
 
     // TODO
-    // let mut machine_enable = pins.gpio10.into_push_pull_output_in_state(PinState::Low);
+    let mut machine_enable = Output::new(p.PIN_10, Level::Low);
 
-    // let mut coolant_level_sensor = {
-    //     // TODO
-    //     let top = pins.gpio11.into_pull_up_input();
-    //     // TODO
-    //     let bottom = pins.gpio12.into_pull_up_input();
-    //     sensors::CoolantLevelSensor::new(top, bottom)
-    // };
+    let mut coolant_level_sensor = {
+        // TODO
+        let top = Input::new(p.PIN_11, Pull::Up);
+        // TODO
+        let bottom = Input::new(p.PIN_12, Pull::Up);
+        sensors::CoolantLevelSensor::new(top, bottom)
+    };
 
-    // let mut onewire_bus = {
-    //     let pin = pins.gpio13.into_push_pull_output();
-    //     OneWire::new(pin).unwrap()
-    // };
+    let mut onewire_bus = {
+        let pin = OutputOpenDrain::new(p.PIN_13, Level::Low);
+        OneWire::new(pin).unwrap()
+    };
 
-    // for device_address in onewire_bus.devices(false, &mut delay) {
-    //     let device_address = device_address.unwrap();
-    //     info!("Found one wire device at address: {:?}", device_address.0);
-    // }
+    for device_address in onewire_bus.devices(false, &mut embassy_time::Delay) {
+        let device_address = device_address.unwrap();
+        info!("Found one wire device at address: {:?}", device_address.0);
+    }
 
-    // let mut temperature_sensors = crate::sensors::TemperatureSensors::new(onewire_bus, delay);
+    let mut temperature_sensors = crate::sensors::TemperatureSensors::new(onewire_bus, embassy_time::Delay);
 
-    // let mut iteration_id: u32 = 0;
-    // let mut last_potential_problems = Vec::new();
+    let mut iteration_id: u32 = 0;
+    let mut last_potential_problems = Vec::new();
 
     loop {
         // TODO
@@ -69,40 +69,40 @@ async fn main(_spawner: Spawner) {
         // TODO
         let coolant_flow_rate = 0.0;
 
-        // let temperature = temperature_sensors.read();
-        // let coolant_level = coolant_level_sensor.read();
+        let temperature = temperature_sensors.read();
+        let coolant_level = coolant_level_sensor.read();
 
-        // let observed = ObservedState {
-        //     temperature,
-        //     coolant_level,
-        //     coolant_pump_rpm,
-        //     coolant_flow_rate,
-        // };
+        let observed = ObservedState {
+            temperature,
+            coolant_level,
+            coolant_pump_rpm,
+            coolant_flow_rate,
+        };
 
-        // let mut potential_problems = Vec::new();
-        // let mut problems = Vec::new();
+        let mut potential_problems = Vec::new();
+        let mut problems = Vec::new();
 
-        // crate::rules::evaluate(RuleEvaluationContext {
-        //     state: &observed,
-        //     now,
-        //     last_potential_problems: &last_potential_problems,
-        //     potential_problems: &mut potential_problems,
-        //     problems: &mut problems,
-        // });
+        crate::rules::evaluate(RuleEvaluationContext {
+            state: &observed,
+            now,
+            last_potential_problems: &last_potential_problems,
+            potential_problems: &mut potential_problems,
+            problems: &mut problems,
+        });
 
-        // let status = Status {
-        //     observed,
-        //     potential_problems,
-        //     problems,
-        // };
+        let status = Status {
+            observed,
+            potential_problems,
+            problems,
+        };
 
-        // // Allow the machine to operate when there are no problems, otherwise disable it
-        // machine_enable
-        //     .set_state(match status.problems.is_empty() {
-        //         true => PinState::High,
-        //         false => PinState::Low,
-        //     })
-        //     .unwrap();
+        // Allow the machine to operate when there are no problems, otherwise disable it
+        machine_enable
+            .set_state(match status.problems.is_empty() {
+                true => PinState::High,
+                false => PinState::Low,
+            })
+            .unwrap();
 
         // TODO
         // telemetry::status(&mut serial, now, iteration_id, &status);
@@ -111,8 +111,8 @@ async fn main(_spawner: Spawner) {
         Timer::after(Duration::from_millis(250)).await;
         info!("doot");
 
-        // iteration_id = iteration_id.wrapping_add(1);
-        // last_potential_problems = status.potential_problems;
+        iteration_id = iteration_id.wrapping_add(1);
+        last_potential_problems = status.potential_problems;
     }
 }
 
