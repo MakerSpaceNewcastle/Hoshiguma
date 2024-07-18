@@ -1,40 +1,31 @@
 #![no_std]
 #![no_main]
 
-mod sensors;
 mod rules;
+mod sensors;
 
-use bsp::{
-    entry,
-    hal::{
-        clocks::{init_clocks_and_plls, Clock},
-        pac,
-        sio::Sio,
-        watchdog::Watchdog,
-    },
-};
+use crate::rules::RuleEvaluationContext;
 use cortex_m::delay::Delay;
 use defmt::info;
 use defmt_rtt as _;
+use embassy_executor::Spawner;
+use embassy_rp as _;
+use embassy_time::{Duration, Timer};
 use embedded_hal::digital::{OutputPin, PinState, StatefulOutputPin};
 use heapless::Vec;
 use hoshiguma_foundational_data::satori::{ObservedState, Status};
 use one_wire_bus::OneWire;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use rp_pico as bsp;
-
-use crate::rules::RuleEvaluationContext;
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
-    loop {
-    }
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
 }
 
-#[entry]
-fn main() -> ! {
+#[embassy_executor::main]
+async fn main(_spawner: Spawner) {
     info!("Program start");
     let mut pac = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
@@ -79,7 +70,7 @@ fn main() -> ! {
     };
 
     let mut onewire_bus = {
-        let pin = pins.gpio13.into_readable_output();
+        let pin = pins.gpio13.into_push_pull_output();
         OneWire::new(pin).unwrap()
     };
 
@@ -89,7 +80,7 @@ fn main() -> ! {
     }
 
     let mut temperature_sensors = crate::sensors::TemperatureSensors::new(onewire_bus, delay);
-    
+
     let mut iteration_id: u32 = 0;
     let mut last_potential_problems = Vec::new();
 
@@ -142,7 +133,7 @@ fn main() -> ! {
         // telemetry::status(&mut serial, now, iteration_id, &status);
 
         led.toggle().unwrap();
-        // hal::Delay::new().delay_ms(250u16);
+        Timer::after(Duration::from_millis(250)).await;
 
         iteration_id = iteration_id.wrapping_add(1);
         last_potential_problems = status.potential_problems;
