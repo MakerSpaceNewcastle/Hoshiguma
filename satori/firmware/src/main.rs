@@ -9,7 +9,7 @@ use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, OutputOpenDrain, Pull};
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Instant, Ticker, Timer};
 use embedded_hal::digital::{OutputPin, PinState};
 use heapless::Vec;
 use hoshiguma_foundational_data::satori::{ObservedState, Status};
@@ -59,9 +59,12 @@ async fn main(_spawner: Spawner) {
     let mut iteration_id: u32 = 0;
     let mut last_potential_problems = Vec::new();
 
+    let mut ticky = Ticker::every(Duration::from_hz(4));
+
     loop {
-        // TODO
-        let now = 0;
+        ticky.next().await;
+        let now = Instant::now().as_millis() as u32;
+        info!("{} ms - {}", now, iteration_id);
 
         // TODO
         let coolant_pump_rpm = 0.0;
@@ -69,8 +72,13 @@ async fn main(_spawner: Spawner) {
         // TODO
         let coolant_flow_rate = 0.0;
 
+        info!("tempread start");
         let temperature = temperature_sensors.read();
+        info!("tempread done");
+        // let temperature = Default::default();
         let coolant_level = coolant_level_sensor.read();
+
+        info!("{}C", temperature.electronics_bay);
 
         let observed = ObservedState {
             temperature,
@@ -108,8 +116,6 @@ async fn main(_spawner: Spawner) {
         // telemetry::status(&mut serial, now, iteration_id, &status);
 
         led.toggle();
-        Timer::after(Duration::from_millis(250)).await;
-        info!("doot {}", iteration_id);
 
         iteration_id = iteration_id.wrapping_add(1);
         last_potential_problems = status.potential_problems;
