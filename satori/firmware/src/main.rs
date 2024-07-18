@@ -109,7 +109,7 @@ async fn main(_spawner: Spawner) {
 
         led.toggle();
         Timer::after(Duration::from_millis(250)).await;
-        info!("doot");
+        info!("doot {}", iteration_id);
 
         iteration_id = iteration_id.wrapping_add(1);
         last_potential_problems = status.potential_problems;
