@@ -7,7 +7,6 @@ pub type Vec<T, const N: usize> = heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Payload {
-    DiscoveredOneWireDevice { address: u64 },
     StateChanged(Status),
 }
 

@@ -9,10 +9,10 @@ use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, OutputOpenDrain, Pull};
-use embassy_time::{Duration, Instant, Ticker, Timer};
+use embassy_time::{Duration, Instant, Ticker};
 use embedded_hal::digital::{OutputPin, PinState};
 use heapless::Vec;
-use hoshiguma_foundational_data::satori::{ObservedState, Status};
+use hoshiguma_foundational_data::satori::{ObservedState, Status, Temperatures};
 use one_wire_bus::OneWire;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -51,10 +51,11 @@ async fn main(_spawner: Spawner) {
 
     for device_address in onewire_bus.devices(false, &mut embassy_time::Delay) {
         let device_address = device_address.unwrap();
-        info!("Found one wire device at address: {:?}", device_address.0);
+        info!("Found one wire device at address: {}", device_address.0);
     }
 
-    let mut temperature_sensors = crate::sensors::TemperatureSensors::new(onewire_bus, embassy_time::Delay);
+    let mut temperature_sensors =
+        crate::sensors::TemperatureSensors::new(onewire_bus, embassy_time::Delay);
 
     let mut iteration_id: u32 = 0;
     let mut last_potential_problems = Vec::new();
@@ -72,13 +73,24 @@ async fn main(_spawner: Spawner) {
         // TODO
         let coolant_flow_rate = 0.0;
 
-        info!("tempread start");
-        let temperature = temperature_sensors.read();
-        info!("tempread done");
-        // let temperature = Default::default();
+        // TODO
+        // let temperature = temperature_sensors.read();
+        let temperature = Temperatures::default();
         let coolant_level = coolant_level_sensor.read();
 
-        info!("{}C", temperature.electronics_bay);
+        // TODO
+        info!("{} C", temperature.electronics_bay);
+        info!(
+            "coolant level: {}",
+            match coolant_level {
+                Some(ref level) => match level {
+                    hoshiguma_foundational_data::satori::CoolantLevel::Full => "full",
+                    hoshiguma_foundational_data::satori::CoolantLevel::Low => "low",
+                    hoshiguma_foundational_data::satori::CoolantLevel::CriticallyLow => "empty",
+                },
+                None => "unknown",
+            }
+        );
 
         let observed = ObservedState {
             temperature,
