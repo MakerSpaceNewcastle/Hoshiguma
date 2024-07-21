@@ -33,6 +33,15 @@ hoshiguma-foundational-data = { path = "../../common/foundational-data", default
 one-wire-bus = "0.1.1"
 postcard = { version = "1.0.8", optional = true }
 
+[patch.crates-io]
+embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-executor     = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-rp           = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-sync         = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-time         = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-usb          = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-usb-driver   = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+
 # cargo build/run
 [profile.dev]
 codegen-units = 1

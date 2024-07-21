@@ -20,6 +20,7 @@ use panic_probe as _;
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
+    // TODO
     loop {}
 }
 
@@ -40,7 +41,7 @@ async fn main(_spawner: Spawner) {
         // TODO
         let top = Input::new(p.PIN_12, Pull::Up);
         // TODO
-        let bottom = Input::new(p.PIN_13, Pull::Up);
+        let bottom = Input::new(p.PIN_14, Pull::Up);
         sensors::CoolantLevelSensor::new(top, bottom)
     };
 
@@ -57,6 +58,24 @@ async fn main(_spawner: Spawner) {
     let mut temperature_sensors =
         crate::sensors::TemperatureSensors::new(onewire_bus, embassy_time::Delay);
 
+    let cfg = embassy_rp::pwm::Config::default();
+    let fc_p13 = embassy_rp::pwm::Pwm::new_input(
+        p.PWM_SLICE6,
+        p.PIN_13,
+        Pull::Up,
+        embassy_rp::pwm::InputMode::FallingEdge,
+        cfg,
+    );
+
+    let cfg = embassy_rp::pwm::Config::default();
+    let fc_p15 = embassy_rp::pwm::Pwm::new_input(
+        p.PWM_SLICE7,
+        p.PIN_15,
+        Pull::Up,
+        embassy_rp::pwm::InputMode::FallingEdge,
+        cfg,
+    );
+
     let mut iteration_id: u32 = 0;
     let mut last_potential_problems = Vec::new();
 
@@ -68,9 +87,15 @@ async fn main(_spawner: Spawner) {
         info!("{} ms - {}", now, iteration_id);
 
         // TODO
+        let count = fc_p13.counter();
+        info!("fc p13 count: {}", count);
+        fc_p13.set_counter(0);
         let coolant_pump_rpm = 0.0;
 
         // TODO
+        let count = fc_p15.counter();
+        info!("fc p15 count: {}", count);
+        fc_p15.set_counter(0);
         let coolant_flow_rate = 0.0;
 
         // TODO
