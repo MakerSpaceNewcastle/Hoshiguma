@@ -34,18 +34,18 @@ async fn main(_spawner: Spawner) {
     // TODO: serial
 
     // TODO
-    let mut machine_enable = Output::new(p.PIN_10, Level::Low);
+    let mut machine_enable = Output::new(p.PIN_9, Level::Low);
 
     let mut coolant_level_sensor = {
         // TODO
-        let top = Input::new(p.PIN_11, Pull::Up);
+        let top = Input::new(p.PIN_12, Pull::Up);
         // TODO
-        let bottom = Input::new(p.PIN_12, Pull::Up);
+        let bottom = Input::new(p.PIN_13, Pull::Up);
         sensors::CoolantLevelSensor::new(top, bottom)
     };
 
     let mut onewire_bus = {
-        let pin = OutputOpenDrain::new(p.PIN_13, Level::Low);
+        let pin = OutputOpenDrain::new(p.PIN_10, Level::Low);
         OneWire::new(pin).unwrap()
     };
 
