@@ -125,7 +125,6 @@ async fn main(_spawner: Spawner) {
                 None => "unknown",
             }
         );
-        panic!("fuck");
 
         let observed = ObservedState {
             temperature,
