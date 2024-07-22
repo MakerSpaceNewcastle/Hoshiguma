@@ -43,13 +43,10 @@ async fn main(_spawner: Spawner) {
 
     let mut led = Output::new(p.PIN_25, Level::Low);
 
-    // TODO
     let mut machine_enable = Output::new(p.PIN_9, Level::Low);
 
     let mut coolant_level_sensor = {
-        // TODO
         let top = Input::new(p.PIN_12, Pull::Up);
-        // TODO
         let bottom = Input::new(p.PIN_14, Pull::Up);
         sensors::CoolantLevelSensor::new(top, bottom)
     };
@@ -67,33 +64,31 @@ async fn main(_spawner: Spawner) {
     let mut temperature_sensors =
         crate::sensors::TemperatureSensors::new(onewire_bus, embassy_time::Delay);
 
-    let cfg = embassy_rp::pwm::Config::default();
     let fc_p13 = embassy_rp::pwm::Pwm::new_input(
         p.PWM_SLICE6,
         p.PIN_13,
         Pull::Up,
         embassy_rp::pwm::InputMode::FallingEdge,
-        cfg,
+        embassy_rp::pwm::Config::default(),
     );
 
-    let cfg = embassy_rp::pwm::Config::default();
     let fc_p15 = embassy_rp::pwm::Pwm::new_input(
         p.PWM_SLICE7,
         p.PIN_15,
         Pull::Up,
         embassy_rp::pwm::InputMode::FallingEdge,
-        cfg,
+        embassy_rp::pwm::Config::default(),
     );
 
-    let mut iteration_id: u32 = 0;
     let mut last_potential_problems = Vec::new();
 
-    let mut tick = Ticker::every(Duration::from_hz(4));
+    let mut tick = Ticker::every(Duration::from_secs(2));
 
     loop {
         tick.next().await;
+
         let now = Instant::now().as_millis() as u32;
-        info!("{} ms - {}", now, iteration_id);
+        info!("{} ms", now);
 
         // TODO
         let count = fc_p13.counter();
@@ -112,6 +107,13 @@ async fn main(_spawner: Spawner) {
         let coolant_level = coolant_level_sensor.read();
 
         // TODO
+        info!("{} C", temperature.coolant_flow);
+        info!("{} C", temperature.coolant_return);
+        info!("{} C", temperature.coolant_resevoir_lower);
+        info!("{} C", temperature.coolant_resevoir_upper);
+        info!("{} C", temperature.coolant_pump);
+        info!("{} C", temperature.room_ambient);
+        info!("{} C", temperature.laser_bay);
         info!("{} C", temperature.electronics_bay);
         info!(
             "coolant level: {}",
@@ -159,7 +161,6 @@ async fn main(_spawner: Spawner) {
 
         led.toggle();
 
-        iteration_id = iteration_id.wrapping_add(1);
         last_potential_problems = status.potential_problems;
     }
 }
