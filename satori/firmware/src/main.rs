@@ -11,7 +11,6 @@ use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, OutputOpenDrain, Pull};
 use embassy_time::{Duration, Instant, Ticker};
 use embedded_hal::digital::{OutputPin, PinState};
-use embedded_hal::delay::DelayNs;
 use heapless::Vec;
 use hoshiguma_foundational_data::satori::{ObservedState, Status, Temperatures};
 use one_wire_bus::OneWire;
@@ -21,7 +20,10 @@ use panic_probe as _;
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    let p = embassy_rp::init(Default::default());
+    use embassy_rp::Peripherals;
+    use embedded_hal::delay::DelayNs;
+
+    let p = unsafe { Peripherals::steal() };
 
     // Disable machine
     let mut machine_enable = Output::new(p.PIN_9, Level::Low);
@@ -37,13 +39,9 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
-    info!("Program start");
-
     let p = embassy_rp::init(Default::default());
 
     let mut led = Output::new(p.PIN_25, Level::Low);
-
-    // TODO: serial
 
     // TODO
     let mut machine_enable = Output::new(p.PIN_9, Level::Low);
@@ -127,6 +125,7 @@ async fn main(_spawner: Spawner) {
                 None => "unknown",
             }
         );
+        panic!("fuck");
 
         let observed = ObservedState {
             temperature,
