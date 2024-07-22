@@ -11,6 +11,7 @@ use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, OutputOpenDrain, Pull};
 use embassy_time::{Duration, Instant, Ticker};
 use embedded_hal::digital::{OutputPin, PinState};
+use embedded_hal::delay::DelayNs;
 use heapless::Vec;
 use hoshiguma_foundational_data::satori::{ObservedState, Status, Temperatures};
 use one_wire_bus::OneWire;
@@ -20,8 +21,18 @@ use panic_probe as _;
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    // TODO
-    loop {}
+    let p = embassy_rp::init(Default::default());
+
+    // Disable machine
+    let mut machine_enable = Output::new(p.PIN_9, Level::Low);
+    machine_enable.set_low();
+
+    // Blink the on board LED pretty fast
+    let mut led = Output::new(p.PIN_25, Level::Low);
+    loop {
+        led.toggle();
+        embassy_time::Delay.delay_ms(50);
+    }
 }
 
 #[embassy_executor::main]
@@ -149,36 +160,9 @@ async fn main(_spawner: Spawner) {
             })
             .unwrap();
 
-        // TODO
-        // telemetry::status(&mut serial, now, iteration_id, &status);
-
         led.toggle();
 
         iteration_id = iteration_id.wrapping_add(1);
         last_potential_problems = status.potential_problems;
     }
 }
-
-// #[panic_handler]
-// fn panic(info: &core::panic::PanicInfo) -> ! {
-//     avr_device::interrupt::disable();
-
-//     let dp = unsafe { atmega_hal::Peripherals::steal() };
-//     let pins = hal::Pins::with_mcu_pins(atmega_hal::pins!(dp));
-
-//     // Disable machine
-//     let mut machine_enable = pins.machine_enable.into_output();
-//     machine_enable.set_low();
-
-//     // Report panic over serial
-//     let mut serial = serial!(dp, pins, 57600);
-//     serial.write_byte(0);
-//     telemetry::panic(&mut serial, info);
-
-//     // Blink LED rapidly
-//     let mut led = pins.led.into_output();
-//     loop {
-//         led.toggle();
-//         hal::Delay::new().delay_ms(50u16);
-//     }
-// }
