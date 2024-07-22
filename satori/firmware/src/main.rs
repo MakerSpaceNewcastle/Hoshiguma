@@ -12,7 +12,7 @@ use embassy_rp::gpio::{Input, Level, Output, OutputOpenDrain, Pull};
 use embassy_time::{Duration, Instant, Ticker};
 use embedded_hal::digital::{OutputPin, PinState};
 use heapless::Vec;
-use hoshiguma_foundational_data::satori::{ObservedState, Status, Temperatures};
+use hoshiguma_foundational_data::satori::{ObservedState, Status};
 use one_wire_bus::OneWire;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
