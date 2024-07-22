@@ -88,10 +88,10 @@ async fn main(_spawner: Spawner) {
     let mut iteration_id: u32 = 0;
     let mut last_potential_problems = Vec::new();
 
-    let mut ticky = Ticker::every(Duration::from_hz(4));
+    let mut tick = Ticker::every(Duration::from_hz(4));
 
     loop {
-        ticky.next().await;
+        tick.next().await;
         let now = Instant::now().as_millis() as u32;
         info!("{} ms - {}", now, iteration_id);
 
@@ -107,9 +107,8 @@ async fn main(_spawner: Spawner) {
         fc_p15.set_counter(0);
         let coolant_flow_rate = 0.0;
 
-        // TODO
-        // let temperature = temperature_sensors.read();
-        let temperature = Temperatures::default();
+        let temperature = temperature_sensors.read();
+
         let coolant_level = coolant_level_sensor.read();
 
         // TODO
