@@ -1,25 +1,7 @@
 pub(crate) mod gpio_debug;
 pub(crate) mod gpio_isolated;
 
-use serde::Serialize;
-use ufmt::derive::uDebug;
-
-#[derive(Clone, uDebug, Serialize, PartialEq)]
-pub(crate) enum ExtractionMode {
-    Normal,
-    Run,
-}
-
-#[derive(Clone, uDebug, Serialize, PartialEq)]
-pub(crate) struct Inputs {
-    pub doors_closed: bool,
-    pub external_enable: bool,
-
-    pub machine_running: bool,
-    pub air_pump_demand: bool,
-
-    pub extraction_mode: ExtractionMode,
-}
+use hoshiguma_foundational_data::koishi::Inputs;
 
 pub(crate) trait ReadInputs {
     fn read(&self) -> Inputs;

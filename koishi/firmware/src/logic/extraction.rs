@@ -1,30 +1,30 @@
-use crate::{
-    hal::TimeMillis,
-    io::inputs::{ExtractionMode, Inputs},
-    logic::run_on_delay::RunOnDelay,
+use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
+use hoshiguma_foundational_data::koishi::{
+    run_on_delay::RunOnDelay, ExtractionMode, ExtractionStatus, Inputs,
 };
-use serde::Serialize;
-use ufmt::derive::uDebug;
 
+/// Time in milliseconds that the extractor will continue to run after demand has ceased.
 const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
     500
 } else {
-    // Time in milliseconds that the extractor will continue to run after demand has ceased.
     45_000
 };
 
-#[derive(uDebug, Clone, PartialEq, Serialize)]
-pub(crate) struct ExtractionStatus {
-    state: RunOnDelay<TimeMillis>,
-    r#override: bool,
+pub(crate) trait ExtractionStatusExt {
+    fn default() -> Self;
+    fn active(&self) -> bool;
 }
 
-impl Default for ExtractionStatus {
+impl ExtractionStatusExt for ExtractionStatus {
     fn default() -> Self {
         Self {
             state: RunOnDelay::new(EXTRACTOR_RUN_ON_DELAY),
             r#override: false,
         }
+    }
+
+    fn active(&self) -> bool {
+        self.state.should_run() || self.r#override
     }
 }
 
@@ -36,11 +36,5 @@ impl super::StatusUpdate for ExtractionStatus {
         new_state.r#override = current.extraction_mode == ExtractionMode::Run;
 
         new_state
-    }
-}
-
-impl ExtractionStatus {
-    pub fn active(&self) -> bool {
-        self.state.should_run() || self.r#override
     }
 }

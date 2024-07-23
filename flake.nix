@@ -1,16 +1,19 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs";
   };
 
   outputs = {
     self,
     nixpkgs,
+    nixpkgs-unstable,
     flake-utils,
   }:
     flake-utils.lib.eachDefaultSystem (
       system: let
         pkgs = import nixpkgs {inherit system;};
+        pkgs-unstable = import nixpkgs-unstable {inherit system;};
       in {
         devShell = pkgs.mkShell {
           packages = with pkgs; [
@@ -21,7 +24,7 @@
             rustfmt
 
             # Common
-            rustup
+            pkgs-unstable.rustup
             pkg-config
 
             # koishi firmware
@@ -34,7 +37,11 @@
             libelf
             zlib
 
-            # koishi telemetry receiver demo
+            # satori firmware
+            flip-link
+            probe-rs
+
+            # telemetry receiver
             systemd
           ];
 

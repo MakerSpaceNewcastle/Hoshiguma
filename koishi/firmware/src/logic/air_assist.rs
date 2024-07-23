@@ -1,19 +1,22 @@
-use crate::{hal::TimeMillis, io::inputs::Inputs, logic::run_on_delay::RunOnDelay};
-use serde::Serialize;
-use ufmt::derive::uDebug;
+use crate::{hal::TimeMillis, logic::run_on_delay::RunOnDelayExt};
+use hoshiguma_foundational_data::koishi::{run_on_delay::RunOnDelay, AirAssistStatus, Inputs};
 
 const AIR_ASSIST_RUN_ON_DELAY: TimeMillis = 500;
 
-#[derive(uDebug, Clone, PartialEq, Serialize)]
-pub(crate) struct AirAssistStatus {
-    state: RunOnDelay<TimeMillis>,
+pub(crate) trait AirAssistStatusExt {
+    fn default() -> Self;
+    fn active(&self) -> bool;
 }
 
-impl Default for AirAssistStatus {
+impl AirAssistStatusExt for AirAssistStatus {
     fn default() -> Self {
         Self {
             state: RunOnDelay::new(AIR_ASSIST_RUN_ON_DELAY),
         }
+    }
+
+    fn active(&self) -> bool {
+        self.state.should_run()
     }
 }
 
@@ -25,11 +28,5 @@ impl super::StatusUpdate for AirAssistStatus {
         new_state.state.update(time, demand);
 
         new_state
-    }
-}
-
-impl AirAssistStatus {
-    pub fn active(&self) -> bool {
-        self.state.should_run()
     }
 }

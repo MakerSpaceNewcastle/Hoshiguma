@@ -1,7 +1,9 @@
-use super::{ExtractionMode, Inputs, ReadInputs};
+use super::ReadInputs;
 use crate::unwrap_simple::UnwrapSimple;
 use embedded_hal::digital::v2::InputPin;
+use hoshiguma_foundational_data::koishi::{ExtractionMode, Inputs};
 
+#[allow(dead_code)]
 pub(crate) struct GpioIsolatedInputs<
     A: InputPin,
     B: InputPin,
