@@ -1,0 +1,95 @@
+[package]
+name = "satori"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2021"
+license = "MIT"
+
+[features]
+default = ["telemetry"]
+telemetry = ["dep:postcard"]
+panic-probe = ["dep:panic-probe"]
+
+[dependencies]
+embedded-hal = { package = "embedded-hal", version = "1.0.0" }
+embedded-hal-p2 = { package = "embedded-hal", version = "0.2.0" }
+
+defmt = "0.3"
+defmt-rtt = "0.4"
+panic-probe = { version = "0.3", features = ["print-defmt"], optional = true }
+
+embassy-executor = { version = "0.5.0", features = ["task-arena-size-1024", "arch-cortex-m", "executor-thread", "defmt", "integrated-timers", "executor-interrupt"] }
+embassy-time = "0.3.1"
+
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+embassy-rp = { version = "0.1.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+
+ds18b20 = "0.1.1"
+enumset = { version = "1.1.3", features = ["serde"] }
+git-version = "0.3.9"
+heapless = { version = "0.8.0", features = ["serde"] }
+hoshiguma-foundational-data = { path = "../../common/foundational-data", default-features = false }
+one-wire-bus = "0.1.1"
+postcard = { version = "1.0.8", optional = true }
+
+[patch.crates-io]
+embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-executor     = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-rp           = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-sync         = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-time         = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-usb          = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+embassy-usb-driver   = { git = "https://github.com/embassy-rs/embassy", rev = "2766993099b6604739ae25724aa2f6a9877d9902" }
+
+# cargo build/run
+[profile.dev]
+codegen-units = 1
+debug = 2
+debug-assertions = true
+incremental = false
+opt-level = 3
+overflow-checks = true
+
+# cargo build/run --release
+[profile.release]
+codegen-units = 1
+debug = 2
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 3
+overflow-checks = false
+
+# do not optimize proc-macro crates = faster builds from scratch
+[profile.dev.build-override]
+codegen-units = 8
+debug = false
+debug-assertions = false
+opt-level = 0
+overflow-checks = false
+
+[profile.release.build-override]
+codegen-units = 8
+debug = false
+debug-assertions = false
+opt-level = 0
+overflow-checks = false
+
+# cargo test
+[profile.test]
+codegen-units = 1
+debug = 2
+debug-assertions = true
+incremental = false
+opt-level = 3
+overflow-checks = true
+
+# cargo test --release
+[profile.bench]
+codegen-units = 1
+debug = 2
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 3
