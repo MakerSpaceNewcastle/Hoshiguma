@@ -8,11 +8,11 @@
 ## Build
 
 ```shell
-cargo build --release -F telemetry
+cargo build --release
 ```
 
 ## Flash
 
 ```shell
-cargo run --release -F telemetry -- -P /dev/ttyXXX
+cargo run --release -- -P /dev/ttyXXX
 ```
