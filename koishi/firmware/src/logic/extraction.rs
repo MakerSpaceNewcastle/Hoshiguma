@@ -4,11 +4,7 @@ use hoshiguma_foundational_data::koishi::{
 };
 
 /// Time in milliseconds that the extractor will continue to run after demand has ceased.
-const EXTRACTOR_RUN_ON_DELAY: TimeMillis = if cfg!(feature = "simulator") {
-    500
-} else {
-    45_000
-};
+const EXTRACTOR_RUN_ON_DELAY: TimeMillis = 45_000;
 
 pub(crate) trait ExtractionStatusExt {
     fn default() -> Self;

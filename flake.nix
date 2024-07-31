@@ -32,11 +32,6 @@
             ravedude
             pkgsCross.avr.buildPackages.gcc
 
-            # koishi firmware in-simulator tests
-            clang
-            libelf
-            zlib
-
             # satori firmware
             flip-link
             probe-rs
