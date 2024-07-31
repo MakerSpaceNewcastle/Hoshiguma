@@ -1,7 +1,0 @@
-[package]
-name = "koishi-tests"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-avr-tester = "0.2"

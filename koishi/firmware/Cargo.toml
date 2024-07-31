@@ -9,7 +9,6 @@ license = "MIT OR Apache-2.0"
 default = ["telemetry"]
 telemetry = ["dep:postcard"]
 devkit = []
-simulator = []
 
 [[bin]]
 name = "koishi"
