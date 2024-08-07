@@ -107,14 +107,14 @@ async fn main(_spawner: Spawner) {
         let coolant_level = coolant_level_sensor.read();
 
         // TODO
-        info!("{} C", temperature.coolant_flow);
-        info!("{} C", temperature.coolant_return);
-        info!("{} C", temperature.coolant_resevoir_lower);
-        info!("{} C", temperature.coolant_resevoir_upper);
-        info!("{} C", temperature.coolant_pump);
-        info!("{} C", temperature.room_ambient);
-        info!("{} C", temperature.laser_bay);
-        info!("{} C", temperature.electronics_bay);
+        info!("cool flow : {} C", temperature.coolant_flow);
+        info!("cool ret  : {} C", temperature.coolant_return);
+        info!("res lower : {} C", temperature.coolant_resevoir_lower);
+        info!("res upper : {} C", temperature.coolant_resevoir_upper);
+        info!("cool pump : {} C", temperature.coolant_pump);
+        info!("room amb  : {} C", temperature.room_ambient);
+        info!("laser amb : {} C", temperature.laser_bay);
+        info!("elec amb  : {} C", temperature.electronics_bay);
         info!(
             "coolant level: {}",
             match coolant_level {
