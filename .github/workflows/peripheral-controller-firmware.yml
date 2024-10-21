@@ -7,11 +7,11 @@ on:
       - main
     paths:
       - 'flake.*'
-      - 'peripheral_controller/firmware/**'
+      - 'peripheral-controller/firmware/**'
   pull_request:
     paths:
       - 'flake.*'
-      - 'peripheral_controller/firmware/**'
+      - 'peripheral-controller/firmware/**'
 
 jobs:
   quality:
@@ -20,7 +20,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./peripheral_controller/firmware
+        working-directory: ./peripheral-controller/firmware
 
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./peripheral_controller/firmware
+        working-directory: ./peripheral-controller/firmware
 
     steps:
       - uses: actions/checkout@v4
