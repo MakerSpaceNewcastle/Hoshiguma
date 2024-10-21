@@ -82,22 +82,22 @@ async fn main(_spawner: Spawner) {
         move || {
             let executor1 = EXECUTOR1.init(Executor::new());
             executor1.run(|spawner| {
-                unwrap!(spawner.spawn(watchdog_feed(watchdog)));
+                unwrap!(spawner.spawn(watchdog_feed(watchdog, led)));
             });
         },
     );
 
     let executor0 = EXECUTOR0.init(Executor::new());
     executor0.run(|spawner| {
-        unwrap!(spawner.spawn(blink_led(led)));
         unwrap!(spawner.spawn(read_temperatures(onewire_bus)));
     });
 }
 
 #[embassy_executor::task]
-async fn watchdog_feed(mut watchdog: Watchdog) {
+async fn watchdog_feed(mut watchdog: Watchdog, mut led: Output<'static>) {
     loop {
         watchdog.feed();
+        led.toggle();
         Timer::after_millis(500).await;
     }
 }
@@ -130,14 +130,6 @@ async fn watch_input(input: Input<'static>, num: usize) {
         if let Some(level) = detector.update(input.get_level()) {
             // TODO
         }
-    }
-}
-
-#[embassy_executor::task]
-async fn blink_led(mut led: Output<'static>) {
-    loop {
-        led.toggle();
-        Timer::after_millis(500).await;
     }
 }
 
