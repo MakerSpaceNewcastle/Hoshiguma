@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+mod status_lamp;
+
 use defmt::{debug, info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::{Executor, Spawner};
@@ -35,51 +37,8 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
-static STATUS_LAMP: Signal<CriticalSectionRawMutex, StatusLamp> = Signal::new();
+static STATUS_LAMP: Signal<CriticalSectionRawMutex, status_lamp::StatusLamp> = Signal::new();
 static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
-
-struct StatusLamp {
-    red: Lamp,
-    amber: Lamp,
-    green: Lamp,
-}
-
-impl StatusLamp {
-    fn r#static(red: bool, amber: bool, green: bool) -> Self {
-        Self {
-            red: red.into(),
-            amber: amber.into(),
-            green: green.into(),
-        }
-    }
-
-    fn red() -> Self {
-        Self::r#static(true, false, false)
-    }
-
-    fn amber() -> Self {
-        Self::r#static(false, true, false)
-    }
-
-    fn green() -> Self {
-        Self::r#static(false, false, true)
-    }
-}
-
-enum Lamp {
-    On,
-    Off,
-}
-
-impl From<bool> for Lamp {
-    fn from(on: bool) -> Self {
-        if on {
-            Lamp::On
-        } else {
-            Lamp::Off
-        }
-    }
-}
 
 enum Event {
     InputChanged,
@@ -197,10 +156,10 @@ async fn status_lamp_task(
     mut relay_amber: Output<'static>,
     mut relay_green: Output<'static>,
 ) {
-    fn level_from_lamp_setting(l: Lamp) -> Level {
+    fn level_from_lamp_setting(l: status_lamp::Lamp) -> Level {
         match l {
-            Lamp::On => Level::High,
-            Lamp::Off => Level::Low,
+            status_lamp::Lamp::On => Level::High,
+            status_lamp::Lamp::Off => Level::Low,
         }
     }
 

@@ -30,6 +30,8 @@ static_cell = "2.1.0"
 one-wire-bus = "0.1.1"
 ds18b20 = "0.1.1"
 
+hoshiguma-telemetry-protocol = { path = "../telemetry-protocol/", default-features = false }
+
 [profile.release]
 debug = 2
 lto = true

@@ -9,7 +9,7 @@ license = "MIT"
 enumset = { version = "1.1.5", features = ["serde"] }
 heapless = { version = "0.8.0", features = ["serde"] }
 postcard = "1.0.10"
-serde = "1.0.210"
+serde = { version = "1.0.210", default-features = false }
 
 [features]
 default = ["std"]
