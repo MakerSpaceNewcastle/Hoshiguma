@@ -1,0 +1,52 @@
+[package]
+name = "hoshiguma-periperal-controller"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2021"
+license = "MIT"
+
+[features]
+default = ["telemetry", "git-version"]
+panic-probe = ["dep:panic-probe"]
+telemetry = ["dep:hoshiguma-telemetry-protocol", "dep:postcard"]
+git-version = ["dep:git-version"]
+
+[dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.3"
+embassy-rp = { version = "0.2.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+
+embassy-executor = { version = "0.6.1", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
+embassy-time = { version = "0.3.2", features = ["defmt"] }
+
+embedded-hal = { package = "embedded-hal", version = "1.0.0" }
+embedded-hal-p2 = { package = "embedded-hal", version = "0.2.0" }
+
+defmt = "0.3.8"
+defmt-rtt = "0.4.1"
+panic-probe = { version = "0.3.2", features = ["print-defmt"], optional = true }
+
+embassy-sync = { git = "https://github.com/embassy-rs/embassy/" }
+embassy-futures = "0.1.1"
+embassy-time-queue-driver = "0.1.0"
+portable-atomic = { version = "1.9.0", features = ["critical-section"] }
+static_cell = "2.1.0"
+
+heapless = { version = "0.8.0", features = ["defmt-03"] }
+
+one-wire-bus = "0.1.1"
+ds18b20 = "0.1.1"
+
+hoshiguma-telemetry-protocol = { path = "../telemetry-protocol/", default-features = false, optional = true }
+git-version = { version = "0.3.5", optional = true }
+postcard  = { version = "1.0.10", optional = true }
+
+[profile.release]
+debug = 2
+lto = true
+opt-level = 'z'
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = "z"
