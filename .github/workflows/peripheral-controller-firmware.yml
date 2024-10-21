@@ -1,0 +1,57 @@
+---
+name: Peripheral Controller Firmware
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'flake.*'
+      - 'peripheral-controller/telemetry-protocol/**'
+      - 'peripheral-controller/firmware/**'
+  pull_request:
+    paths:
+      - 'flake.*'
+      - 'peripheral-controller/telemetry-protocol/**'
+      - 'peripheral-controller/firmware/**'
+
+jobs:
+  # quality:
+  #   name: Code Quality
+  #   runs-on: ubuntu-latest
+
+  #   defaults:
+  #     run:
+  #       working-directory: ./peripheral-controller/firmware
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: cachix/install-nix-action@v30
+
+  #     - run: nix develop --command rustup target add thumbv6m-none-eabi
+
+  #     - name: Clippy
+  #       run: nix develop --command cargo clippy -- -Dwarnings
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # needs:
+    #   - quality
+
+    defaults:
+      run:
+        working-directory: ./peripheral-controller/firmware
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v30
+
+      - run: nix develop --command rustup target add thumbv6m-none-eabi
+
+      - name: Build
+        run: |
+          nix develop --command cargo build --release --no-default-features --features telemetry
+          nix develop --command cargo build --release --no-default-features --features telemetry --features panic-probe
+          nix develop --command cargo build --release --no-default-features
+          nix develop --command cargo build --release --no-default-features --features panic-probe
