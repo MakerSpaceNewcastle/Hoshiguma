@@ -9,7 +9,9 @@ use embassy_rp::{
     multicore::{spawn_core1, Stack},
     watchdog::Watchdog,
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, signal::Signal,
+};
 use embassy_time::{Duration, Ticker, Timer};
 use one_wire_bus::OneWire;
 #[cfg(feature = "panic-probe")]
@@ -33,7 +35,51 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
+static STATUS_LAMP: Signal<CriticalSectionRawMutex, StatusLamp> = Signal::new();
 static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
+
+struct StatusLamp {
+    red: Lamp,
+    amber: Lamp,
+    green: Lamp,
+}
+
+impl StatusLamp {
+    fn r#static(red: bool, amber: bool, green: bool) -> Self {
+        Self {
+            red: red.into(),
+            amber: amber.into(),
+            green: green.into(),
+        }
+    }
+
+    fn red() -> Self {
+        Self::r#static(true, false, false)
+    }
+
+    fn amber() -> Self {
+        Self::r#static(false, true, false)
+    }
+
+    fn green() -> Self {
+        Self::r#static(false, false, true)
+    }
+}
+
+enum Lamp {
+    On,
+    Off,
+}
+
+impl From<bool> for Lamp {
+    fn from(on: bool) -> Self {
+        if on {
+            Lamp::On
+        } else {
+            Lamp::Off
+        }
+    }
+}
 
 enum Event {
     InputChanged,
@@ -83,6 +129,12 @@ async fn main(_spawner: Spawner) {
             let executor1 = EXECUTOR1.init(Executor::new());
             executor1.run(|spawner| {
                 unwrap!(spawner.spawn(watchdog_feed(watchdog, led)));
+
+                unwrap!(spawner.spawn(status_lamp_task(
+                    relay0_lamp_red,
+                    relay1_lamp_amber,
+                    relay2_lamp_green
+                )));
             });
         },
     );
@@ -98,6 +150,12 @@ async fn watchdog_feed(mut watchdog: Watchdog, mut led: Output<'static>) {
     loop {
         watchdog.feed();
         led.toggle();
+        // STATUS_LAMP.signal(StatusLamp::r#static(true, true, false));
+        Timer::after_millis(500).await;
+
+        watchdog.feed();
+        led.toggle();
+        // STATUS_LAMP.signal(StatusLamp::amber());
         Timer::after_millis(500).await;
     }
 }
@@ -130,6 +188,28 @@ async fn watch_input(input: Input<'static>, num: usize) {
         if let Some(level) = detector.update(input.get_level()) {
             // TODO
         }
+    }
+}
+
+#[embassy_executor::task]
+async fn status_lamp_task(
+    mut relay_red: Output<'static>,
+    mut relay_amber: Output<'static>,
+    mut relay_green: Output<'static>,
+) {
+    fn level_from_lamp_setting(l: Lamp) -> Level {
+        match l {
+            Lamp::On => Level::High,
+            Lamp::Off => Level::Low,
+        }
+    }
+
+    loop {
+        let lamp = STATUS_LAMP.wait().await;
+
+        relay_red.set_level(level_from_lamp_setting(lamp.red));
+        relay_amber.set_level(level_from_lamp_setting(lamp.amber));
+        relay_green.set_level(level_from_lamp_setting(lamp.green));
     }
 }
 
