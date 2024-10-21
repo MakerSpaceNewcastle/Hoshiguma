@@ -1,8 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod koishi;
-pub mod satori;
-
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]

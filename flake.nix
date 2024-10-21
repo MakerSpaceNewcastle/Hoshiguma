@@ -23,6 +23,10 @@
             # Peripheral controller firmware
             rustup
             probe-rs
+
+            # Peripheral controller telemetry receiver
+            pkg-config
+            systemd
           ];
         };
       }
