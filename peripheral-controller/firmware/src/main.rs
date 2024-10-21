@@ -33,12 +33,7 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
-static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
-
-enum Event {
-    IsolatedInputChanged { num: usize, level: Level },
-    GeneralIoChanged { num: usize, level: Level },
-}
+// static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
@@ -47,30 +42,23 @@ async fn main(_spawner: Spawner) {
     let mut watchdog = Watchdog::new(p.WATCHDOG);
     watchdog.start(Duration::from_millis(550));
 
-    let io0 = Input::new(p.PIN_0, Pull::Up);
-    let io1 = Input::new(p.PIN_1, Pull::Up);
-    let io2 = Input::new(p.PIN_2, Pull::Up);
-    let io3 = Input::new(p.PIN_3, Pull::Up);
-    let io4 = Input::new(p.PIN_4, Pull::Up);
-    let io5 = Input::new(p.PIN_5, Pull::Up);
+    // let in0 = Input::new(p.PIN_15, Pull::Down);
+    // let in1 = Input::new(p.PIN_14, Pull::Down);
+    // let in2 = Input::new(p.PIN_13, Pull::Down);
+    let in3_run_detect = Input::new(p.PIN_12, Pull::Down);
+    let in4_air_assist_demand = Input::new(p.PIN_11, Pull::Down);
+    let in5_fume_extractor_mode = Input::new(p.PIN_10, Pull::Down);
+    let in6_chassis_intrusion = Input::new(p.PIN_9, Pull::Down);
+    let in7_24v_detect = Input::new(p.PIN_8, Pull::Down);
 
-    let in0 = Input::new(p.PIN_15, Pull::Down);
-    let in1 = Input::new(p.PIN_14, Pull::Down);
-    let in2 = Input::new(p.PIN_13, Pull::Down);
-    let in3 = Input::new(p.PIN_12, Pull::Down);
-    let in4 = Input::new(p.PIN_11, Pull::Down);
-    let in5 = Input::new(p.PIN_10, Pull::Down);
-    let in6 = Input::new(p.PIN_9, Pull::Down);
-    let in7 = Input::new(p.PIN_8, Pull::Down);
-
-    let relay0 = Output::new(p.PIN_7, Level::Low);
-    let relay1 = Output::new(p.PIN_6, Level::Low);
-    let relay2 = Output::new(p.PIN_16, Level::Low);
-    let relay3 = Output::new(p.PIN_17, Level::Low);
-    let relay4 = Output::new(p.PIN_18, Level::Low);
-    let relay5 = Output::new(p.PIN_19, Level::Low);
-    let relay6 = Output::new(p.PIN_20, Level::Low);
-    let relay7 = Output::new(p.PIN_21, Level::Low);
+    let relay0_lamp_red = Output::new(p.PIN_7, Level::Low);
+    let relay1_lamp_amber = Output::new(p.PIN_6, Level::Low);
+    let relay2_lamp_green = Output::new(p.PIN_16, Level::Low);
+    let relay3_control_interrupt = Output::new(p.PIN_17, Level::Low);
+    let relay4_laser_enable = Output::new(p.PIN_18, Level::Low);
+    // let relay5 = Output::new(p.PIN_19, Level::Low);
+    let relay6_air_assist_pump = Output::new(p.PIN_20, Level::Low);
+    let relay7_fume_extractor = Output::new(p.PIN_21, Level::Low);
 
     let led = Output::new(p.PIN_25, Level::Low);
 
@@ -91,26 +79,6 @@ async fn main(_spawner: Spawner) {
             let executor1 = EXECUTOR1.init(Executor::new());
             executor1.run(|spawner| {
                 unwrap!(spawner.spawn(watchdog_feed(watchdog)));
-
-                unwrap!(spawner.spawn(watch_input(in0, 0)));
-                unwrap!(spawner.spawn(watch_input(in1, 1)));
-                unwrap!(spawner.spawn(watch_input(in2, 2)));
-                unwrap!(spawner.spawn(watch_input(in3, 3)));
-                unwrap!(spawner.spawn(watch_input(in4, 4)));
-                unwrap!(spawner.spawn(watch_input(in5, 5)));
-                unwrap!(spawner.spawn(watch_input(in6, 6)));
-                unwrap!(spawner.spawn(watch_input(in7, 7)));
-
-                unwrap!(spawner.spawn(watch_io(io0, 0)));
-                unwrap!(spawner.spawn(watch_io(io1, 1)));
-                unwrap!(spawner.spawn(watch_io(io2, 2)));
-                unwrap!(spawner.spawn(watch_io(io3, 3)));
-                unwrap!(spawner.spawn(watch_io(io4, 4)));
-                unwrap!(spawner.spawn(watch_io(io5, 5)));
-
-                unwrap!(spawner.spawn(relay_output(
-                    relay0, relay1, relay2, relay3, relay4, relay5, relay6, relay7,
-                )));
             });
         },
     );
@@ -156,22 +124,7 @@ async fn watch_input(input: Input<'static>, num: usize) {
         Timer::after_micros(10).await;
 
         if let Some(level) = detector.update(input.get_level()) {
-            CHANNEL
-                .send(Event::IsolatedInputChanged { num, level })
-                .await;
-        }
-    }
-}
-
-#[embassy_executor::task(pool_size = 6)]
-async fn watch_io(input: Input<'static>, num: usize) {
-    let mut detector = PinChangeDetector::default();
-
-    loop {
-        Timer::after_micros(10).await;
-
-        if let Some(level) = detector.update(input.get_level()) {
-            CHANNEL.send(Event::GeneralIoChanged { num, level }).await;
+            // TODO
         }
     }
 }
@@ -184,52 +137,43 @@ async fn blink_led(mut led: Output<'static>) {
     }
 }
 
-fn level_as_str(level: Level) -> &'static str {
-    match level {
-        Level::Low => "low",
-        Level::High => "high",
-    }
-}
+// #[allow(clippy::too_many_arguments)]
+// #[embassy_executor::task]
+// async fn relay_output(
+//     mut relay0: Output<'static>,
+//     mut relay1: Output<'static>,
+//     mut relay2: Output<'static>,
+//     mut relay3: Output<'static>,
+//     mut relay4: Output<'static>,
+//     mut relay5: Output<'static>,
+//     mut relay6: Output<'static>,
+//     mut relay7: Output<'static>,
+// ) {
+//     loop {
+//         let event = CHANNEL.receive().await;
 
-#[allow(clippy::too_many_arguments)]
-#[embassy_executor::task]
-async fn relay_output(
-    mut relay0: Output<'static>,
-    mut relay1: Output<'static>,
-    mut relay2: Output<'static>,
-    mut relay3: Output<'static>,
-    mut relay4: Output<'static>,
-    mut relay5: Output<'static>,
-    mut relay6: Output<'static>,
-    mut relay7: Output<'static>,
-) {
-    loop {
-        let event = CHANNEL.receive().await;
+//         let (relay_idx, level) = match event {
+//             Event::IsolatedInputChanged { num, level } => {
+//                 (num, level)
+//             }
+//             Event::GeneralIoChanged { num, level } => {
+//                 (num, level)
+//             }
+//         };
 
-        let (relay_idx, level) = match event {
-            Event::IsolatedInputChanged { num, level } => {
-                info!("Input {} is {}", num, level_as_str(level),);
-                (num, level)
-            }
-            Event::GeneralIoChanged { num, level } => {
-                info!("IO {} is {}", num, level_as_str(level),);
-                (num, level)
-            }
-        };
-
-        match relay_idx {
-            0 => relay0.set_level(level),
-            1 => relay1.set_level(level),
-            2 => relay2.set_level(level),
-            3 => relay3.set_level(level),
-            4 => relay4.set_level(level),
-            5 => relay5.set_level(level),
-            6 => relay6.set_level(level),
-            7 => relay7.set_level(level),
-            _ => {}
-        };
-    }
-}
+//         match relay_idx {
+//             0 => relay0.set_level(level),
+//             1 => relay1.set_level(level),
+//             2 => relay2.set_level(level),
+//             3 => relay3.set_level(level),
+//             4 => relay4.set_level(level),
+//             5 => relay5.set_level(level),
+//             6 => relay6.set_level(level),
+//             7 => relay7.set_level(level),
+//             _ => {}
+//         };
+//     }
+// }
 
 #[embassy_executor::task]
 async fn read_temperatures(mut bus: OneWire<OutputOpenDrain<'static>>) {
