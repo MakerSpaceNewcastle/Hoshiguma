@@ -33,7 +33,11 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
-// static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
+static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
+
+enum Event {
+    InputChanged,
+}
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
