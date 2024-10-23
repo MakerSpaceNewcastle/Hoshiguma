@@ -60,17 +60,13 @@ async fn main(_spawner: Spawner) {
     let in6_chassis_intrusion = Input::new(p.PIN_9, Pull::Down);
     let in7_24v_detect = Input::new(p.PIN_8, Pull::Down);
 
-    let relay0_lamp_red = Output::new(p.PIN_7, Level::Low);
-    let relay1_lamp_amber = Output::new(p.PIN_6, Level::Low);
-    let relay2_lamp_green = Output::new(p.PIN_16, Level::Low);
     let relay3_control_interrupt = Output::new(p.PIN_17, Level::Low);
     let relay4_laser_enable = Output::new(p.PIN_18, Level::Low);
     // let relay5 = Output::new(p.PIN_19, Level::Low);
     let relay6_air_assist_pump = Output::new(p.PIN_20, Level::Low);
     let relay7_fume_extractor = Output::new(p.PIN_21, Level::Low);
 
-    let status_lamp =
-        status_lamp::StatusLamp::new(relay0_lamp_red, relay1_lamp_amber, relay2_lamp_green);
+    let status_lamp = new_status_lamp!(p);
 
     let led = Output::new(p.PIN_25, Level::Low);
 

@@ -1,5 +1,21 @@
 use embassy_rp::gpio::{Level, Output};
 
+#[macro_export]
+macro_rules! new_status_lamp {
+    ($p:expr) => {{
+        // Relay 0
+        let red = Output::new($p.PIN_7, Level::Low);
+
+        // Relay 1
+        let amber = Output::new($p.PIN_6, Level::Low);
+
+        // Relay 2
+        let green = Output::new($p.PIN_16, Level::Low);
+
+        crate::status_lamp::StatusLamp::new(red, amber, green)
+    }};
+}
+
 pub(crate) struct StatusLamp {
     red: Output<'static>,
     amber: Output<'static>,
