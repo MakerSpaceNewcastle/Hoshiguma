@@ -37,7 +37,7 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
-static STATUS_LAMP: Signal<CriticalSectionRawMutex, status_lamp::StatusLamp> = Signal::new();
+static STATUS_LAMP: Signal<CriticalSectionRawMutex, status_lamp::StatusLampSetting> = Signal::new();
 static CHANNEL: Channel<CriticalSectionRawMutex, Event, 1> = Channel::new();
 
 enum Event {
@@ -69,6 +69,9 @@ async fn main(_spawner: Spawner) {
     let relay6_air_assist_pump = Output::new(p.PIN_20, Level::Low);
     let relay7_fume_extractor = Output::new(p.PIN_21, Level::Low);
 
+    let status_lamp =
+        status_lamp::StatusLamp::new(relay0_lamp_red, relay1_lamp_amber, relay2_lamp_green);
+
     let led = Output::new(p.PIN_25, Level::Low);
 
     let mut onewire_bus = {
@@ -89,11 +92,7 @@ async fn main(_spawner: Spawner) {
             executor1.run(|spawner| {
                 unwrap!(spawner.spawn(watchdog_feed(watchdog, led)));
 
-                unwrap!(spawner.spawn(status_lamp_task(
-                    relay0_lamp_red,
-                    relay1_lamp_amber,
-                    relay2_lamp_green
-                )));
+                unwrap!(spawner.spawn(status_lamp_task(status_lamp)));
             });
         },
     );
@@ -151,64 +150,12 @@ async fn watch_input(input: Input<'static>, num: usize) {
 }
 
 #[embassy_executor::task]
-async fn status_lamp_task(
-    mut relay_red: Output<'static>,
-    mut relay_amber: Output<'static>,
-    mut relay_green: Output<'static>,
-) {
-    fn level_from_lamp_setting(l: status_lamp::Lamp) -> Level {
-        match l {
-            status_lamp::Lamp::On => Level::High,
-            status_lamp::Lamp::Off => Level::Low,
-        }
-    }
-
+async fn status_lamp_task(mut status_lamp: status_lamp::StatusLamp) {
     loop {
-        let lamp = STATUS_LAMP.wait().await;
-
-        relay_red.set_level(level_from_lamp_setting(lamp.red));
-        relay_amber.set_level(level_from_lamp_setting(lamp.amber));
-        relay_green.set_level(level_from_lamp_setting(lamp.green));
+        let settings = STATUS_LAMP.wait().await;
+        status_lamp.output(&settings);
     }
 }
-
-// #[allow(clippy::too_many_arguments)]
-// #[embassy_executor::task]
-// async fn relay_output(
-//     mut relay0: Output<'static>,
-//     mut relay1: Output<'static>,
-//     mut relay2: Output<'static>,
-//     mut relay3: Output<'static>,
-//     mut relay4: Output<'static>,
-//     mut relay5: Output<'static>,
-//     mut relay6: Output<'static>,
-//     mut relay7: Output<'static>,
-// ) {
-//     loop {
-//         let event = CHANNEL.receive().await;
-
-//         let (relay_idx, level) = match event {
-//             Event::IsolatedInputChanged { num, level } => {
-//                 (num, level)
-//             }
-//             Event::GeneralIoChanged { num, level } => {
-//                 (num, level)
-//             }
-//         };
-
-//         match relay_idx {
-//             0 => relay0.set_level(level),
-//             1 => relay1.set_level(level),
-//             2 => relay2.set_level(level),
-//             3 => relay3.set_level(level),
-//             4 => relay4.set_level(level),
-//             5 => relay5.set_level(level),
-//             6 => relay6.set_level(level),
-//             7 => relay7.set_level(level),
-//             _ => {}
-//         };
-//     }
-// }
 
 #[embassy_executor::task]
 async fn read_temperatures(mut bus: OneWire<OutputOpenDrain<'static>>) {
