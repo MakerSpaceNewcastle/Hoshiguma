@@ -38,7 +38,7 @@ impl From<&TemperatureReadings>
             onboard: value.onboard,
             electronics_bay_top: value.electronics_bay_top,
             laser_chamber: value.laser_chamber,
-            ambient: value.laser_chamber,
+            ambient: value.ambient,
             coolant_flow: value.coolant_flow,
             coolant_return: value.coolant_return,
             coolant_resevoir_bottom: value.coolant_resevoir_bottom,
