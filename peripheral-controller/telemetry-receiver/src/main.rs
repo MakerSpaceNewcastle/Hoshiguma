@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
 use hoshiguma_telemetry_protocol::{
     payload::{
-        system::{Boot, SystemMessagePayload},
+        system::{Info, SystemMessagePayload},
         Payload,
     },
     Message,
@@ -92,7 +92,7 @@ fn main() {
     }
 }
 
-fn check_firmware_version(msg: &Boot) {
+fn check_firmware_version(msg: &Info) {
     #[cfg(feature = "git-version")]
     let our_version = git_version::git_version!();
     #[cfg(not(feature = "git-version"))]

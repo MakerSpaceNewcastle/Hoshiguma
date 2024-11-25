@@ -1,11 +1,12 @@
-mod boot;
+mod info;
 mod panic;
 
-pub use self::{boot::Boot, panic::Panic};
+pub use self::{info::Info, panic::Panic};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SystemMessagePayload {
-    Boot(Boot),
+    Boot(Info),
+    Heartbeat(Info),
     Panic(Panic),
 }
