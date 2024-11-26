@@ -1,0 +1,64 @@
+[package]
+name = "hoshiguma-telemetry-module"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2021"
+license = "MIT"
+
+[features]
+default = ["git-version"]
+git-version = ["dep:git-version"]
+
+[dependencies]
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.3"
+embassy-rp = { version = "0.2.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+assign-resources = "0.4.1"
+
+# Wifi
+cyw43 = { version = "0.2.0", features = ["defmt", "firmware-logs"] }
+cyw43-pio = { version = "0.2.0", features = ["defmt"] }
+embassy-net = { version = "0.4.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
+rand = { version = "0.8.5", default-features = false }
+
+embassy-executor = { version = "0.6.1", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
+embassy-time = { version = "0.3.2", features = ["defmt"] }
+
+embedded-hal = "1.0.0"
+embassy-embedded-hal = { version = "0.2.0", features = ["defmt"] }
+
+defmt = "0.3.8"
+defmt-rtt = "0.4.1"
+panic-probe = { version = "0.3.2", features = ["print-defmt"] }
+
+embassy-sync = "0.6.0"
+embassy-futures = "0.1.1"
+embassy-time-queue-driver = "0.1.0"
+portable-atomic = { version = "1.9.0", features = ["critical-section"] }
+static_cell = "2.1.0"
+
+heapless = { version = "0.8.0", features = ["defmt-03"] }
+
+# Telemetry RX
+hoshiguma-telemetry-protocol = { path = "../../peripheral-controller/telemetry-protocol/", default-features = false }
+git-version = { version = "0.3.5", optional = true }
+postcard = "1.0.10"
+
+# Display
+embedded-graphics = "0.8.1"
+mipidsi = "0.8.0"
+display-interface-spi = "0.5.0"
+
+# MQTT telemetry TX
+rust-mqtt = { version = "0.3.0", default-features = false, features = ["defmt"] }
+serde-json-core = { version = "0.6.0", features = ["defmt"] }
+
+[profile.release]
+debug = 2
+lto = true
+opt-level = 'z'
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = "z"

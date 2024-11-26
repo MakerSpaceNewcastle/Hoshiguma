@@ -17,7 +17,7 @@ struct Cli {
     port: String,
 
     /// Serial baud rate
-    #[arg(short, long, default_value = "115200")]
+    #[arg(short, long, default_value = "9600")]
     baud: u32,
 
     /// Format to print received messages in
