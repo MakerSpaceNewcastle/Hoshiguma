@@ -18,12 +18,11 @@ pub(crate) type TelemetryUart = UartTx<'static, UART0, Async>;
 #[macro_export]
 macro_rules! init_telemetry_uart {
     ($p:expr) => {{
-        let uart: $crate::telemetry::TelemetryUart = embassy_rp::uart::UartTx::new(
-            $p.UART0,
-            $p.PIN_0,
-            $p.DMA_CH0,
-            embassy_rp::uart::Config::default(),
-        );
+        let mut config = embassy_rp::uart::Config::default();
+        config.baudrate = 9600;
+
+        let uart: $crate::telemetry::TelemetryUart =
+            embassy_rp::uart::UartTx::new($p.UART0, $p.PIN_0, $p.DMA_CH0, config);
 
         uart
     }};
