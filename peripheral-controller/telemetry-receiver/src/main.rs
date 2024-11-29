@@ -93,11 +93,7 @@ fn main() {
 }
 
 fn check_firmware_version(msg: &Info) {
-    #[cfg(feature = "git-version")]
     let our_version = git_version::git_version!();
-    #[cfg(not(feature = "git-version"))]
-    let our_version = "unknown";
-
     let their_version = &msg.git_revision;
 
     debug!("Host Git revision: {}", our_version);
