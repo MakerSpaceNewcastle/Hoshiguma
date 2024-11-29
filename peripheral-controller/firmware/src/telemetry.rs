@@ -59,10 +59,7 @@ fn new_message(payload: Payload) -> Message {
 
 fn info_message() -> Info {
     Info {
-        #[cfg(feature = "git-version")]
         git_revision: git_version::git_version!().try_into().unwrap(),
-        #[cfg(not(feature = "git-version"))]
-        git_revision: "unknown".try_into().unwrap(),
     }
 }
 

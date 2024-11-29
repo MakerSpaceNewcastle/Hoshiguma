@@ -17,4 +17,6 @@ jobs:
       - uses: cachix/install-nix-action@v30
 
       - name: Format
-        run: nix develop --command treefmt --fail-on-change
+        run: |
+          eval "$(nix print-dev-env)"
+          treefmt --fail-on-change

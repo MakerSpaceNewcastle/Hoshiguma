@@ -6,10 +6,9 @@ edition = "2021"
 license = "MIT"
 
 [features]
-default = ["telemetry", "git-version"]
+default = ["telemetry"]
 panic-probe = ["dep:panic-probe"]
-telemetry = ["dep:hoshiguma-telemetry-protocol", "dep:postcard"]
-git-version = ["dep:git-version"]
+telemetry = ["dep:hoshiguma-telemetry-protocol", "dep:git-version", "dep:postcard"]
 
 [dependencies]
 cortex-m = "0.7.7"
