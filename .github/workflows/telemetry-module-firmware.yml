@@ -29,6 +29,8 @@ jobs:
       - uses: cachix/install-nix-action@v30
 
       - name: Clippy
+        env:
+          CONFIG: ./config.toml
         run: |
           eval "$(nix print-dev-env)"
           set -x
@@ -53,6 +55,8 @@ jobs:
       - uses: cachix/install-nix-action@v30
 
       - name: Build
+        env:
+          CONFIG: ./config.toml
         run: |
           eval "$(nix print-dev-env)"
           set -x

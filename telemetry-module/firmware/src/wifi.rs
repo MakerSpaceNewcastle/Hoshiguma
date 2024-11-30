@@ -101,7 +101,10 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
     info!("Joining WiFi network");
     loop {
-        match control.join_wpa2("Maker Space", "TODO").await {
+        match control
+            .join_wpa2(env!("WIFI_SSID"), env!("WIFI_PASSWORD"))
+            .await
+        {
             Ok(_) => break,
             Err(err) => {
                 warn!("Failed to join WiFi network with status {}", err.status);
@@ -128,7 +131,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         socket.set_timeout(Some(Duration::from_secs(10)));
 
         let broker_address = match stack
-            .dns_query("broker.hivemq.com", DnsQueryType::A)
+            .dns_query(env!("MQTT_BROKER_URL"), DnsQueryType::A)
             .await
             .map(|a| a[0])
         {
@@ -150,9 +153,9 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
         let mut client = {
             let mut config = ClientConfig::new(MqttVersion::MQTTv5, CountingRng(20000));
-            config.add_client_id("doot");
+            config.add_client_id(env!("MQTT_CLIENT_ID"));
             config.max_packet_size = MQTT_BUFFER_SIZE as u32;
-            config.add_will("TODO/telemetry-module/online", b"false", true);
+            config.add_will(env!("ONLINE_MQTT_TOPIC"), b"false", true);
 
             MqttClient::<_, 5, _>::new(
                 socket,
@@ -182,7 +185,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
         match client
             .send_message(
-                "TODO/telemetry-module/online",
+                env!("ONLINE_MQTT_TOPIC"),
                 b"true",
                 QualityOfService::QoS1,
                 true,
@@ -201,7 +204,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
         match client
             .send_message(
-                "TODO/telemetry-module/version",
+                env!("VERSION_MQTT_TOPIC"),
                 git_version::git_version!().as_bytes(),
                 QualityOfService::QoS1,
                 true,
@@ -232,7 +235,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
                         Ok(data) => {
                             match client
                                 .send_message(
-                                    "TODO/controller-telemetry",
+                                    env!("TELEMETRY_MQTT_TOPIC"),
                                     &data,
                                     QualityOfService::QoS1,
                                     true,
