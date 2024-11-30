@@ -31,7 +31,7 @@ jobs:
       - name: Clippy
         run: |
           eval "$(nix print-dev-env)"
-          set +x
+          set -x
 
           rustup show
 
@@ -54,7 +54,7 @@ jobs:
       - name: Build
         run: |
           eval "$(nix print-dev-env)"
-          set +x
+          set -x
 
           rustup show
 
