@@ -4,7 +4,7 @@ pub(super) mod state;
 
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use core::cell::RefCell;
-use defmt::info;
+use defmt::{info, Format};
 use display_interface_spi::SPIInterface;
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
 use embassy_futures::select::{select3, Either3};
@@ -32,6 +32,12 @@ macro_rules! draw_drawable {
 
 const SCREEN_WIDTH: u16 = 128;
 const SCREEN_HEIGHT: u16 = 128;
+
+#[derive(PartialEq, Eq, Format)]
+enum DrawType {
+    Full,
+    ValuesOnly,
+}
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::DisplayResources) {
@@ -68,7 +74,7 @@ pub(super) async fn task(r: crate::DisplayResources) {
     let ui_event_rx = UI_INPUTS.receiver();
 
     loop {
-        match select3(
+        let draw_type = match select3(
             ui_event_rx.receive(),
             STATE_CHANGED.wait(),
             embassy_time::Timer::after_secs(5),
@@ -78,22 +84,28 @@ pub(super) async fn task(r: crate::DisplayResources) {
             Either3::First(msg) => match msg {
                 UiEvent::ButtonPushed => {
                     screen_selector.select_next();
+                    DrawType::Full
                 }
             },
             Either3::Second(new_state) => {
                 state = new_state;
+                DrawType::ValuesOnly
             }
             Either3::Third(_) => {
                 // Nothing special to do here, just redraw the screen
+                // TODO: is this actually needed?
+                DrawType::ValuesOnly
             }
         };
 
-        // TODO: only redraw full screen when it changes (otherwise just redraw values)
-        info!("Display draw");
-        draw_drawable!(
-            &mut display,
-            drawables::title_bar::TitleBar::new(&screen_selector)
-        );
+        info!("Display draw ({})", draw_type);
+        if draw_type == DrawType::Full {
+            draw_drawable!(
+                &mut display,
+                drawables::title_bar::TitleBar::new(&screen_selector)
+            );
+        }
+        // TODO: partial drawable
         draw_drawable!(
             &mut display,
             drawables::info_pane_background::InfoPaneBackground::default()
