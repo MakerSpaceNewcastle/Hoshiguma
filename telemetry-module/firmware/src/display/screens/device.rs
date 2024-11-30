@@ -38,7 +38,7 @@ impl Drawable for Device<'_> {
             cursor,
             value_offset,
             "Rev",
-            Some(crate::git_version_string()),
+            Some(git_version::git_version!()),
             None,
         )
         .draw(target)?;
