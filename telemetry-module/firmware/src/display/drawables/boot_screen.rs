@@ -55,7 +55,7 @@ impl Drawable for BootScreen {
 
         // Show the firmware version
         Text::with_alignment(
-            crate::git_version_string(),
+            git_version::git_version!(),
             display_box.center() + Point::new(0, 50),
             text_style,
             Alignment::Center,

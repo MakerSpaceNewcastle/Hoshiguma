@@ -23,18 +23,6 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
-fn git_version_string() -> &'static str {
-    #[cfg(feature = "git-version")]
-    {
-        git_version::git_version!()
-    }
-
-    #[cfg(not(feature = "git-version"))]
-    {
-        "unknown"
-    }
-}
-
 assign_resources::assign_resources! {
     display: DisplayResources {
         miso: PIN_12,

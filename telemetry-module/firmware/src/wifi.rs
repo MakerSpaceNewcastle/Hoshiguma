@@ -202,7 +202,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         match client
             .send_message(
                 "TODO/telemetry-module/version",
-                crate::git_version_string().as_bytes(),
+                git_version::git_version!().as_bytes(),
                 QualityOfService::QoS1,
                 true,
             )
