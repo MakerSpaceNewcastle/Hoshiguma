@@ -28,8 +28,6 @@ use rust_mqtt::{
 };
 use static_cell::StaticCell;
 
-// TODO
-#[allow(dead_code)]
 #[derive(Clone)]
 pub(crate) enum NetworkEvent {
     NetworkConnected(StaticConfigV4),
@@ -99,7 +97,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
     let mut telem_rx = TELEMETRY_MESSAGES.subscriber().unwrap();
 
-    info!("Joining WiFi network");
+    info!("Joining WiFi network {}", env!("WIFI_SSID"));
     loop {
         match control
             .join_wpa2(env!("WIFI_SSID"), env!("WIFI_PASSWORD"))
