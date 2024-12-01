@@ -70,19 +70,18 @@ async fn main(_spawner: Spawner) {
                 unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
                 unwrap!(spawner.spawn(crate::telemetry::task(r.telemetry_uart)));
+
+                unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
             });
         },
     );
 
     let executor0 = EXECUTOR0.init(Executor::new());
     executor0.run(|spawner| {
-        unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
-
         unwrap!(spawner.spawn(crate::display::state::task()));
         unwrap!(spawner.spawn(crate::display::task(r.display)));
 
-        // TODO
-        // unwrap!(spawner.spawn(crate::wifi::task(r.wifi, spawner)));
+        unwrap!(spawner.spawn(crate::wifi::task(r.wifi, spawner)));
     });
 }
 
