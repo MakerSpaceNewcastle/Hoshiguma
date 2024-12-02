@@ -12,7 +12,10 @@ use embassy_rp::{
     gpio::{Level, Output},
     spi::Config,
 };
-use embassy_sync::blocking_mutex::{raw::NoopRawMutex, Mutex};
+use embassy_sync::{
+    blocking_mutex::{raw::NoopRawMutex, Mutex},
+    pubsub::WaitResult,
+};
 use embassy_time::Timer;
 use embedded_graphics::Drawable;
 use mipidsi::{
@@ -71,45 +74,48 @@ pub(super) async fn task(r: crate::DisplayResources) {
     let mut screen_selector = ScreenSelector::default();
     let mut state = DisplayDataState::default();
 
-    let ui_event_rx = UI_INPUTS.receiver();
+    let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
 
     loop {
         let draw_type = match select3(
-            ui_event_rx.receive(),
+            ui_event_rx.next_message(),
             STATE_CHANGED.wait(),
             embassy_time::Timer::after_secs(5),
         )
         .await
         {
             Either3::First(msg) => match msg {
-                UiEvent::ButtonPushed => {
+                WaitResult::Message(UiEvent::ButtonPushed) => {
                     screen_selector.select_next();
-                    DrawType::Full
+                    Some(DrawType::Full)
                 }
+                _ => None,
             },
             Either3::Second(new_state) => {
                 state = new_state;
-                DrawType::ValuesOnly
+                Some(DrawType::ValuesOnly)
             }
             Either3::Third(_) => {
                 // Nothing special to do here, just redraw the screen
                 // TODO: is this actually needed?
-                DrawType::ValuesOnly
+                Some(DrawType::ValuesOnly)
             }
         };
 
-        info!("Display draw ({})", draw_type);
-        if draw_type == DrawType::Full {
+        if let Some(draw_type) = draw_type {
+            info!("Display draw ({})", draw_type);
+            if draw_type == DrawType::Full {
+                draw_drawable!(
+                    &mut display,
+                    drawables::title_bar::TitleBar::new(&screen_selector)
+                );
+            }
+            // TODO: partial drawable
             draw_drawable!(
                 &mut display,
-                drawables::title_bar::TitleBar::new(&screen_selector)
+                drawables::info_pane_background::InfoPaneBackground::default()
             );
+            screen_selector.draw(&mut display, &state);
         }
-        // TODO: partial drawable
-        draw_drawable!(
-            &mut display,
-            drawables::info_pane_background::InfoPaneBackground::default()
-        );
-        screen_selector.draw(&mut display, &state);
     }
 }
