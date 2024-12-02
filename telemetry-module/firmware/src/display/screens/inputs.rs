@@ -71,8 +71,8 @@ impl Drawable for Inputs<'_> {
             value_offset,
             "Air Demand",
             self.state.air_assist_demand.as_ref().map(|v| match v {
-                AirAssistDemand::Idle => "Demand",
-                AirAssistDemand::Demand => "Idle",
+                AirAssistDemand::Idle => "Idle",
+                AirAssistDemand::Demand => "Demand",
             }),
             None,
         )

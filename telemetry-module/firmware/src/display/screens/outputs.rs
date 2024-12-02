@@ -44,7 +44,7 @@ impl Drawable for Outputs<'_> {
                 .map(|sl| {
                     let mut s = heapless::String::<16>::new();
                     s.write_fmt(format_args!(
-                        "[{}] [{}] [{}]",
+                        "{} {} {}",
                         match sl.red {
                             true => "R",
                             false => " ",
