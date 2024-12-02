@@ -4,7 +4,7 @@ use crate::{
 };
 use defmt::warn;
 use embassy_futures::select::{select, Either};
-use embassy_net::{IpAddress, StaticConfigV4};
+use embassy_net::StaticConfigV4;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult, signal::Signal,
 };
@@ -29,7 +29,7 @@ use hoshiguma_telemetry_protocol::{
 pub(crate) struct DisplayDataState {
     // Networking
     pub(crate) ipv4_config: Option<StaticConfigV4>,
-    pub(crate) mqtt_broker_address: Option<IpAddress>,
+    pub(crate) mqtt_broker_connected: bool,
 
     // Controller system
     pub(crate) controller_git_rev: Option<TelemString>,
@@ -72,11 +72,11 @@ pub(crate) async fn task() {
                 NetworkEvent::NetworkConnected(ip_config) => {
                     state.ipv4_config = Some(ip_config);
                 }
-                NetworkEvent::MqttBrokerConnected(broker_address) => {
-                    state.mqtt_broker_address = Some(broker_address);
+                NetworkEvent::MqttBrokerConnected => {
+                    state.mqtt_broker_connected = true;
                 }
                 NetworkEvent::MqttBrokerDisconnected => {
-                    state.mqtt_broker_address = None;
+                    state.mqtt_broker_connected = false;
                 }
             },
             Either::Second(msg) => {

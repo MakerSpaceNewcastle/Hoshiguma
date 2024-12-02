@@ -4,7 +4,7 @@ use cyw43_pio::PioSpi;
 use defmt::{info, unwrap, warn};
 use embassy_executor::Spawner;
 use embassy_net::{
-    dns::DnsQueryType, tcp::TcpSocket, Config, IpAddress, Stack, StackResources, StaticConfigV4,
+    tcp::TcpSocket, Config, IpAddress, Ipv4Address, Stack, StackResources, StaticConfigV4,
 };
 use embassy_rp::{
     bind_interrupts,
@@ -28,11 +28,23 @@ use rust_mqtt::{
 };
 use static_cell::StaticCell;
 
+const WIFI_SSID: &str = "Maker Space";
+
+pub(crate) const MQTT_BROKER_IP: IpAddress = IpAddress::Ipv4(Ipv4Address::new(192, 168, 8, 183));
+const MQTT_BROKER_PORT: u16 = 1883;
+
+const MQTT_CLIENT_ID: &str = "hoshiguma-telemetry-module";
+const MQTT_USERNAME: &str = "hoshiguma";
+
+const ONLINE_MQTT_TOPIC: &str = "hoshiguma/telemetry-module/online";
+const VERSION_MQTT_TOPIC: &str = "hoshiguma/telemetry-module/version";
+const TELEMETRY_MQTT_TOPIC: &str = "hoshiguma/events";
+
 #[derive(Clone)]
 pub(crate) enum NetworkEvent {
     NetworkConnected(StaticConfigV4),
 
-    MqttBrokerConnected(IpAddress),
+    MqttBrokerConnected,
     MqttBrokerDisconnected,
 }
 
@@ -97,12 +109,9 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
     let mut telem_rx = TELEMETRY_MESSAGES.subscriber().unwrap();
 
-    info!("Joining WiFi network {}", env!("WIFI_SSID"));
+    info!("Joining WiFi network {}", WIFI_SSID);
     loop {
-        match control
-            .join_wpa2(env!("WIFI_SSID"), env!("WIFI_PASSWORD"))
-            .await
-        {
+        match control.join_wpa2(WIFI_SSID, env!("WIFI_PASSWORD")).await {
             Ok(_) => break,
             Err(err) => {
                 warn!("Failed to join WiFi network with status {}", err.status);
@@ -128,22 +137,11 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
         socket.set_timeout(Some(Duration::from_secs(10)));
 
-        let broker_address = match stack
-            .dns_query(env!("MQTT_BROKER_URL"), DnsQueryType::A)
-            .await
-            .map(|a| a[0])
-        {
-            Ok(address) => address,
-            Err(e) => {
-                info!("DNS lookup error: {}", e);
-                continue;
-            }
-        };
-
-        let broker_endpoint = (broker_address, 1883);
-
-        info!("Connecting to MQTT broker");
-        let connection = socket.connect(broker_endpoint).await;
+        info!(
+            "Connecting to MQTT broker {}:{}",
+            MQTT_BROKER_IP, MQTT_BROKER_PORT
+        );
+        let connection = socket.connect((MQTT_BROKER_IP, MQTT_BROKER_PORT)).await;
         if let Err(e) = connection {
             warn!("Broker socket connection error: {:?}", e);
             continue;
@@ -151,9 +149,11 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
         let mut client = {
             let mut config = ClientConfig::new(MqttVersion::MQTTv5, CountingRng(20000));
-            config.add_client_id(env!("MQTT_CLIENT_ID"));
+            config.add_client_id(MQTT_CLIENT_ID);
+            config.add_username(MQTT_USERNAME);
+            config.add_password(env!("MQTT_PASSWORD"));
             config.max_packet_size = MQTT_BUFFER_SIZE as u32;
-            config.add_will(env!("ONLINE_MQTT_TOPIC"), b"false", true);
+            config.add_will(ONLINE_MQTT_TOPIC, b"false", true);
 
             MqttClient::<_, 5, _>::new(
                 socket,
@@ -168,9 +168,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         match client.connect_to_broker().await {
             Ok(()) => {
                 info!("Connected to MQTT broker");
-                NETWORK_EVENTS
-                    .send(NetworkEvent::MqttBrokerConnected(broker_address))
-                    .await;
+                NETWORK_EVENTS.send(NetworkEvent::MqttBrokerConnected).await;
             }
             Err(e) => {
                 warn!("MQTT error: {:?}", e);
@@ -182,12 +180,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         }
 
         match client
-            .send_message(
-                env!("ONLINE_MQTT_TOPIC"),
-                b"true",
-                QualityOfService::QoS1,
-                true,
-            )
+            .send_message(ONLINE_MQTT_TOPIC, b"true", QualityOfService::QoS1, true)
             .await
         {
             Ok(()) => {}
@@ -202,7 +195,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
         match client
             .send_message(
-                env!("VERSION_MQTT_TOPIC"),
+                VERSION_MQTT_TOPIC,
                 git_version::git_version!().as_bytes(),
                 QualityOfService::QoS1,
                 true,
@@ -233,7 +226,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
                         Ok(data) => {
                             match client
                                 .send_message(
-                                    env!("TELEMETRY_MQTT_TOPIC"),
+                                    TELEMETRY_MQTT_TOPIC,
                                     &data,
                                     QualityOfService::QoS1,
                                     true,

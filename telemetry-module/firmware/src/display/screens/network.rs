@@ -1,10 +1,13 @@
-use crate::display::{
-    drawables::{
-        info_pane_background::REGION,
-        measurement::{Measurement, Severity},
-        subtitle::Subtitle,
+use crate::{
+    display::{
+        drawables::{
+            info_pane_background::REGION,
+            measurement::{Measurement, Severity},
+            subtitle::Subtitle,
+        },
+        state::DisplayDataState,
     },
-    state::DisplayDataState,
+    wifi::MQTT_BROKER_IP,
 };
 use core::fmt::Write;
 use embedded_graphics::{
@@ -99,30 +102,28 @@ impl Drawable for Network<'_> {
             cursor,
             value_offset,
             "State",
-            Some(match self.state.mqtt_broker_address {
-                Some(_) => "Connected",
-                None => "Disconnected",
+            Some(match self.state.mqtt_broker_connected {
+                true => "Connected",
+                false => "Disconnected",
             }),
-            Some(match self.state.mqtt_broker_address {
-                Some(_) => Severity::Normal,
-                None => Severity::Critical,
+            Some(match self.state.mqtt_broker_connected {
+                true => Severity::Normal,
+                false => Severity::Critical,
             }),
         )
         .draw(target)?;
 
         // MQTT broker IP address
+        let mqtt_broker_ip_str = {
+            let mut s = heapless::String::<16>::new();
+            s.write_fmt(format_args!("{}", MQTT_BROKER_IP)).unwrap();
+            s
+        };
         Measurement::new(
             cursor,
             value_offset,
             "Brkr",
-            self.state
-                .mqtt_broker_address
-                .map(|addr| {
-                    let mut s = heapless::String::<16>::new();
-                    s.write_fmt(format_args!("{}", addr)).unwrap();
-                    s
-                })
-                .as_deref(),
+            Some(&mqtt_broker_ip_str),
             None,
         )
         .draw(target)?;
