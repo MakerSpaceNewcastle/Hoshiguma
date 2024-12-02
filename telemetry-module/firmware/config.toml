@@ -1,9 +1,0 @@
-wifi_ssid = "Maker Space"
-wifi_password = ""
-
-mqtt_broker_url = "broker.hivemq.com"
-mqtt_client_id = "arse/telemetry-module/online"
-
-online_mqtt_topic = "arse/telemetry-module/online"
-version_mqtt_topic = "arse/telemetry-module/version"
-telemetry_mqtt_topic = "arse/events"
