@@ -6,15 +6,18 @@ mod telemetry;
 mod ui_button;
 mod wifi;
 
-use defmt::unwrap;
+use crate::ui_button::{UiEvent, UI_INPUTS};
+use defmt::{info, unwrap, warn};
 use defmt_rtt as _;
 use embassy_executor::{Executor, Spawner};
+use embassy_futures::select::{select, Either};
 use embassy_rp::{
     gpio::{Level, Output},
     multicore::{spawn_core1, Stack},
     peripherals,
     watchdog::Watchdog,
 };
+use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Ticker, Timer};
 use panic_probe as _;
 use static_cell::StaticCell;
@@ -101,11 +104,24 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
         Timer::after_millis(50).await;
     }
 
-    // Flash LED steadily to indicate normal operation
+    let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
     let mut ticker = Ticker::every(steady_blink_delay);
+
     loop {
-        watchdog.feed();
-        led.toggle();
-        ticker.next().await;
+        match select(ticker.next(), ui_event_rx.next_message()).await {
+            Either::First(_) => {
+                // Flash LED steadily to indicate normal operation
+                watchdog.feed();
+                led.toggle();
+            }
+            Either::Second(WaitResult::Lagged(lost_messages)) => {
+                warn!("Subscriber lagged, lost {} messages", lost_messages);
+            }
+            Either::Second(WaitResult::Message(UiEvent::ButtonPushedForALongTime)) => {
+                info!("Triggering reboot!");
+                watchdog.trigger_reset();
+            }
+            _ => {}
+        }
     }
 }
