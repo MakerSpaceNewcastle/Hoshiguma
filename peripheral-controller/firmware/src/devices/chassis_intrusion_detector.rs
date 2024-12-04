@@ -1,4 +1,5 @@
 use crate::io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs};
+use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::Level;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
@@ -16,7 +17,8 @@ macro_rules! init_chassis_intrusion_detector {
     }};
 }
 
-pub(crate) type ChassisIntrusionDetector = DigitalInputStateChangeDetector<1, ChassisIntrusion>;
+pub(crate) type ChassisIntrusionDetector =
+    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, ChassisIntrusion>;
 
 #[derive(Clone, Format)]
 pub(crate) enum ChassisIntrusion {

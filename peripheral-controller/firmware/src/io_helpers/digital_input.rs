@@ -1,3 +1,4 @@
+use super::debounce::DebouncerLevelExt;
 use defmt::{debug, Format};
 use embassy_rp::gpio::{Input, Level};
 
@@ -7,12 +8,14 @@ pub(crate) trait StateFromDigitalInputs<const N: usize> {
         Self: Sized;
 }
 
-pub(crate) struct DigitalInputStateChangeDetector<const N: usize, S> {
-    detector: MultiPinChangeDetector<N>,
+pub(crate) struct DigitalInputStateChangeDetector<D, const N: usize, S> {
+    detector: MultiPinChangeDetector<D, N>,
     _state_type: core::marker::PhantomData<S>,
 }
 
-impl<const N: usize, S: StateFromDigitalInputs<N> + Format> DigitalInputStateChangeDetector<N, S> {
+impl<D: DebouncerLevelExt, const N: usize, S: StateFromDigitalInputs<N> + Format>
+    DigitalInputStateChangeDetector<D, N, S>
+{
     pub(crate) fn new(inputs: [Input<'static>; N]) -> Self {
         Self {
             detector: MultiPinChangeDetector::new(inputs),
@@ -32,27 +35,35 @@ impl<const N: usize, S: StateFromDigitalInputs<N> + Format> DigitalInputStateCha
     }
 }
 
-pub(crate) struct MultiPinChangeDetector<const N: usize> {
+pub(crate) struct MultiPinChangeDetector<D, const N: usize> {
     inputs: [Input<'static>; N],
-    last: Option<[Level; N]>,
+    debouncers: [D; N],
+    changed: bool,
 }
 
-impl<const N: usize> MultiPinChangeDetector<N> {
+impl<D: DebouncerLevelExt, const N: usize> MultiPinChangeDetector<D, N> {
     pub(crate) fn new(inputs: [Input<'static>; N]) -> Self {
-        Self { inputs, last: None }
+        let debouncers = core::array::from_fn(|i| D::new(inputs[i].get_level()));
+        Self {
+            inputs,
+            debouncers,
+            changed: true,
+        }
     }
 
     pub(crate) fn update(&mut self) -> Option<[Level; N]> {
-        let mut new = [Level::Low; N];
-        for (i, level) in new.iter_mut().enumerate().take(N) {
-            *level = self.inputs[i].get_level();
+        for (i, deb) in self.debouncers.iter_mut().enumerate().take(N) {
+            self.changed =
+                self.changed || (*deb).update_level(self.inputs[i].get_level()).is_some();
         }
 
-        let changed = self.last != Some(new);
-        self.last = Some(new);
-
-        if changed {
-            self.last
+        if self.changed {
+            let mut levels = [Level::Low; N];
+            for (i, level) in levels.iter_mut().enumerate() {
+                *level = self.debouncers[i].get_level();
+            }
+            self.changed = false;
+            Some(levels)
         } else {
             None
         }
