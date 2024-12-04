@@ -6,11 +6,13 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/telemetry-receiver.yml'
       - 'flake.*'
       - 'peripheral-controller/telemetry-protocol/**'
       - 'peripheral-controller/telemetry-receiver/**'
   pull_request:
     paths:
+      - '.github/workflows/telemetry-receiver.yml'
       - 'flake.*'
       - 'peripheral-controller/telemetry-protocol/**'
       - 'peripheral-controller/telemetry-receiver/**'
@@ -28,9 +30,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v30
 
+      - name: Install system dependencies
+        run: |
+          set -x
+          sudo apt install --yes libudev-dev
+
       - name: Clippy
         run: |
-          eval "$(nix print-dev-env)"
           set -x
 
           rustup show
@@ -51,9 +57,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v30
 
+      - name: Install system dependencies
+        run: |
+          set -x
+          sudo apt install --yes libudev-dev
+
       - name: Build
         run: |
-          eval "$(nix print-dev-env)"
           set -x
 
           rustup show
