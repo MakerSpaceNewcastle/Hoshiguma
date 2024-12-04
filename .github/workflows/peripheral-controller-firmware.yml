@@ -6,11 +6,13 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/peripheral-controller.yml'
       - 'flake.*'
       - 'peripheral-controller/telemetry-protocol/**'
       - 'peripheral-controller/firmware/**'
   pull_request:
     paths:
+      - '.github/workflows/peripheral-controller.yml'
       - 'flake.*'
       - 'peripheral-controller/telemetry-protocol/**'
       - 'peripheral-controller/firmware/**'
@@ -30,7 +32,6 @@ jobs:
 
       - name: Clippy
         run: |
-          eval "$(nix print-dev-env)"
           set -x
 
           rustup target add thumbv6m-none-eabi
@@ -54,7 +55,6 @@ jobs:
 
       - name: Build
         run: |
-          eval "$(nix print-dev-env)"
           set -x
 
           rustup target add thumbv6m-none-eabi
