@@ -1,6 +1,7 @@
 use crate::io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs};
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
+use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::Level;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
@@ -21,7 +22,8 @@ macro_rules! init_machine_power_detector {
     }};
 }
 
-pub(crate) type MachinePowerDetector = DigitalInputStateChangeDetector<1, MachinePower>;
+pub(crate) type MachinePowerDetector =
+    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, MachinePower>;
 
 #[derive(Clone, PartialEq, Eq, Format)]
 pub(crate) enum MachinePower {

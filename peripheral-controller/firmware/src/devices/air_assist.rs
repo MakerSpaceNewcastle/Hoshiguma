@@ -4,6 +4,7 @@ use crate::io_helpers::{
 };
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
+use debouncr::{DebouncerStateful, Repeat2};
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::Level;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
@@ -30,7 +31,8 @@ macro_rules! init_air_assist_pump {
     }};
 }
 
-pub(crate) type AirAssistDemandDetector = DigitalInputStateChangeDetector<1, AirAssistDemand>;
+pub(crate) type AirAssistDemandDetector =
+    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, AirAssistDemand>;
 pub(crate) type AirAssistPump = DigitalOutputController<1, AirAssistDemand>;
 
 #[derive(Clone, Format)]

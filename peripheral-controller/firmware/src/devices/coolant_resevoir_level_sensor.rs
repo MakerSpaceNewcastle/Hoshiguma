@@ -1,4 +1,5 @@
 use crate::io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs};
+use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::Level;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
@@ -25,7 +26,7 @@ macro_rules! init_coolant_resevoir_level_sensor {
 }
 
 pub(crate) type CoolantResevoirLevelSensor =
-    DigitalInputStateChangeDetector<2, CoolantResevoirLevelReading>;
+    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 2, CoolantResevoirLevelReading>;
 
 #[derive(Clone, Format)]
 pub(crate) struct CoolantResevoirLevelReading(pub(crate) Result<CoolantResevoirLevel, ()>);

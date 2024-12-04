@@ -1,4 +1,5 @@
 use crate::io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs};
+use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::Level;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
@@ -16,7 +17,8 @@ macro_rules! init_machine_run_detector {
     }};
 }
 
-pub(crate) type MachineRunDetector = DigitalInputStateChangeDetector<1, MachineRunStatus>;
+pub(crate) type MachineRunDetector =
+    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, MachineRunStatus>;
 
 #[derive(Clone, Format)]
 pub(crate) enum MachineRunStatus {

@@ -36,6 +36,8 @@ heapless = { version = "0.8.0", features = ["defmt-03"] }
 one-wire-bus = "0.1.1"
 ds18b20 = "0.1.1"
 
+debouncr = "0.2.2"
+
 hoshiguma-telemetry-protocol = { path = "../telemetry-protocol/", default-features = false, optional = true }
 git-version = { version = "0.3.5", optional = true }
 postcard  = { version = "1.0.10", optional = true }
