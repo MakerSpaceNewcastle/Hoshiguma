@@ -1,8 +1,9 @@
 use crate::telemetry::TELEMETRY_MESSAGES;
 use cyw43::{PowerManagementMode, State};
 use cyw43_pio::PioSpi;
-use defmt::{info, unwrap, warn};
+use defmt::{debug, info, unwrap, warn};
 use embassy_executor::Spawner;
+use embassy_futures::select::{select, Either};
 use embassy_net::{
     tcp::TcpSocket, Config, IpAddress, Ipv4Address, Stack, StackResources, StaticConfigV4,
 };
@@ -16,7 +17,7 @@ use embassy_rp::{
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, pubsub::WaitResult,
 };
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Ticker, Timer};
 use rand::RngCore;
 use rust_mqtt::{
     client::{
@@ -40,6 +41,8 @@ const ONLINE_MQTT_TOPIC: &str = "hoshiguma/telemetry-module/online";
 const VERSION_MQTT_TOPIC: &str = "hoshiguma/telemetry-module/version";
 const TELEMETRY_MQTT_TOPIC: &str = "hoshiguma/events";
 
+const MQTT_BUFFER_SIZE: usize = 512;
+
 #[derive(Clone)]
 pub(crate) enum NetworkEvent {
     NetworkConnected(StaticConfigV4),
@@ -54,6 +57,18 @@ pub(crate) static NETWORK_EVENTS: Channel<CriticalSectionRawMutex, NetworkEvent,
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
 });
+
+#[embassy_executor::task]
+async fn cyw43_task(
+    runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
+) -> ! {
+    runner.run().await
+}
+
+#[embassy_executor::task]
+async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'static>>) -> ! {
+    runner.run().await
+}
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
@@ -89,25 +104,14 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
     let mut rng = RoscRng;
     let seed = rng.next_u64();
 
-    static STACK: StaticCell<Stack<cyw43::NetDriver<'static>>> = StaticCell::new();
     static RESOURCES: StaticCell<StackResources<4>> = StaticCell::new();
-    let stack = &*STACK.init(Stack::new(
+    let (stack, runner) = embassy_net::new(
         net_device,
         Config::dhcpv4(Default::default()),
         RESOURCES.init(StackResources::<4>::new()),
         seed,
-    ));
-
-    unwrap!(spawner.spawn(net_task(stack)));
-
-    let mut rx_buffer = [0; 4096];
-    let mut tx_buffer = [0; 4096];
-
-    const MQTT_BUFFER_SIZE: usize = 512;
-    let mut mqtt_rx_buffer = [0; MQTT_BUFFER_SIZE];
-    let mut mqtt_tx_buffer = [0; MQTT_BUFFER_SIZE];
-
-    let mut telem_rx = TELEMETRY_MESSAGES.subscriber().unwrap();
+    );
+    unwrap!(spawner.spawn(net_task(runner)));
 
     info!("Joining WiFi network {}", WIFI_SSID);
     loop {
@@ -134,86 +138,103 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
     }
 
     loop {
-        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-        socket.set_timeout(Some(Duration::from_secs(10)));
+        // Start the MQTT client
+        if run_mqtt_client(stack).await.is_err() {
+            // Notify of MQTT broker connection loss
+            NETWORK_EVENTS
+                .send(NetworkEvent::MqttBrokerDisconnected)
+                .await;
+        }
 
-        info!(
-            "Connecting to MQTT broker {}:{}",
-            MQTT_BROKER_IP, MQTT_BROKER_PORT
-        );
-        let connection = socket.connect((MQTT_BROKER_IP, MQTT_BROKER_PORT)).await;
-        if let Err(e) = connection {
+        // Wait a little bit of time before connecting again
+        Timer::after_millis(500).await;
+    }
+}
+
+async fn run_mqtt_client(stack: Stack<'_>) -> Result<(), ()> {
+    let mut rx_buffer = [0; 4096];
+    let mut tx_buffer = [0; 4096];
+
+    let mut mqtt_rx_buffer = [0; MQTT_BUFFER_SIZE];
+    let mut mqtt_tx_buffer = [0; MQTT_BUFFER_SIZE];
+
+    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    socket.set_timeout(Some(Duration::from_secs(10)));
+
+    info!(
+        "Connecting to MQTT broker {}:{}",
+        MQTT_BROKER_IP, MQTT_BROKER_PORT
+    );
+    socket
+        .connect((MQTT_BROKER_IP, MQTT_BROKER_PORT))
+        .await
+        .map_err(|e| {
             warn!("Broker socket connection error: {:?}", e);
-            continue;
+        })?;
+
+    let mut client = {
+        let mut config = ClientConfig::new(MqttVersion::MQTTv5, CountingRng(20000));
+        config.add_client_id(MQTT_CLIENT_ID);
+        config.add_username(MQTT_USERNAME);
+        config.add_password(env!("MQTT_PASSWORD"));
+        config.max_packet_size = MQTT_BUFFER_SIZE as u32;
+        config.add_will(ONLINE_MQTT_TOPIC, b"false", true);
+
+        MqttClient::<_, 5, _>::new(
+            socket,
+            &mut mqtt_tx_buffer,
+            MQTT_BUFFER_SIZE,
+            &mut mqtt_rx_buffer,
+            MQTT_BUFFER_SIZE,
+            config,
+        )
+    };
+
+    match client.connect_to_broker().await {
+        Ok(()) => {
+            info!("Connected to MQTT broker");
+            NETWORK_EVENTS.send(NetworkEvent::MqttBrokerConnected).await;
         }
-
-        let mut client = {
-            let mut config = ClientConfig::new(MqttVersion::MQTTv5, CountingRng(20000));
-            config.add_client_id(MQTT_CLIENT_ID);
-            config.add_username(MQTT_USERNAME);
-            config.add_password(env!("MQTT_PASSWORD"));
-            config.max_packet_size = MQTT_BUFFER_SIZE as u32;
-            config.add_will(ONLINE_MQTT_TOPIC, b"false", true);
-
-            MqttClient::<_, 5, _>::new(
-                socket,
-                &mut mqtt_tx_buffer,
-                MQTT_BUFFER_SIZE,
-                &mut mqtt_rx_buffer,
-                MQTT_BUFFER_SIZE,
-                config,
-            )
-        };
-
-        match client.connect_to_broker().await {
-            Ok(()) => {
-                info!("Connected to MQTT broker");
-                NETWORK_EVENTS.send(NetworkEvent::MqttBrokerConnected).await;
-            }
-            Err(e) => {
-                warn!("MQTT error: {:?}", e);
-                NETWORK_EVENTS
-                    .send(NetworkEvent::MqttBrokerDisconnected)
-                    .await;
-                continue;
-            }
+        Err(e) => {
+            warn!("MQTT error: {:?}", e);
+            return Err(());
         }
+    }
 
-        match client
-            .send_message(ONLINE_MQTT_TOPIC, b"true", QualityOfService::QoS1, true)
-            .await
-        {
-            Ok(()) => {}
-            Err(e) => {
-                warn!("MQTT error: {:?}", e);
-                NETWORK_EVENTS
-                    .send(NetworkEvent::MqttBrokerDisconnected)
-                    .await;
-                continue;
-            }
-        }
+    client
+        .send_message(ONLINE_MQTT_TOPIC, b"true", QualityOfService::QoS1, true)
+        .await
+        .map_err(|e| {
+            warn!("MQTT publish error: {:?}", e);
+        })?;
 
-        match client
-            .send_message(
-                VERSION_MQTT_TOPIC,
-                git_version::git_version!().as_bytes(),
-                QualityOfService::QoS1,
-                true,
-            )
-            .await
-        {
-            Ok(()) => {}
-            Err(e) => {
-                warn!("MQTT error: {:?}", e);
-                NETWORK_EVENTS
-                    .send(NetworkEvent::MqttBrokerDisconnected)
-                    .await;
-                continue;
-            }
-        }
+    client
+        .send_message(
+            VERSION_MQTT_TOPIC,
+            git_version::git_version!().as_bytes(),
+            QualityOfService::QoS1,
+            true,
+        )
+        .await
+        .map_err(|e| {
+            warn!("MQTT publish error: {:?}", e);
+        })?;
 
-        loop {
-            match telem_rx.next_message().await {
+    let mut ping_tick = Ticker::every(Duration::from_secs(5));
+    let mut telem_rx = TELEMETRY_MESSAGES.subscriber().unwrap();
+
+    loop {
+        match select(ping_tick.next(), telem_rx.next_message()).await {
+            Either::First(_) => match client.send_ping().await {
+                Ok(_) => {
+                    debug!("MQTT ping OK");
+                }
+                Err(e) => {
+                    warn!("MQTT ping error: {:?}", e);
+                    return Err(());
+                }
+            },
+            Either::Second(msg) => match msg {
                 WaitResult::Lagged(msg_count) => {
                     warn!(
                         "Telemetry message receiver lagged, missed {} messages",
@@ -221,44 +242,24 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
                     );
                 }
                 WaitResult::Message(msg) => {
-                    let veccy = serde_json_core::to_vec::<_, MQTT_BUFFER_SIZE>(&msg);
-                    match veccy {
+                    match serde_json_core::to_vec::<_, MQTT_BUFFER_SIZE>(&msg) {
                         Ok(data) => {
-                            match client
+                            client
                                 .send_message(
                                     TELEMETRY_MQTT_TOPIC,
                                     &data,
                                     QualityOfService::QoS1,
-                                    true,
+                                    false,
                                 )
                                 .await
-                            {
-                                Ok(()) => {}
-                                Err(e) => {
-                                    warn!("MQTT error: {:?}", e);
-                                    NETWORK_EVENTS
-                                        .send(NetworkEvent::MqttBrokerDisconnected)
-                                        .await;
-                                    continue;
-                                }
-                            }
+                                .map_err(|e| {
+                                    warn!("MQTT publish error: {:?}", e);
+                                })?;
                         }
                         Err(e) => warn!("Cannot JSON serialise message: {}", e),
                     }
                 }
-            }
+            },
         }
     }
-}
-
-#[embassy_executor::task]
-async fn cyw43_task(
-    runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
-) -> ! {
-    runner.run().await
-}
-
-#[embassy_executor::task]
-async fn net_task(stack: &'static Stack<cyw43::NetDriver<'static>>) -> ! {
-    stack.run().await
 }
