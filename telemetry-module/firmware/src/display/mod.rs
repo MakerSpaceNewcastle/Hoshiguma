@@ -4,7 +4,7 @@ pub(super) mod state;
 
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use core::cell::RefCell;
-use defmt::{info, Format};
+use defmt::{debug, Format};
 use display_interface_spi::SPIInterface;
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
 use embassy_futures::select::{select3, Either3};
@@ -103,7 +103,7 @@ pub(super) async fn task(r: crate::DisplayResources) {
         };
 
         if let Some(draw_type) = draw_type {
-            info!("Display draw ({})", draw_type);
+            debug!("Display draw ({})", draw_type);
             if draw_type == DrawType::Full {
                 draw_drawable!(
                     &mut display,
