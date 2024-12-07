@@ -24,7 +24,7 @@ use rust_mqtt::{
         client::MqttClient,
         client_config::{ClientConfig, MqttVersion},
     },
-    packet::v5::publish_packet::QualityOfService,
+    packet::v5::{publish_packet::QualityOfService, reason_codes::ReasonCode},
     utils::rng_generator::CountingRng,
 };
 use static_cell::StaticCell;
@@ -151,6 +151,39 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
     }
 }
 
+trait ClientExt {
+    async fn publish<'a>(
+        &mut self,
+        topic: &'a str,
+        payload: &'a [u8],
+        retain: bool,
+    ) -> Result<(), ()>;
+}
+
+impl<T: embedded_io_async::Read + embedded_io_async::Write, R: RngCore> ClientExt
+    for MqttClient<'_, T, 5, R>
+{
+    async fn publish<'a>(
+        &mut self,
+        topic: &'a str,
+        payload: &'a [u8],
+        retain: bool,
+    ) -> Result<(), ()> {
+        let result = self
+            .send_message(topic, payload, QualityOfService::QoS1, retain)
+            .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(ReasonCode::NoMatchingSubscribers) => Ok(()),
+            Err(e) => {
+                warn!("MQTT publish error: {:?}", e);
+                Err(())
+            }
+        }
+    }
+}
+
 async fn run_mqtt_client(stack: Stack<'_>) -> Result<(), ()> {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
@@ -201,24 +234,15 @@ async fn run_mqtt_client(stack: Stack<'_>) -> Result<(), ()> {
         }
     }
 
-    client
-        .send_message(ONLINE_MQTT_TOPIC, b"true", QualityOfService::QoS1, true)
-        .await
-        .map_err(|e| {
-            warn!("MQTT publish error: {:?}", e);
-        })?;
+    client.publish(ONLINE_MQTT_TOPIC, b"true", true).await?;
 
     client
-        .send_message(
+        .publish(
             VERSION_MQTT_TOPIC,
             git_version::git_version!().as_bytes(),
-            QualityOfService::QoS1,
             true,
         )
-        .await
-        .map_err(|e| {
-            warn!("MQTT publish error: {:?}", e);
-        })?;
+        .await?;
 
     let mut ping_tick = Ticker::every(Duration::from_secs(5));
     let mut telem_rx = TELEMETRY_MESSAGES.subscriber().unwrap();
@@ -244,17 +268,7 @@ async fn run_mqtt_client(stack: Stack<'_>) -> Result<(), ()> {
                 WaitResult::Message(msg) => {
                     match serde_json_core::to_vec::<_, MQTT_BUFFER_SIZE>(&msg) {
                         Ok(data) => {
-                            client
-                                .send_message(
-                                    TELEMETRY_MQTT_TOPIC,
-                                    &data,
-                                    QualityOfService::QoS1,
-                                    false,
-                                )
-                                .await
-                                .map_err(|e| {
-                                    warn!("MQTT publish error: {:?}", e);
-                                })?;
+                            client.publish(TELEMETRY_MQTT_TOPIC, &data, false).await?;
                         }
                         Err(e) => warn!("Cannot JSON serialise message: {}", e),
                     }
