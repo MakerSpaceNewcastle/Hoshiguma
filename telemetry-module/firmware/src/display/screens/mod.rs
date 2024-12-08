@@ -7,7 +7,7 @@ mod outputs;
 mod summary;
 mod temperatures;
 
-use super::state::DisplayDataState;
+use super::{state::DisplayDataState, DrawType};
 use defmt::{debug, error, info, Format};
 use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget, Drawable};
 
@@ -77,7 +77,7 @@ impl ScreenSelector {
         self.selected_idx + 1
     }
 
-    pub(super) fn draw<D>(&self, target: &mut D, state: &DisplayDataState)
+    pub(super) fn draw<D>(&self, target: &mut D, draw_type: DrawType, state: &DisplayDataState)
     where
         D: DrawTarget<Color = Rgb565>,
     {

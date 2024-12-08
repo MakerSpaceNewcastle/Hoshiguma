@@ -17,7 +17,7 @@ use embassy_sync::{
     pubsub::WaitResult,
 };
 use embassy_time::Timer;
-use embedded_graphics::{prelude::DrawTarget, Drawable};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget, Drawable};
 use mipidsi::{
     models::ST7735s,
     options::{ColorOrder, Orientation, Rotation},
@@ -85,6 +85,9 @@ pub(super) async fn task(r: crate::DisplayResources) {
 
     let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
 
+    // Initial full display draw
+    draw(&mut display, DrawType::Full, &screen_selector, &state).await;
+
     loop {
         let draw_type = match select3(
             ui_event_rx.next_message(),
@@ -112,15 +115,22 @@ pub(super) async fn task(r: crate::DisplayResources) {
         };
 
         if let Some(draw_type) = draw_type {
-            debug!("Display draw ({})", draw_type);
-            if draw_type == DrawType::Full {
-                draw_drawable!(
-                    &mut display,
-                    drawables::screen::Screen::new(&screen_selector)
-                );
-            }
-            // TODO: partial drawable
-            screen_selector.draw(&mut display, &state);
+            draw(&mut display, draw_type, &screen_selector, &state).await;
         }
     }
+}
+
+async fn draw<D: DrawTarget>(
+    display: &mut D,
+    draw_type: DrawType,
+    screen_selector: &ScreenSelector,
+    state: &DisplayDataState,
+) where
+    D: DrawTarget<Color = Rgb565>,
+{
+    debug!("Display draw ({})", draw_type);
+    if draw_type == DrawType::Full {
+        draw_drawable!(display, drawables::screen::Screen::new(&screen_selector));
+    }
+    screen_selector.draw(display, draw_type, state);
 }
