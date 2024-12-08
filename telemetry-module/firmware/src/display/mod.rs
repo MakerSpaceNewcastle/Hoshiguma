@@ -17,7 +17,7 @@ use embassy_sync::{
     pubsub::WaitResult,
 };
 use embassy_time::Timer;
-use embedded_graphics::Drawable;
+use embedded_graphics::{prelude::DrawTarget, Drawable};
 use mipidsi::{
     models::ST7735s,
     options::{ColorOrder, Orientation, Rotation},
@@ -40,6 +40,15 @@ const SCREEN_HEIGHT: u16 = 128;
 enum DrawType {
     Full,
     ValuesOnly,
+}
+
+trait DrawTypeDrawable {
+    type Color;
+    type Output;
+
+    fn draw<D>(&self, target: &mut D, draw_type: DrawType) -> Result<Self::Output, D::Error>
+    where
+        D: DrawTarget<Color = Self::Color>;
 }
 
 #[embassy_executor::task]
