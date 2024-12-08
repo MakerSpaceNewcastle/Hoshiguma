@@ -116,14 +116,10 @@ pub(super) async fn task(r: crate::DisplayResources) {
             if draw_type == DrawType::Full {
                 draw_drawable!(
                     &mut display,
-                    drawables::title_bar::TitleBar::new(&screen_selector)
+                    drawables::screen::Screen::new(&screen_selector)
                 );
             }
             // TODO: partial drawable
-            draw_drawable!(
-                &mut display,
-                drawables::info_pane_background::InfoPaneBackground::default()
-            );
             screen_selector.draw(&mut display, &state);
         }
     }

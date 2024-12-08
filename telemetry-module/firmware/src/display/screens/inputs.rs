@@ -1,7 +1,7 @@
 use crate::display::{
     drawables::{
-        info_pane_background::REGION,
         measurement::{Measurement, Severity},
+        screen::INFO_PANE_REGION,
     },
     state::DisplayDataState,
 };
@@ -34,7 +34,10 @@ impl Drawable for Inputs<'_> {
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 65;
-        let cursor = Point::new(REGION.top_left.x + 2, REGION.top_left.y + 11);
+        let cursor = Point::new(
+            INFO_PANE_REGION.top_left.x + 2,
+            INFO_PANE_REGION.top_left.y + 11,
+        );
 
         // Machine power detection
         let cursor = Measurement::new(

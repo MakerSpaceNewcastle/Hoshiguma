@@ -1,4 +1,4 @@
-use crate::display::{screens::ScreenSelector, SCREEN_WIDTH};
+use crate::display::{screens::ScreenSelector, SCREEN_HEIGHT, SCREEN_WIDTH};
 use core::fmt::Write;
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
@@ -9,16 +9,25 @@ use embedded_graphics::{
     Drawable,
 };
 
-pub(super) const HEIGHT: u32 = 12;
-const REGION: Rectangle = Rectangle::new(Point::new(0, 0), Size::new(SCREEN_WIDTH as u32, HEIGHT));
-const BACKGROUND_COLOUR: Rgb565 = Rgb565::CSS_DARK_SLATE_GRAY;
+const TITLE_BAR_HEIGHT: u32 = 12;
+const TITLE_BAR_REGION: Rectangle = Rectangle::new(
+    Point::new(0, 0),
+    Size::new(SCREEN_WIDTH as u32, TITLE_BAR_HEIGHT),
+);
+const TITLE_BAR_BACKGROUND_COLOUR: Rgb565 = Rgb565::CSS_DARK_SLATE_GRAY;
 
-pub(crate) struct TitleBar {
+pub(crate) const INFO_PANE_REGION: Rectangle = Rectangle::new(
+    Point::new(0, TITLE_BAR_HEIGHT as i32),
+    Size::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32 - TITLE_BAR_HEIGHT),
+);
+pub(crate) const INFO_PANE_BACKGROUND_COLOUR: Rgb565 = Rgb565::CSS_BLACK;
+
+pub(crate) struct Screen {
     screen_number: usize,
     screen_title: &'static str,
 }
 
-impl TitleBar {
+impl Screen {
     pub(crate) fn new(screen_selector: &ScreenSelector) -> Self {
         Self {
             screen_number: screen_selector.current_screen_number(),
@@ -27,7 +36,7 @@ impl TitleBar {
     }
 }
 
-impl Drawable for TitleBar {
+impl Drawable for Screen {
     type Color = Rgb565;
     type Output = ();
 
@@ -37,9 +46,11 @@ impl Drawable for TitleBar {
     {
         // Draw the title bar background
         let background_style = PrimitiveStyleBuilder::new()
-            .fill_color(BACKGROUND_COLOUR)
+            .fill_color(TITLE_BAR_BACKGROUND_COLOUR)
             .build();
-        REGION.into_styled(background_style).draw(target)?;
+        TITLE_BAR_REGION
+            .into_styled(background_style)
+            .draw(target)?;
 
         let text_style = MonoTextStyle::new(&FONT_6X10, Rgb565::CSS_WHITE);
 
@@ -52,8 +63,20 @@ impl Drawable for TitleBar {
         ))
         .expect("text buffer should be large enough for the longest possible title bar text");
 
-        let p = Point::new(REGION.top_left.x + 2, REGION.bottom_right().unwrap().y - 3);
+        let p = Point::new(
+            TITLE_BAR_REGION.top_left.x + 2,
+            TITLE_BAR_REGION.bottom_right().unwrap().y - 3,
+        );
         Text::with_alignment(&s, p, text_style, Alignment::Left).draw(target)?;
+
+        // Draw the info pane background
+        let background_style = PrimitiveStyleBuilder::new()
+            .fill_color(INFO_PANE_BACKGROUND_COLOUR)
+            .build();
+
+        INFO_PANE_REGION
+            .into_styled(background_style)
+            .draw(target)?;
 
         Ok(())
     }

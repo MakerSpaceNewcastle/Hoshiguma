@@ -1,5 +1,5 @@
 use crate::display::{
-    drawables::{info_pane_background::REGION, measurement::Measurement, subtitle::Subtitle},
+    drawables::{measurement::Measurement, screen::INFO_PANE_REGION, subtitle::Subtitle},
     state::DisplayDataState,
 };
 use core::fmt::Write;
@@ -29,7 +29,10 @@ impl Drawable for Device<'_> {
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 25;
-        let cursor = Point::new(REGION.top_left.x + 2, REGION.top_left.y + 11);
+        let cursor = Point::new(
+            INFO_PANE_REGION.top_left.x + 2,
+            INFO_PANE_REGION.top_left.y + 11,
+        );
 
         let cursor = Subtitle::new(cursor, "Telemetry Module").draw(target)?;
 
