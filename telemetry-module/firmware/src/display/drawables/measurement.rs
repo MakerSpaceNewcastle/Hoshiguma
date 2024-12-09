@@ -1,10 +1,15 @@
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::Rgb565,
-    prelude::{DrawTarget, Point, WebColors},
+    prelude::{DrawTarget, Point, Primitive, Size, WebColors},
+    primitives::{PrimitiveStyleBuilder, Rectangle},
     text::{Alignment, Text},
     Drawable,
 };
+
+use crate::display::{DrawType, DrawTypeDrawable, SCREEN_WIDTH};
+
+use super::screen::INFO_PANE_BACKGROUND_COLOUR;
 
 pub(crate) enum Severity {
     Normal,
@@ -12,6 +17,7 @@ pub(crate) enum Severity {
     Critical,
 }
 
+/// Shows the name and value of a measurement/state.
 pub(crate) struct Measurement<'a> {
     origin: Point,
     value_offset: Point,
@@ -44,17 +50,39 @@ impl<'a> Measurement<'a> {
     }
 }
 
-impl Drawable for Measurement<'_> {
+const NAME_TEXT_STYLE: MonoTextStyle<'_, Rgb565> =
+    MonoTextStyle::new(&FONT_6X10, super::LIGHT_TEXT_COLOUR);
+
+impl DrawTypeDrawable for Measurement<'_> {
     type Color = Rgb565;
     type Output = Point;
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, target: &mut D, draw_type: &DrawType) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let name_style = MonoTextStyle::new(&FONT_6X10, super::LIGHT_TEXT_COLOUR);
+        let value_position = self.origin + self.value_offset;
 
-        Text::with_alignment(self.name, self.origin, name_style, Alignment::Left).draw(target)?;
+        match draw_type {
+            DrawType::Full => {
+                // Draw the measurement name on a full redraw only
+                Text::with_alignment(self.name, self.origin, NAME_TEXT_STYLE, Alignment::Left)
+                    .draw(target)?;
+            }
+            DrawType::ValuesOnly => {
+                // Blank the area where the value text will be drawn
+                // (only required when doing a values only draw)
+                let width = SCREEN_WIDTH as i32 - value_position.x;
+                let region = Rectangle::new(
+                    value_position - Point::new(0, Self::height() - 4),
+                    Size::new(width as u32, Self::height() as u32),
+                );
+                let background_style = PrimitiveStyleBuilder::new()
+                    .fill_color(INFO_PANE_BACKGROUND_COLOUR)
+                    .build();
+                region.into_styled(background_style).draw(target)?;
+            }
+        }
 
         let value_style = MonoTextStyle::new(
             &FONT_6X10,
@@ -72,13 +100,8 @@ impl Drawable for Measurement<'_> {
 
         let value = self.value.unwrap_or("<unknown>");
 
-        Text::with_alignment(
-            value,
-            self.origin + self.value_offset,
-            value_style,
-            Alignment::Left,
-        )
-        .draw(target)?;
+        // Always draw the value text
+        Text::with_alignment(value, value_position, value_style, Alignment::Left).draw(target)?;
 
         Ok(self.origin + Point::new(0, Self::height()))
     }

@@ -1,3 +1,4 @@
+use crate::display::{DrawType, DrawTypeDrawable};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::Rgb565,
@@ -6,6 +7,7 @@ use embedded_graphics::{
     Drawable,
 };
 
+/// Underlined text that can be used to group sets of related values on screen.
 pub(crate) struct Subtitle {
     origin: Point,
 
@@ -22,18 +24,20 @@ impl Subtitle {
     }
 }
 
-impl Drawable for Subtitle {
+impl DrawTypeDrawable for Subtitle {
     type Color = Rgb565;
     type Output = Point;
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, target: &mut D, draw_type: &DrawType) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
         let mut style = MonoTextStyle::new(&FONT_6X10, super::LIGHT_TEXT_COLOUR);
         style.set_underline_color(DecorationColor::TextColor);
 
-        Text::with_alignment(self.text, self.origin, style, Alignment::Left).draw(target)?;
+        if *draw_type == DrawType::Full {
+            Text::with_alignment(self.text, self.origin, style, Alignment::Left).draw(target)?;
+        }
 
         Ok(self.origin + Point::new(0, Self::height()))
     }

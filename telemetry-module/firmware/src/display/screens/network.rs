@@ -1,11 +1,12 @@
 use crate::{
     display::{
         drawables::{
-            info_pane_background::REGION,
             measurement::{Measurement, Severity},
+            screen::INFO_PANE_REGION,
             subtitle::Subtitle,
         },
         state::DisplayDataState,
+        DrawType, DrawTypeDrawable,
     },
     wifi::MQTT_BROKER_IP,
 };
@@ -13,7 +14,6 @@ use core::fmt::Write;
 use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
-    Drawable,
 };
 
 pub(super) struct Network<'a> {
@@ -26,18 +26,21 @@ impl<'a> Network<'a> {
     }
 }
 
-impl Drawable for Network<'_> {
+impl DrawTypeDrawable for Network<'_> {
     type Color = Rgb565;
     type Output = ();
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, target: &mut D, draw_type: &DrawType) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 35;
-        let cursor = Point::new(REGION.top_left.x + 2, REGION.top_left.y + 11);
+        let cursor = Point::new(
+            INFO_PANE_REGION.top_left.x + 2,
+            INFO_PANE_REGION.top_left.y + 11,
+        );
 
-        let cursor = Subtitle::new(cursor, "Local Network").draw(target)?;
+        let cursor = Subtitle::new(cursor, "Local Network").draw(target, draw_type)?;
 
         // Network connection status
         let cursor = Measurement::new(
@@ -53,7 +56,7 @@ impl Drawable for Network<'_> {
                 None => Severity::Critical,
             }),
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Our IP address
         let cursor = Measurement::new(
@@ -72,7 +75,7 @@ impl Drawable for Network<'_> {
                 .as_deref(),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Gateway IP address
         let cursor = Measurement::new(
@@ -91,11 +94,11 @@ impl Drawable for Network<'_> {
                 .as_deref(),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         let cursor = cursor + Point::new(0, 5);
 
-        let cursor = Subtitle::new(cursor, "MQTT").draw(target)?;
+        let cursor = Subtitle::new(cursor, "MQTT").draw(target, draw_type)?;
 
         // MQTT connection status
         let cursor = Measurement::new(
@@ -111,7 +114,7 @@ impl Drawable for Network<'_> {
                 false => Severity::Critical,
             }),
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // MQTT broker IP address
         let mqtt_broker_ip_str = {
@@ -126,7 +129,7 @@ impl Drawable for Network<'_> {
             Some(&mqtt_broker_ip_str),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         Ok(())
     }
