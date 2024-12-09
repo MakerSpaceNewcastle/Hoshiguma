@@ -1,14 +1,14 @@
 use crate::display::{
     drawables::{
-        info_pane_background::REGION,
         measurement::{Measurement, Severity},
+        screen::INFO_PANE_REGION,
     },
     state::DisplayDataState,
+    DrawType, DrawTypeDrawable,
 };
 use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
-    Drawable,
 };
 use hoshiguma_telemetry_protocol::payload::observation::{
     AirAssistDemand, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionMode, MachinePower,
@@ -25,16 +25,19 @@ impl<'a> Inputs<'a> {
     }
 }
 
-impl Drawable for Inputs<'_> {
+impl DrawTypeDrawable for Inputs<'_> {
     type Color = Rgb565;
     type Output = ();
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, target: &mut D, draw_type: &DrawType) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 65;
-        let cursor = Point::new(REGION.top_left.x + 2, REGION.top_left.y + 11);
+        let cursor = Point::new(
+            INFO_PANE_REGION.top_left.x + 2,
+            INFO_PANE_REGION.top_left.y + 11,
+        );
 
         // Machine power detection
         let cursor = Measurement::new(
@@ -50,7 +53,7 @@ impl Drawable for Inputs<'_> {
                 MachinePower::Off => Severity::Critical,
             }),
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Machine running
         let cursor = Measurement::new(
@@ -63,7 +66,7 @@ impl Drawable for Inputs<'_> {
             }),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Air assist demand
         let cursor = Measurement::new(
@@ -76,7 +79,7 @@ impl Drawable for Inputs<'_> {
             }),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Fume extraction mode switch
         let cursor = Measurement::new(
@@ -89,7 +92,7 @@ impl Drawable for Inputs<'_> {
             }),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Chassis intrusion
         let cursor = Measurement::new(
@@ -102,7 +105,7 @@ impl Drawable for Inputs<'_> {
             }),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Coolant resevoir level
         Measurement::new(
@@ -122,7 +125,7 @@ impl Drawable for Inputs<'_> {
                 _ => None,
             },
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         Ok(())
     }

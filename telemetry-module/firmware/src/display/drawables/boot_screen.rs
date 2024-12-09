@@ -7,6 +7,7 @@ use embedded_graphics::{
     Drawable,
 };
 
+/// Boot screen, shows firmware name, version and display alignment/bounds/offset verification bars.
 #[derive(Default)]
 pub(crate) struct BootScreen {}
 

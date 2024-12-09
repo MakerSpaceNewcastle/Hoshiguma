@@ -1,15 +1,15 @@
 use crate::display::{
     drawables::{
-        info_pane_background::REGION,
         measurement::{Measurement, Severity},
+        screen::INFO_PANE_REGION,
     },
     state::DisplayDataState,
+    DrawType, DrawTypeDrawable,
 };
 use core::fmt::Write;
 use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
-    Drawable,
 };
 use hoshiguma_telemetry_protocol::payload::{
     observation::MachineRunStatus, process::MachineOperationLockout,
@@ -25,16 +25,19 @@ impl<'a> Summary<'a> {
     }
 }
 
-impl Drawable for Summary<'_> {
+impl DrawTypeDrawable for Summary<'_> {
     type Color = Rgb565;
     type Output = ();
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, target: &mut D, draw_type: &DrawType) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 60;
-        let cursor = Point::new(REGION.top_left.x + 2, REGION.top_left.y + 11);
+        let cursor = Point::new(
+            INFO_PANE_REGION.top_left.x + 2,
+            INFO_PANE_REGION.top_left.y + 11,
+        );
 
         // Operation inhibit state
         let cursor = Measurement::new(
@@ -52,7 +55,7 @@ impl Drawable for Summary<'_> {
                 MachineOperationLockout::Denied => Severity::Critical,
             }),
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Number of active alarms
         let num_alarms = self.state.alarms.as_ref().map(|alarms| alarms.alarms.len());
@@ -70,7 +73,7 @@ impl Drawable for Summary<'_> {
                 .as_deref(),
             num_alarms.as_ref().map(|_| Severity::Warning),
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         let cursor = cursor + Point::new(0, 5);
 
@@ -88,7 +91,7 @@ impl Drawable for Summary<'_> {
                 MachineRunStatus::Running => Severity::Warning,
             }),
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         let cursor = cursor + Point::new(0, 5);
 
@@ -110,7 +113,7 @@ impl Drawable for Summary<'_> {
                 .as_deref(),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Coolant return temperature
         let cursor = Measurement::new(
@@ -130,7 +133,7 @@ impl Drawable for Summary<'_> {
                 .as_deref(),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         let cursor = cursor + Point::new(0, 5);
 
@@ -152,7 +155,7 @@ impl Drawable for Summary<'_> {
                 .as_deref(),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         // Coolant resevoir bottom temperature
         Measurement::new(
@@ -172,7 +175,7 @@ impl Drawable for Summary<'_> {
                 .as_deref(),
             None,
         )
-        .draw(target)?;
+        .draw(target, draw_type)?;
 
         Ok(())
     }

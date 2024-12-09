@@ -7,9 +7,11 @@ mod outputs;
 mod summary;
 mod temperatures;
 
-use super::state::DisplayDataState;
+use crate::display::DrawTypeDrawable;
+
+use super::{state::DisplayDataState, DrawType};
 use defmt::{debug, error, info, Format};
-use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget, Drawable};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
 
 #[derive(Clone, Format)]
 pub(super) enum Screen {
@@ -77,7 +79,7 @@ impl ScreenSelector {
         self.selected_idx + 1
     }
 
-    pub(super) fn draw<D>(&self, target: &mut D, state: &DisplayDataState)
+    pub(super) fn draw<D>(&self, target: &mut D, draw_type: &DrawType, state: &DisplayDataState)
     where
         D: DrawTarget<Color = Rgb565>,
     {
@@ -85,14 +87,16 @@ impl ScreenSelector {
         debug!("Drawing screen {}", screen);
 
         let result = match screen {
-            Screen::Summary => self::summary::Summary::new(state).draw(target),
-            Screen::AlertList => self::alert_list::AlertList {}.draw(target),
-            Screen::Monitors => self::monitors::Monitors {}.draw(target),
-            Screen::Temperatures => self::temperatures::Temperatures::new(state).draw(target),
-            Screen::Inputs => self::inputs::Inputs::new(state).draw(target),
-            Screen::Outputs => self::outputs::Outputs::new(state).draw(target),
-            Screen::Network => self::network::Network::new(state).draw(target),
-            Screen::Device => self::device::Device::new(state).draw(target),
+            Screen::Summary => self::summary::Summary::new(state).draw(target, draw_type),
+            Screen::AlertList => self::alert_list::AlertList {}.draw(target, draw_type),
+            Screen::Monitors => self::monitors::Monitors {}.draw(target, draw_type),
+            Screen::Temperatures => {
+                self::temperatures::Temperatures::new(state).draw(target, draw_type)
+            }
+            Screen::Inputs => self::inputs::Inputs::new(state).draw(target, draw_type),
+            Screen::Outputs => self::outputs::Outputs::new(state).draw(target, draw_type),
+            Screen::Network => self::network::Network::new(state).draw(target, draw_type),
+            Screen::Device => self::device::Device::new(state).draw(target, draw_type),
         };
 
         if result.is_err() {
