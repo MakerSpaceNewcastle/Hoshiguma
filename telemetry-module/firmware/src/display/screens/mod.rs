@@ -1,7 +1,6 @@
 mod alert_list;
 mod device;
 mod inputs;
-mod monitors;
 mod network;
 mod outputs;
 mod summary;
@@ -17,7 +16,6 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
 pub(super) enum Screen {
     Summary,
     AlertList,
-    Monitors,
     Temperatures,
     Inputs,
     Outputs,
@@ -30,7 +28,6 @@ impl Screen {
         match self {
             Screen::Summary => "Summary",
             Screen::AlertList => "Alerts",
-            Screen::Monitors => "Monitors",
             Screen::Temperatures => "Temperatures",
             Screen::Inputs => "Inputs",
             Screen::Outputs => "Outputs",
@@ -40,10 +37,9 @@ impl Screen {
     }
 }
 
-pub(super) const SCREENS: [Screen; 8] = [
+pub(super) const SCREENS: [Screen; 7] = [
     Screen::Summary,
     Screen::AlertList,
-    Screen::Monitors,
     Screen::Temperatures,
     Screen::Inputs,
     Screen::Outputs,
@@ -89,7 +85,6 @@ impl ScreenSelector {
         let result = match screen {
             Screen::Summary => self::summary::Summary::new(state).draw(target, draw_type),
             Screen::AlertList => self::alert_list::AlertList {}.draw(target, draw_type),
-            Screen::Monitors => self::monitors::Monitors {}.draw(target, draw_type),
             Screen::Temperatures => {
                 self::temperatures::Temperatures::new(state).draw(target, draw_type)
             }
