@@ -1,3 +1,5 @@
+use super::screen::INFO_PANE_BACKGROUND_COLOUR;
+use crate::display::{DrawType, DrawTypeDrawable, LIGHT_TEXT_COLOUR, SCREEN_WIDTH};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::Rgb565,
@@ -7,9 +9,8 @@ use embedded_graphics::{
     Drawable,
 };
 
-use crate::display::{DrawType, DrawTypeDrawable, SCREEN_WIDTH};
-
-use super::screen::INFO_PANE_BACKGROUND_COLOUR;
+pub(crate) const UNKNOWN_TEXT: &str = "<unknown>";
+pub(crate) const UNKNOWN_COLOUR: Rgb565 = Rgb565::CSS_MAGENTA;
 
 pub(crate) enum Severity {
     Normal,
@@ -51,7 +52,7 @@ impl<'a> Measurement<'a> {
 }
 
 const NAME_TEXT_STYLE: MonoTextStyle<'_, Rgb565> =
-    MonoTextStyle::new(&FONT_6X10, super::LIGHT_TEXT_COLOUR);
+    MonoTextStyle::new(&FONT_6X10, LIGHT_TEXT_COLOUR);
 
 impl DrawTypeDrawable for Measurement<'_> {
     type Color = Rgb565;
@@ -91,14 +92,14 @@ impl DrawTypeDrawable for Measurement<'_> {
                     Some(Severity::Normal) => Rgb565::CSS_GREEN,
                     Some(Severity::Warning) => Rgb565::CSS_YELLOW,
                     Some(Severity::Critical) => Rgb565::CSS_RED,
-                    None => super::LIGHT_TEXT_COLOUR,
+                    None => LIGHT_TEXT_COLOUR,
                 }
             } else {
-                Rgb565::CSS_MAGENTA
+                UNKNOWN_COLOUR
             },
         );
 
-        let value = self.value.unwrap_or("<unknown>");
+        let value = self.value.unwrap_or(UNKNOWN_TEXT);
 
         // Always draw the value text
         Text::with_alignment(value, value_position, value_style, Alignment::Left).draw(target)?;
