@@ -7,9 +7,9 @@ use embedded_graphics::{
     Drawable,
 };
 
-pub(super) struct AlertList {}
+pub(super) struct AlarmList {}
 
-impl DrawTypeDrawable for AlertList {
+impl DrawTypeDrawable for AlarmList {
     type Color = Rgb565;
     type Output = ();
 
@@ -18,7 +18,7 @@ impl DrawTypeDrawable for AlertList {
         D: DrawTarget<Color = Self::Color>,
     {
         Text::with_alignment(
-            "TODO\nAlert List",
+            "TODO\nAlarm List",
             INFO_PANE_REGION.center(),
             MonoTextStyle::new(&FONT_6X10, Rgb565::CSS_WHITE),
             Alignment::Center,
