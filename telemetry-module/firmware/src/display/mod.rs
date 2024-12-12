@@ -2,10 +2,15 @@ mod drawables;
 mod screens;
 pub(super) mod state;
 
+use self::{
+    screens::{DrawableScreen, ScreenSelector},
+    state::{DisplayDataState, STATE_CHANGED},
+};
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use core::cell::RefCell;
-use defmt::{debug, Format};
+use defmt::{debug, warn, Format};
 use display_interface_spi::SPIInterface;
+use drawables::{boot_screen::BootScreen, screen::Screen};
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
 use embassy_futures::select::{select3, Either3};
 use embassy_rp::{
@@ -17,24 +22,20 @@ use embassy_sync::{
     pubsub::WaitResult,
 };
 use embassy_time::Timer;
-use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget, Drawable};
+use embedded_graphics::{
+    pixelcolor::Rgb565,
+    prelude::{DrawTarget, WebColors},
+    Drawable,
+};
 use mipidsi::{
     models::ST7735s,
     options::{ColorOrder, Orientation, Rotation},
 };
-use screens::ScreenSelector;
-use state::{DisplayDataState, STATE_CHANGED};
-
-macro_rules! draw_drawable {
-    ($display: expr, $drawable: expr) => {{
-        if let Err(_) = $drawable.draw($display) {
-            defmt::error!("Failed to draw drawable");
-        }
-    }};
-}
 
 const SCREEN_WIDTH: u16 = 128;
 const SCREEN_HEIGHT: u16 = 128;
+
+const LIGHT_TEXT_COLOUR: Rgb565 = Rgb565::CSS_MOCCASIN;
 
 #[derive(PartialEq, Eq, Format)]
 enum DrawType {
@@ -77,7 +78,9 @@ pub(super) async fn task(r: crate::DisplayResources) {
         .unwrap();
 
     // Show the boot splash screen
-    draw_drawable!(&mut display, drawables::boot_screen::BootScreen::default());
+    if BootScreen::default().draw(&mut display).is_err() {
+        warn!("Failed to draw boot screen");
+    }
     Timer::after_secs(2).await;
 
     let mut screen_selector = ScreenSelector::default();
@@ -129,8 +132,12 @@ async fn draw<D>(
     D: DrawTarget<Color = Rgb565>,
 {
     debug!("Display draw ({})", draw_type);
-    if draw_type == DrawType::Full {
-        draw_drawable!(display, drawables::screen::Screen::new(screen_selector));
+
+    if draw_type == DrawType::Full && Screen::new(screen_selector).draw(display).is_err() {
+        warn!("Failed to draw screen title");
     }
-    screen_selector.draw(display, &draw_type, state);
+
+    if screen_selector.draw(display, &draw_type, state).is_err() {
+        warn!("Failed to draw screen");
+    }
 }
