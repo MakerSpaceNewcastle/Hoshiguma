@@ -6,11 +6,24 @@ mod outputs;
 mod summary;
 mod temperatures;
 
-use crate::display::DrawTypeDrawable;
-
 use super::{state::DisplayDataState, DrawType};
-use defmt::{debug, error, info, Format};
+use crate::display::DrawTypeDrawable;
+use defmt::{debug, info, Format};
 use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
+
+pub(super) trait DrawableScreen {
+    type Color;
+    type Output;
+
+    fn draw<D>(
+        &self,
+        target: &mut D,
+        draw_type: &DrawType,
+        state: &DisplayDataState,
+    ) -> Result<Self::Output, D::Error>
+    where
+        D: DrawTarget<Color = Self::Color>;
+}
 
 #[derive(Clone, Format)]
 pub(super) enum Screen {
@@ -74,17 +87,27 @@ impl ScreenSelector {
     pub(super) fn current_screen_number(&self) -> usize {
         self.selected_idx + 1
     }
+}
 
-    pub(super) fn draw<D>(&self, target: &mut D, draw_type: &DrawType, state: &DisplayDataState)
+impl DrawableScreen for ScreenSelector {
+    type Color = Rgb565;
+    type Output = ();
+
+    fn draw<D>(
+        &self,
+        target: &mut D,
+        draw_type: &DrawType,
+        state: &DisplayDataState,
+    ) -> Result<Self::Output, D::Error>
     where
-        D: DrawTarget<Color = Rgb565>,
+        D: DrawTarget<Color = Self::Color>,
     {
         let screen = self.current_screen();
         debug!("Drawing screen {}", screen);
 
-        let result = match screen {
+        match screen {
             Screen::Summary => self::summary::Summary::new(state).draw(target, draw_type),
-            Screen::AlarmList => self::alarm_list::AlarmList {}.draw(target, draw_type),
+            Screen::AlarmList => self::alarm_list::AlarmList::new(state).draw(target, draw_type),
             Screen::Temperatures => {
                 self::temperatures::Temperatures::new(state).draw(target, draw_type)
             }
@@ -92,10 +115,6 @@ impl ScreenSelector {
             Screen::Outputs => self::outputs::Outputs::new(state).draw(target, draw_type),
             Screen::Network => self::network::Network::new(state).draw(target, draw_type),
             Screen::Device => self::device::Device::new(state).draw(target, draw_type),
-        };
-
-        if result.is_err() {
-            error!("Failed to draw info pane screen");
         }
     }
 }
