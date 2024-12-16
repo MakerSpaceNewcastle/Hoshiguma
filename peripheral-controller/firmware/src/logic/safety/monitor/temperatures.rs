@@ -66,13 +66,13 @@ pub(crate) async fn task() {
             let mut resevoir_state = MonitorState::Normal;
 
             if let Ok(coolant_resevoir_top) =
-                temperature_to_state(25.0, 40.0, state.coolant_resevoir_top)
+                temperature_to_state(28.0, 40.0, state.coolant_resevoir_top)
             {
                 resevoir_state.upgrade(coolant_resevoir_top);
             }
 
             if let Ok(coolant_resevoir_bottom) =
-                temperature_to_state(25.0, 40.0, state.coolant_resevoir_bottom)
+                temperature_to_state(28.0, 40.0, state.coolant_resevoir_bottom)
             {
                 resevoir_state.upgrade(coolant_resevoir_bottom);
             }
