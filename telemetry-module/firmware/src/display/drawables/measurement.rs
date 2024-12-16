@@ -1,4 +1,4 @@
-use super::screen::INFO_PANE_BACKGROUND_COLOUR;
+use super::info_background::INFO_PANE_BACKGROUND_COLOUR;
 use crate::display::{DrawType, DrawTypeDrawable, LIGHT_TEXT_COLOUR, SCREEN_WIDTH};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
