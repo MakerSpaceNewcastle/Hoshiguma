@@ -1,5 +1,5 @@
 use crate::display::{
-    drawables::{measurement::Measurement, screen::INFO_PANE_REGION, subtitle::Subtitle},
+    drawables::{info_background::INFO_PANE_REGION, measurement::Measurement, subtitle::Subtitle},
     state::DisplayDataState,
     DrawType, DrawTypeDrawable,
 };

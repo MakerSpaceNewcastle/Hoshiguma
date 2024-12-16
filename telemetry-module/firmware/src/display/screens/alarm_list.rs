@@ -1,7 +1,7 @@
 use crate::display::{
     drawables::{
+        info_background::{InfoPaneBackground, INFO_PANE_REGION},
         measurement::{UNKNOWN_COLOUR, UNKNOWN_TEXT},
-        screen::{INFO_PANE_BACKGROUND_COLOUR, INFO_PANE_REGION},
         text::GenericText,
     },
     state::DisplayDataState,
@@ -11,8 +11,7 @@ use core::fmt::Write;
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::Rgb565,
-    prelude::{DrawTarget, Point, Primitive, WebColors},
-    primitives::PrimitiveStyleBuilder,
+    prelude::{DrawTarget, Point, WebColors},
     text::{renderer::CharacterStyle, Alignment, Text},
     Drawable,
 };
@@ -37,12 +36,7 @@ impl DrawTypeDrawable for AlarmList<'_> {
         D: DrawTarget<Color = Self::Color>,
     {
         // Always redraw the background
-        let background_style = PrimitiveStyleBuilder::new()
-            .fill_color(INFO_PANE_BACKGROUND_COLOUR)
-            .build();
-        INFO_PANE_REGION
-            .into_styled(background_style)
-            .draw(target)?;
+        InfoPaneBackground::default().draw(target)?;
 
         if let Some(alarms) = &self.state.alarms {
             if alarms.alarms.is_empty() {

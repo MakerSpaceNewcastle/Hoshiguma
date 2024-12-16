@@ -1,7 +1,7 @@
 use crate::display::{
     drawables::{
+        info_background::INFO_PANE_REGION,
         measurement::{Measurement, Severity},
-        screen::INFO_PANE_REGION,
     },
     state::DisplayDataState,
     DrawType, DrawTypeDrawable,
