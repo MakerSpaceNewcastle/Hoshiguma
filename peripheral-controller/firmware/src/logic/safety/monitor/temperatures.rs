@@ -41,13 +41,30 @@ pub(crate) async fn task() {
     let mut coolant_flow_status = MonitorStatus::new(Monitor::CoolantFlowTemperature);
     let mut coolant_resevoir_status = MonitorStatus::new(Monitor::CoolantResevoirTemperature);
 
+    let mut sensor_failure_counter = 0;
+
     loop {
         let state = rx.changed().await;
 
         // Check for faulty sensors
         let sensor_state = match state.overall_result() {
-            Ok(_) => MonitorState::Normal,
-            Err(_) => MonitorState::Warn,
+            Ok(_) => {
+                sensor_failure_counter = 0;
+                MonitorState::Normal
+            }
+            Err(_) => {
+                sensor_failure_counter += 1;
+                warn!(
+                    "One or more temperature sensors have failed {} times in a row",
+                    sensor_failure_counter
+                );
+
+                if sensor_failure_counter < 3 {
+                    MonitorState::Normal
+                } else {
+                    MonitorState::Warn
+                }
+            }
         };
 
         if sensor_status.refresh(sensor_state) == Changed::Yes {
