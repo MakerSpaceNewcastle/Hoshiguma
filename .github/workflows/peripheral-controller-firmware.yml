@@ -7,13 +7,13 @@ on:
       - main
     paths:
       - '.github/workflows/peripheral-controller.yml'
-      - 'flake.*'
+      - 'devenv.*'
       - 'peripheral-controller/telemetry-protocol/**'
       - 'peripheral-controller/firmware/**'
   pull_request:
     paths:
       - '.github/workflows/peripheral-controller.yml'
-      - 'flake.*'
+      - 'devenv.*'
       - 'peripheral-controller/telemetry-protocol/**'
       - 'peripheral-controller/firmware/**'
 
@@ -22,17 +22,21 @@ jobs:
     name: Code Quality
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./peripheral-controller/firmware
-
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v30
+      - uses: cachix/cachix-action@v15
+        with:
+          name: devenv
+      - name: Install devenv.sh
+        run: nix profile install nixpkgs#devenv
 
       - name: Clippy
+        shell: devenv shell bash -- -e {0}
         run: |
           set -x
+
+          cd ./peripheral-controller/firmware
 
           rustup target add thumbv6m-none-eabi
           rustup show
@@ -45,17 +49,21 @@ jobs:
     needs:
       - quality
 
-    defaults:
-      run:
-        working-directory: ./peripheral-controller/firmware
-
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v30
+      - uses: cachix/cachix-action@v15
+        with:
+          name: devenv
+      - name: Install devenv.sh
+        run: nix profile install nixpkgs#devenv
 
       - name: Build
+        shell: devenv shell bash -- -e {0}
         run: |
           set -x
+
+          cd ./peripheral-controller/firmware
 
           rustup target add thumbv6m-none-eabi
           rustup show
