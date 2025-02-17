@@ -20,6 +20,7 @@ use embassy_rp::{
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Ticker, Timer};
 use panic_probe as _;
+use portable_atomic as _;
 use static_cell::StaticCell;
 
 static mut CORE1_STACK: Stack<4096> = Stack::new();
