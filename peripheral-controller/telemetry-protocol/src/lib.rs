@@ -2,6 +2,7 @@
 
 pub mod payload;
 
+use heapless as _;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]
