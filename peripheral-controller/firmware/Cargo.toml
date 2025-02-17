@@ -11,15 +11,11 @@ panic-probe = ["dep:panic-probe"]
 telemetry = ["dep:hoshiguma-telemetry-protocol", "dep:git-version", "dep:postcard"]
 
 [dependencies]
-cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
 embassy-rp = { version = "0.2.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 
 embassy-executor = { version = "0.6.1", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
 embassy-time = { version = "0.3.2", features = ["defmt"] }
-
-embedded-hal = { package = "embedded-hal", version = "1.0.0" }
-embedded-hal-p2 = { package = "embedded-hal", version = "0.2.0" }
 
 defmt = "0.3.8"
 defmt-rtt = "0.4.1"
@@ -51,3 +47,6 @@ opt-level = 'z'
 debug = 2
 lto = true
 opt-level = "z"
+
+[lints.rust]
+unused_crate_dependencies = "deny"
