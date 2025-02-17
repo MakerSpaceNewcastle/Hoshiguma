@@ -6,7 +6,6 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
 embassy-rp = { version = "0.2.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 assign-resources = "0.4.1"
@@ -20,7 +19,6 @@ rand = { version = "0.8.5", default-features = false }
 embassy-executor = { version = "0.6.1", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
 embassy-time = { version = "0.3.2", features = ["defmt"] }
 
-embedded-hal = "1.0.0"
 embassy-embedded-hal = { version = "0.2.0", features = ["defmt"] }
 embedded-io-async = "0.6.1"
 
@@ -30,7 +28,6 @@ panic-probe = { version = "0.3.2", features = ["print-defmt"] }
 
 embassy-sync = "0.6.0"
 embassy-futures = "0.1.1"
-embassy-time-queue-driver = "0.1.0"
 portable-atomic = { version = "1.9.0", features = ["critical-section"] }
 static_cell = "2.1.0"
 
@@ -59,3 +56,6 @@ opt-level = 'z'
 debug = 2
 lto = true
 opt-level = "z"
+
+[lints.rust]
+unused_crate_dependencies = "deny"
