@@ -7,19 +7,19 @@ license = "MIT"
 
 [dependencies]
 cortex-m-rt = "0.7.3"
-embassy-rp = { version = "0.2.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-rp = { version = "0.3.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 assign-resources = "0.4.1"
 
 # Wifi
-cyw43 = { version = "0.2.0", features = ["defmt", "firmware-logs"] }
-cyw43-pio = { version = "0.2.0", features = ["defmt"] }
-embassy-net = { version = "0.5.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
+cyw43 = { version = "0.3.0", features = ["defmt", "firmware-logs"] }
+cyw43-pio = { version = "0.3.0", features = ["defmt"] }
+embassy-net = { version = "0.6.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
 rand = { version = "0.8.5", default-features = false }
 
-embassy-executor = { version = "0.6.1", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt", "integrated-timers"] }
-embassy-time = { version = "0.3.2", features = ["defmt"] }
+embassy-executor = { version = "0.7.0", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-time = { version = "0.4.0", features = ["defmt"] }
 
-embassy-embedded-hal = { version = "0.2.0", features = ["defmt"] }
+embassy-embedded-hal = { version = "0.3.0", features = ["defmt"] }
 embedded-io-async = "0.6.1"
 
 defmt = "0.3.8"
