@@ -1,6 +1,6 @@
 use crate::telemetry::TELEMETRY_MESSAGES;
-use cyw43::{PowerManagementMode, State};
-use cyw43_pio::PioSpi;
+use cyw43::{JoinOptions, PowerManagementMode, State};
+use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{debug, info, unwrap, warn};
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
@@ -80,6 +80,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
     let spi = PioSpi::new(
         &mut pio.common,
         pio.sm0,
+        DEFAULT_CLOCK_DIVIDER,
         pio.irq0,
         cs,
         r.dio,
@@ -115,7 +116,13 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
     info!("Joining WiFi network {}", WIFI_SSID);
     loop {
-        match control.join_wpa2(WIFI_SSID, env!("WIFI_PASSWORD")).await {
+        match control
+            .join(
+                WIFI_SSID,
+                JoinOptions::new(env!("WIFI_PASSWORD").as_bytes()),
+            )
+            .await
+        {
             Ok(_) => break,
             Err(err) => {
                 warn!("Failed to join WiFi network with status {}", err.status);
