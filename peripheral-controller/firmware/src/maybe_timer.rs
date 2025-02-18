@@ -30,14 +30,14 @@ impl Future for MaybeTimer {
             if self.yielded_once && expires_at <= Instant::now() {
                 Poll::Ready(())
             } else {
-                embassy_time_queue_driver::schedule_wake(expires_at.as_ticks(), cx.waker());
+                embassy_time_driver::schedule_wake(expires_at.as_ticks(), cx.waker());
                 self.yielded_once = true;
                 Poll::Pending
             }
         } else {
             // This can be quite long as the future will never complete
             let wake_deadline = Instant::now() + Duration::from_secs(5);
-            embassy_time_queue_driver::schedule_wake(wake_deadline.as_ticks(), cx.waker());
+            embassy_time_driver::schedule_wake(wake_deadline.as_ticks(), cx.waker());
             self.yielded_once = true;
             Poll::Pending
         }
