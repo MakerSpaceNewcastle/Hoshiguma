@@ -9,46 +9,50 @@ mod maybe_timer;
 #[cfg(feature = "telemetry")]
 mod telemetry;
 
-use defmt::{info, unwrap};
+use assign_resources::assign_resources;
+use defmt::unwrap;
 use defmt_rtt as _;
 use embassy_executor::{Executor, Spawner};
 use embassy_rp::{
-    gpio::{Input, Level, Output, OutputOpenDrain, Pull},
+    gpio::{Input, Level, Output, Pull},
     multicore::{spawn_core1, Stack},
+    peripherals,
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Timer};
-use one_wire_bus::OneWire;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
 use static_cell::StaticCell;
+use telemetry::TelemetryUart;
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
     use devices::{
-        laser_enable::LaserEnableState, machine_enable::MachineEnableState,
-        status_lamp::StatusLampSetting,
+        laser_enable::{LaserEnable, LaserEnableState},
+        machine_enable::{MachineEnable, MachineEnableState},
+        status_lamp::{StatusLamp, StatusLampSetting},
     };
 
     let p = unsafe { embassy_rp::Peripherals::steal() };
+    let r = split_resources!(p);
 
     // Disable the machine and laser
-    let mut laser_enable = init_laser_enable!(p);
-    let mut machine_enable = init_machine_enable!(p);
+    let mut laser_enable: LaserEnable = r.laser_enable.into();
+    let mut machine_enable: MachineEnable = r.machine_enable.into();
     laser_enable.set(LaserEnableState::Inhibited);
     machine_enable.set(MachineEnableState::Inhibited);
 
     // Report the panic
     #[cfg(feature = "telemetry")]
     {
-        let mut uart = init_telemetry_uart!(p);
+        let mut uart: TelemetryUart = r.telemetry.into();
         crate::telemetry::report_panic(&mut uart, info);
     }
 
     // Set the status lamp to something distinctive
-    let mut status_lamp = init_status_lamp!(p);
+    let mut status_lamp: StatusLamp = r.status_lamp.into();
     status_lamp.set(StatusLampSetting {
         red: true,
         amber: true,
@@ -56,7 +60,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     });
 
     // Blink the on-board LED pretty fast
-    let mut led = Output::new(p.PIN_25, Level::Low);
+    let mut led = Output::new(r.status.led, Level::Low);
     loop {
         led.toggle();
         embassy_time::block_for(Duration::from_millis(50));
@@ -67,11 +71,61 @@ static mut CORE1_STACK: Stack<4096> = Stack::new();
 static EXECUTOR0: StaticCell<Executor> = StaticCell::new();
 static EXECUTOR1: StaticCell<Executor> = StaticCell::new();
 
+assign_resources! {
+    status: StatusResources {
+        watchdog: WATCHDOG,
+        led: PIN_25,
+    },
+    onewire: OnewireResources {
+        pin: PIN_22,
+    },
+    status_lamp: StatusLampResources {
+        red: PIN_7, // Relay 0
+        amber: PIN_6, // Relay 1
+        green: PIN_16, // Relay 2
+    },
+    machine_power_detect: MachinePowerDetectResources {
+        detect: PIN_8, // Input 7
+    },
+    chassis_intrusion_detect: ChassisIntrusionDetectResources {
+        detect: PIN_9, // Input 4
+    },
+    air_assist_demand_detect: AirAssistDemandDetectResources {
+        detect: PIN_11, // Input 4
+    },
+    machine_run_detect: MachineRunDetectResources {
+        detect: PIN_12, // Input 3
+    },
+    fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
+        switch: PIN_10, // Input 5
+    },
+    coolant_resevoir_level_sensor: CoolantResevoirLevelSensorResources {
+        empty: PIN_4, // Level shifted IO 4
+        low: PIN_5, // Level shifted IO 5
+    },
+    air_assist_pump: AirAssistPumpResources {
+        relay: PIN_20, // Relay 6
+    },
+    fume_extraction_fan: FumeExtractionFanResources {
+        relay: PIN_21, // Relay 7
+    },
+    laser_enable: LaserEnableResources {
+        relay: PIN_18, // Relay 4
+    },
+    machine_enable: MachineEnableResources {
+        relay: PIN_17, // Relay 3
+    },
+    telemetry: TelemetryResources {
+        tx_pin: PIN_0,
+        uart: UART0,
+        dma_ch: DMA_CH0,
+    },
+}
+
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
-
-    let onboard_led = Output::new(p.PIN_25, Level::Low);
+    let r = split_resources!(p);
 
     // Unused IO
     let _in0 = Input::new(p.PIN_15, Pull::Down);
@@ -79,35 +133,8 @@ async fn main(_spawner: Spawner) {
     let _in2 = Input::new(p.PIN_13, Pull::Down);
     let _relay5 = Output::new(p.PIN_19, Level::Low);
 
-    // Digital IO
-    let status_lamp = init_status_lamp!(p);
-    let machine_power_detector = init_machine_power_detector!(p);
-    let chassis_intrusion_detector = init_chassis_intrusion_detector!(p);
-    let air_assist_demand_detector = init_air_assist_demand_detector!(p);
-    let air_assist_pump = init_air_assist_pump!(p);
-    let machine_run_detector = init_machine_run_detector!(p);
-    let fume_extraction_mode_switch = init_fume_extraction_mode_switch!(p);
-    let fume_extraction_fan = init_fume_extraction_fan!(p);
-    let coolant_resevoir_level_sensor = init_coolant_resevoir_level_sensor!(p);
-    let laser_enable = init_laser_enable!(p);
-    let machine_enable = init_machine_enable!(p);
-
-    // Temperature sensors
-    let mut onewire_bus = {
-        let pin = OutputOpenDrain::new(p.PIN_22, Level::Low);
-        OneWire::new(pin).unwrap()
-    };
-
-    for device_address in onewire_bus.devices(false, &mut embassy_time::Delay) {
-        let device_address = device_address.unwrap();
-        info!("Found one wire device at address: {}", device_address.0);
-    }
-
-    let mut watchdog = Watchdog::new(p.WATCHDOG);
-    watchdog.start(Duration::from_millis(550));
-
     #[cfg(feature = "telemetry")]
-    let mut telemetry_uart = init_telemetry_uart!(p);
+    let mut telemetry_uart: TelemetryUart = r.telemetry.into();
 
     #[cfg(feature = "telemetry")]
     crate::telemetry::report_boot(&mut telemetry_uart).await;
@@ -119,17 +146,17 @@ async fn main(_spawner: Spawner) {
         move || {
             let executor1 = EXECUTOR1.init(Executor::new());
             executor1.run(|spawner| {
-                unwrap!(spawner.spawn(watchdog_feed_task(watchdog, onboard_led)));
+                unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
                 unwrap!(spawner.spawn(devices::machine_power_detector::task(
-                    machine_power_detector,
+                    r.machine_power_detect
                 )));
                 unwrap!(spawner.spawn(devices::digital_inputs::task(
-                    chassis_intrusion_detector,
-                    air_assist_demand_detector,
-                    machine_run_detector,
-                    fume_extraction_mode_switch,
-                    coolant_resevoir_level_sensor,
+                    r.chassis_intrusion_detect,
+                    r.air_assist_demand_detect,
+                    r.machine_run_detect,
+                    r.fume_extraction_mode_switch,
+                    r.coolant_resevoir_level_sensor,
                 )));
 
                 // State monitor tasks
@@ -141,12 +168,12 @@ async fn main(_spawner: Spawner) {
 
                 // Machine operation permission control tasks
                 unwrap!(spawner.spawn(logic::safety::lockout::machine_lockout_task()));
-                unwrap!(spawner.spawn(devices::laser_enable::task(laser_enable)));
-                unwrap!(spawner.spawn(devices::machine_enable::task(machine_enable)));
+                unwrap!(spawner.spawn(devices::laser_enable::task(r.laser_enable)));
+                unwrap!(spawner.spawn(devices::machine_enable::task(r.machine_enable)));
 
                 // Fume extraction control tasks
                 unwrap!(spawner.spawn(logic::fume_extraction::task()));
-                unwrap!(spawner.spawn(devices::fume_extraction_fan::task(fume_extraction_fan)));
+                unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
             });
         },
     );
@@ -155,9 +182,9 @@ async fn main(_spawner: Spawner) {
     let executor0 = EXECUTOR0.init(Executor::new());
     executor0.run(|spawner| {
         unwrap!(spawner.spawn(logic::status_lamp::task()));
-        unwrap!(spawner.spawn(devices::status_lamp::task(status_lamp)));
+        unwrap!(spawner.spawn(devices::status_lamp::task(r.status_lamp)));
 
-        unwrap!(spawner.spawn(devices::temperature_sensors::task(onewire_bus)));
+        unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
 
         // State monitor tasks
         unwrap!(spawner.spawn(logic::safety::monitor::power::task()));
@@ -165,7 +192,7 @@ async fn main(_spawner: Spawner) {
         unwrap!(spawner.spawn(logic::safety::monitor::temperatures::task()));
 
         // Air assist control tasks
-        unwrap!(spawner.spawn(devices::air_assist::pump_task(air_assist_pump)));
+        unwrap!(spawner.spawn(devices::air_assist::pump_task(r.air_assist_pump)));
         unwrap!(spawner.spawn(logic::air_assist::task()));
 
         // Telemetry reporting tasks
@@ -175,10 +202,15 @@ async fn main(_spawner: Spawner) {
 }
 
 #[embassy_executor::task]
-async fn watchdog_feed_task(mut watchdog: Watchdog, mut led: Output<'static>) {
+async fn watchdog_feed_task(r: StatusResources) {
+    let mut onboard_led = Output::new(r.led, Level::Low);
+
+    let mut watchdog = Watchdog::new(r.watchdog);
+    watchdog.start(Duration::from_millis(550));
+
     loop {
         watchdog.feed();
-        led.toggle();
+        onboard_led.toggle();
         Timer::after_millis(500).await;
     }
 }

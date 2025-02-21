@@ -1,3 +1,4 @@
+use crate::TelemetryResources;
 #[cfg(not(feature = "panic-probe"))]
 use core::panic::PanicInfo;
 use defmt::{debug, error, unwrap};
@@ -15,17 +16,13 @@ use hoshiguma_telemetry_protocol::{
 
 pub(crate) type TelemetryUart = UartTx<'static, UART0, Async>;
 
-#[macro_export]
-macro_rules! init_telemetry_uart {
-    ($p:expr) => {{
+impl From<TelemetryResources> for TelemetryUart {
+    fn from(r: TelemetryResources) -> Self {
         let mut config = embassy_rp::uart::Config::default();
         config.baudrate = 9600;
 
-        let uart: $crate::telemetry::TelemetryUart =
-            embassy_rp::uart::UartTx::new($p.UART0, $p.PIN_0, $p.DMA_CH0, config);
-
-        uart
-    }};
+        embassy_rp::uart::UartTx::new(r.uart, r.tx_pin, r.dma_ch, config)
+    }
 }
 
 async fn tx_message(uart: &mut TelemetryUart, msg: &Message) {

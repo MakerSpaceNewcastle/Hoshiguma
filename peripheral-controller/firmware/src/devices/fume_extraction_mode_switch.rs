@@ -1,7 +1,10 @@
-use crate::io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs};
+use crate::{
+    io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
+    FumeExtractionModeSwitchResources,
+};
 use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
-use embassy_rp::gpio::Level;
+use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 
 pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
@@ -10,18 +13,15 @@ pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
     2,
 > = Watch::new();
 
-#[macro_export]
-macro_rules! init_fume_extraction_mode_switch {
-    ($p:expr) => {{
-        // Isolated input 5
-        let input = embassy_rp::gpio::Input::new($p.PIN_10, embassy_rp::gpio::Pull::Down);
-
-        $crate::devices::fume_extraction_mode_switch::FumeExtractionModeSwitch::new([input])
-    }};
-}
-
 pub(crate) type FumeExtractionModeSwitch =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, FumeExtractionMode>;
+
+impl From<FumeExtractionModeSwitchResources> for FumeExtractionModeSwitch {
+    fn from(r: FumeExtractionModeSwitchResources) -> Self {
+        let input = Input::new(r.switch, Pull::Down);
+        Self::new([input])
+    }
+}
 
 #[derive(Clone, Format)]
 pub(crate) enum FumeExtractionMode {

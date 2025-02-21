@@ -1,29 +1,26 @@
-use crate::io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs};
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
+use crate::{
+    io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
+    StatusLampResources,
+};
 use defmt::{unwrap, Format};
-use embassy_rp::gpio::Level;
+use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 #[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
-#[macro_export]
-macro_rules! init_status_lamp {
-    ($p:expr) => {{
-        // Relay 0
-        let red = Output::new($p.PIN_7, Level::Low);
-
-        // Relay 1
-        let amber = Output::new($p.PIN_6, Level::Low);
-
-        // Relay 2
-        let green = Output::new($p.PIN_16, Level::Low);
-
-        $crate::devices::status_lamp::StatusLamp::new([red, amber, green])
-    }};
-}
-
 pub(crate) type StatusLamp = DigitalOutputController<3, StatusLampSetting>;
+
+impl From<StatusLampResources> for StatusLamp {
+    fn from(r: StatusLampResources) -> Self {
+        let red = Output::new(r.red, Level::Low);
+        let amber = Output::new(r.amber, Level::Low);
+        let green = Output::new(r.green, Level::Low);
+
+        Self::new([red, amber, green])
+    }
+}
 
 #[derive(Default, Clone, Format)]
 pub(crate) struct StatusLampSetting {
@@ -66,7 +63,8 @@ impl StatusLampSetting {
 pub(crate) static STATUS_LAMP: Watch<CriticalSectionRawMutex, StatusLampSetting, 2> = Watch::new();
 
 #[embassy_executor::task]
-pub(crate) async fn task(mut status_lamp: StatusLamp) {
+pub(crate) async fn task(r: StatusLampResources) {
+    let mut status_lamp: StatusLamp = r.into();
     let mut rx = unwrap!(STATUS_LAMP.receiver());
 
     loop {

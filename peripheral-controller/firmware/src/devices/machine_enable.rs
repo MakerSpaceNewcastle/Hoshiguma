@@ -1,23 +1,23 @@
-use crate::io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs};
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
+use crate::{
+    io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
+    MachineEnableResources,
+};
 use defmt::Format;
-use embassy_rp::gpio::Level;
+use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 #[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
-#[macro_export]
-macro_rules! init_machine_enable {
-    ($p:expr) => {{
-        // Relay output 3
-        let output = embassy_rp::gpio::Output::new($p.PIN_17, embassy_rp::gpio::Level::Low);
-
-        $crate::devices::machine_enable::MachineEnable::new([output])
-    }};
-}
-
 pub(crate) type MachineEnable = DigitalOutputController<1, MachineEnableState>;
+
+impl From<MachineEnableResources> for MachineEnable {
+    fn from(r: MachineEnableResources) -> Self {
+        let output = Output::new(r.relay, Level::Low);
+        Self::new([output])
+    }
+}
 
 #[derive(Clone, Format)]
 pub(crate) enum MachineEnableState {
@@ -48,7 +48,9 @@ pub(crate) static MACHINE_ENABLE: Watch<CriticalSectionRawMutex, MachineEnableSt
     Watch::new();
 
 #[embassy_executor::task]
-pub(crate) async fn task(mut machine_enable: MachineEnable) {
+pub(crate) async fn task(r: MachineEnableResources) {
+    let mut machine_enable: MachineEnable = r.into();
+
     let mut rx = MACHINE_ENABLE.receiver().unwrap();
 
     loop {
