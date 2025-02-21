@@ -13,6 +13,7 @@ telemetry = ["dep:hoshiguma-telemetry-protocol", "dep:git-version", "dep:postcar
 [dependencies]
 cortex-m-rt = "0.7.3"
 embassy-rp = { version = "0.3.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+assign-resources = "0.4.1"
 
 embassy-executor = { version = "0.7.0", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
 embassy-time = { version = "0.4.0", features = ["defmt"] }

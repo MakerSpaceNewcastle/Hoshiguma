@@ -1,10 +1,11 @@
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
-use defmt::Format;
-use ds18b20::Ds18b20;
-use embassy_rp::gpio::OutputOpenDrain;
+use crate::OnewireResources;
+use defmt::{info, Format};
+use ds18b20::{Ds18b20, Resolution};
+use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::{Delay, Duration, Ticker, Timer};
 #[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 use one_wire_bus::{Address, OneWire};
@@ -75,8 +76,17 @@ pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, TemperatureR
     Watch::new();
 
 #[embassy_executor::task]
-pub(crate) async fn task(mut bus: OneWire<OutputOpenDrain<'static>>) {
-    let mut delay = embassy_time::Delay;
+pub(crate) async fn task(r: OnewireResources) {
+    let mut bus = {
+        let pin = OutputOpenDrain::new(r.pin, Level::Low);
+        OneWire::new(pin).unwrap()
+    };
+
+    // Scan bus
+    for device_address in bus.devices(false, &mut embassy_time::Delay) {
+        let device_address = device_address.unwrap();
+        info!("Found one wire device at address: {}", device_address.0);
+    }
 
     let mut ticker = Ticker::every(Duration::from_secs(10));
 
@@ -93,13 +103,13 @@ pub(crate) async fn task(mut bus: OneWire<OutputOpenDrain<'static>>) {
     let coolant_pump_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
 
     loop {
-        ds18b20::start_simultaneous_temp_measurement(&mut bus, &mut delay).unwrap();
+        ds18b20::start_simultaneous_temp_measurement(&mut bus, &mut Delay).unwrap();
 
-        Timer::after_millis(ds18b20::Resolution::Bits12.max_measurement_time_millis() as u64).await;
+        Timer::after_millis(Resolution::Bits12.max_measurement_time_millis() as u64).await;
 
         let mut read_sensor = |sensor: &Ds18b20| -> TemperatureReading {
             sensor
-                .read_data(&mut bus, &mut delay)
+                .read_data(&mut bus, &mut Delay)
                 .map(|r| r.temperature)
                 .map_err(|_| ())
         };

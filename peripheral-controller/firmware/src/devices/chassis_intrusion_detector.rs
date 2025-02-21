@@ -1,24 +1,24 @@
-use crate::io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs};
+use crate::{
+    io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
+    ChassisIntrusionDetectResources,
+};
 use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
-use embassy_rp::gpio::Level;
+use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 
 pub(crate) static CHASSIS_INTRUSION_CHANGED: Watch<CriticalSectionRawMutex, ChassisIntrusion, 1> =
     Watch::new();
 
-#[macro_export]
-macro_rules! init_chassis_intrusion_detector {
-    ($p:expr) => {{
-        // Isolated input 6
-        let input = embassy_rp::gpio::Input::new($p.PIN_9, embassy_rp::gpio::Pull::Down);
-
-        $crate::devices::chassis_intrusion_detector::ChassisIntrusionDetector::new([input])
-    }};
-}
-
 pub(crate) type ChassisIntrusionDetector =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, ChassisIntrusion>;
+
+impl From<ChassisIntrusionDetectResources> for ChassisIntrusionDetector {
+    fn from(r: ChassisIntrusionDetectResources) -> Self {
+        let input = Input::new(r.detect, Pull::Down);
+        Self::new([input])
+    }
+}
 
 #[derive(Clone, Format)]
 pub(crate) enum ChassisIntrusion {

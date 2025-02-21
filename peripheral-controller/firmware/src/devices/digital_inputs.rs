@@ -7,18 +7,33 @@ use super::{
 };
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
+use crate::{
+    AirAssistDemandDetectResources, ChassisIntrusionDetectResources,
+    CoolantResevoirLevelSensorResources, FumeExtractionModeSwitchResources,
+    MachineRunDetectResources,
+};
 use embassy_time::{Duration, Ticker};
 #[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[embassy_executor::task]
 pub(crate) async fn task(
-    mut chassis_intrusion_detector: ChassisIntrusionDetector,
-    mut air_assist_demand_detector: AirAssistDemandDetector,
-    mut machine_run_detector: MachineRunDetector,
-    mut fume_extraction_mode_switch: FumeExtractionModeSwitch,
-    mut coolant_resevoir_level_sensor: CoolantResevoirLevelSensor,
+    chassis_intrusion_detector_resources: ChassisIntrusionDetectResources,
+    air_assist_demand_detector_resources: AirAssistDemandDetectResources,
+    machine_run_detector_resources: MachineRunDetectResources,
+    fume_extraction_mode_switch_resources: FumeExtractionModeSwitchResources,
+    coolant_resevoir_level_sensor_resources: CoolantResevoirLevelSensorResources,
 ) {
+    let mut chassis_intrusion_detector: ChassisIntrusionDetector =
+        chassis_intrusion_detector_resources.into();
+    let mut air_assist_demand_detector: AirAssistDemandDetector =
+        air_assist_demand_detector_resources.into();
+    let mut machine_run_detector: MachineRunDetector = machine_run_detector_resources.into();
+    let mut fume_extraction_mode_switch: FumeExtractionModeSwitch =
+        fume_extraction_mode_switch_resources.into();
+    let mut coolant_resevoir_level_sensor: CoolantResevoirLevelSensor =
+        coolant_resevoir_level_sensor_resources.into();
+
     let mut ticker = Ticker::every(Duration::from_micros(10));
 
     let chassis_intrusion_tx = CHASSIS_INTRUSION_CHANGED.sender();

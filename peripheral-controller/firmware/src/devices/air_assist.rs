@@ -1,39 +1,37 @@
-use crate::io_helpers::{
-    digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
-    digital_output::{DigitalOutputController, StateToDigitalOutputs},
-};
 #[cfg(feature = "telemetry")]
 use crate::telemetry::queue_telemetry_message;
+use crate::{
+    io_helpers::{
+        digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
+        digital_output::{DigitalOutputController, StateToDigitalOutputs},
+    },
+    AirAssistDemandDetectResources, AirAssistPumpResources,
+};
 use debouncr::{DebouncerStateful, Repeat2};
 use defmt::{unwrap, Format};
-use embassy_rp::gpio::Level;
+use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 #[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
-#[macro_export]
-macro_rules! init_air_assist_demand_detector {
-    ($p:expr) => {{
-        // Isolated input 4
-        let input = embassy_rp::gpio::Input::new($p.PIN_11, embassy_rp::gpio::Pull::Down);
-
-        $crate::devices::air_assist::AirAssistDemandDetector::new([input])
-    }};
-}
-
-#[macro_export]
-macro_rules! init_air_assist_pump {
-    ($p:expr) => {{
-        // Relay output 6
-        let output = embassy_rp::gpio::Output::new($p.PIN_20, embassy_rp::gpio::Level::Low);
-
-        $crate::devices::air_assist::AirAssistPump::new([output])
-    }};
-}
-
 pub(crate) type AirAssistDemandDetector =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, AirAssistDemand>;
+
+impl From<AirAssistDemandDetectResources> for AirAssistDemandDetector {
+    fn from(r: AirAssistDemandDetectResources) -> Self {
+        let input = Input::new(r.detect, Pull::Down);
+        Self::new([input])
+    }
+}
+
 pub(crate) type AirAssistPump = DigitalOutputController<1, AirAssistDemand>;
+
+impl From<AirAssistPumpResources> for AirAssistPump {
+    fn from(r: AirAssistPumpResources) -> Self {
+        let output = Output::new(r.relay, Level::Low);
+        Self::new([output])
+    }
+}
 
 #[derive(Clone, Format)]
 pub(crate) enum AirAssistDemand {
@@ -87,7 +85,9 @@ pub(crate) static AIR_ASSIST_PUMP: Watch<CriticalSectionRawMutex, AirAssistDeman
     Watch::new();
 
 #[embassy_executor::task]
-pub(crate) async fn pump_task(mut air_assist_pump: AirAssistPump) {
+pub(crate) async fn pump_task(r: AirAssistPumpResources) {
+    let mut air_assist_pump: AirAssistPump = r.into();
+
     let mut rx = unwrap!(AIR_ASSIST_PUMP.receiver());
 
     loop {
