@@ -29,7 +29,6 @@ pub(crate) enum FumeExtractionMode {
     OverrideRun,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&FumeExtractionMode>
     for hoshiguma_telemetry_protocol::payload::observation::FumeExtractionMode
 {

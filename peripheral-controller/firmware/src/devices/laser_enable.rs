@@ -1,13 +1,11 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use crate::{
     io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
+    telemetry::queue_telemetry_message,
     LaserEnableResources,
 };
 use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
 pub(crate) type LaserEnable = DigitalOutputController<1, LaserEnableState>;
@@ -25,7 +23,6 @@ pub(crate) enum LaserEnableState {
     Enabled,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&LaserEnableState> for hoshiguma_telemetry_protocol::payload::control::LaserEnable {
     fn from(value: &LaserEnableState) -> Self {
         match value {
@@ -55,7 +52,6 @@ pub(crate) async fn task(r: LaserEnableResources) {
     loop {
         let setting = rx.changed().await;
 
-        #[cfg(feature = "telemetry")]
         queue_telemetry_message(Payload::Control(ControlPayload::LaserEnable(
             (&setting).into(),
         )))

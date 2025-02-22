@@ -28,7 +28,6 @@ impl From<CoolantResevoirLevelSensorResources> for CoolantResevoirLevelSensor {
 #[derive(Clone, Format)]
 pub(crate) struct CoolantResevoirLevelReading(pub(crate) Result<CoolantResevoirLevel, ()>);
 
-#[cfg(feature = "telemetry")]
 impl From<&CoolantResevoirLevelReading>
     for hoshiguma_telemetry_protocol::payload::observation::CoolantResevoirLevelReading
 {

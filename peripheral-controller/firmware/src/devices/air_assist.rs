@@ -1,17 +1,15 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use crate::{
     io_helpers::{
         digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
         digital_output::{DigitalOutputController, StateToDigitalOutputs},
     },
+    telemetry::queue_telemetry_message,
     AirAssistDemandDetectResources, AirAssistPumpResources,
 };
 use debouncr::{DebouncerStateful, Repeat2};
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
 pub(crate) type AirAssistDemandDetector =
@@ -39,7 +37,6 @@ pub(crate) enum AirAssistDemand {
     Demand,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&AirAssistDemand>
     for hoshiguma_telemetry_protocol::payload::observation::AirAssistDemand
 {
@@ -51,7 +48,6 @@ impl From<&AirAssistDemand>
     }
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&AirAssistDemand> for hoshiguma_telemetry_protocol::payload::control::AirAssistPump {
     fn from(value: &AirAssistDemand) -> Self {
         match value {
@@ -93,7 +89,6 @@ pub(crate) async fn pump_task(r: AirAssistPumpResources) {
     loop {
         let setting = rx.changed().await;
 
-        #[cfg(feature = "telemetry")]
         queue_telemetry_message(Payload::Control(ControlPayload::AirAssistPump(
             (&setting).into(),
         )))

@@ -1,13 +1,11 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use crate::{
     io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
+    telemetry::queue_telemetry_message,
     FumeExtractionFanResources,
 };
 use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
 pub(crate) type FumeExtractionFan = DigitalOutputController<1, FumeExtractionDemand>;
@@ -25,7 +23,6 @@ pub(crate) enum FumeExtractionDemand {
     Demand,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&FumeExtractionDemand>
     for hoshiguma_telemetry_protocol::payload::control::FumeExtractionFan
 {
@@ -58,7 +55,6 @@ pub(crate) async fn task(r: FumeExtractionFanResources) {
     loop {
         let setting = rx.changed().await;
 
-        #[cfg(feature = "telemetry")]
         queue_telemetry_message(Payload::Control(ControlPayload::FumeExtractionFan(
             (&setting).into(),
         )))

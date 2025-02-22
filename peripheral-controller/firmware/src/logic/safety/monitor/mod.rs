@@ -22,7 +22,6 @@ pub(crate) enum Monitor {
     CoolantResevoirTemperature,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&Monitor> for hoshiguma_telemetry_protocol::payload::process::Monitor {
     fn from(value: &Monitor) -> Self {
         match value {
@@ -44,7 +43,6 @@ pub(crate) enum MonitorState {
     Critical,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&MonitorState> for hoshiguma_telemetry_protocol::payload::process::MonitorState {
     fn from(value: &MonitorState) -> Self {
         match value {
@@ -70,7 +68,6 @@ pub(crate) struct MonitorStatus {
     pub state: MonitorState,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&MonitorStatus> for hoshiguma_telemetry_protocol::payload::process::MonitorStatus {
     fn from(value: &MonitorStatus) -> Self {
         Self {
