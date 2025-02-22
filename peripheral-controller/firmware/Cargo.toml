@@ -6,9 +6,8 @@ edition = "2021"
 license = "MIT"
 
 [features]
-default = ["telemetry"]
+default = []
 panic-probe = ["dep:panic-probe"]
-telemetry = ["dep:hoshiguma-telemetry-protocol", "dep:git-version", "dep:postcard"]
 
 [dependencies]
 cortex-m-rt = "0.7.3"
@@ -35,9 +34,10 @@ ds18b20 = "0.1.1"
 
 debouncr = "0.2.2"
 
-hoshiguma-telemetry-protocol = { path = "../telemetry-protocol/", default-features = false, optional = true }
-git-version = { version = "0.3.5", optional = true }
-postcard  = { version = "1.0.10", optional = true }
+# Telemetry
+hoshiguma-telemetry-protocol = { path = "../telemetry-protocol/", default-features = false }
+git-version = "0.3.5"
+postcard  = "1.0.10"
 
 [profile.release]
 debug = 2

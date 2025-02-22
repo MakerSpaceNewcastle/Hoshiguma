@@ -5,15 +5,12 @@ use super::{
     fume_extraction_mode_switch::{FumeExtractionModeSwitch, FUME_EXTRACTION_MODE_CHANGED},
     machine_run_detector::{MachineRunDetector, MACHINE_RUNNING_CHANGED},
 };
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use crate::{
-    AirAssistDemandDetectResources, ChassisIntrusionDetectResources,
-    CoolantResevoirLevelSensorResources, FumeExtractionModeSwitchResources,
-    MachineRunDetectResources,
+    telemetry::queue_telemetry_message, AirAssistDemandDetectResources,
+    ChassisIntrusionDetectResources, CoolantResevoirLevelSensorResources,
+    FumeExtractionModeSwitchResources, MachineRunDetectResources,
 };
 use embassy_time::{Duration, Ticker};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[embassy_executor::task]
@@ -46,7 +43,6 @@ pub(crate) async fn task(
         ticker.next().await;
 
         if let Some(state) = chassis_intrusion_detector.update() {
-            #[cfg(feature = "telemetry")]
             queue_telemetry_message(Payload::Observation(ObservationPayload::ChassisIntrusion(
                 (&state).into(),
             )))
@@ -56,7 +52,6 @@ pub(crate) async fn task(
         }
 
         if let Some(state) = air_assist_demand_detector.update() {
-            #[cfg(feature = "telemetry")]
             queue_telemetry_message(Payload::Observation(ObservationPayload::AirAssistDemand(
                 (&state).into(),
             )))
@@ -66,7 +61,6 @@ pub(crate) async fn task(
         }
 
         if let Some(state) = machine_run_detector.update() {
-            #[cfg(feature = "telemetry")]
             queue_telemetry_message(Payload::Observation(ObservationPayload::MachineRun(
                 (&state).into(),
             )))
@@ -76,7 +70,6 @@ pub(crate) async fn task(
         }
 
         if let Some(state) = fume_extraction_mode_switch.update() {
-            #[cfg(feature = "telemetry")]
             queue_telemetry_message(Payload::Observation(
                 ObservationPayload::FumeExtractionMode((&state).into()),
             ))
@@ -86,7 +79,6 @@ pub(crate) async fn task(
         }
 
         if let Some(state) = coolant_resevoir_level_sensor.update() {
-            #[cfg(feature = "telemetry")]
             queue_telemetry_message(Payload::Observation(
                 ObservationPayload::CoolantResevoirLevel((&state).into()),
             ))

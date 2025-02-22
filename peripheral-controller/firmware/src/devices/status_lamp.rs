@@ -1,13 +1,11 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use crate::{
     io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
+    telemetry::queue_telemetry_message,
     StatusLampResources,
 };
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
 pub(crate) type StatusLamp = DigitalOutputController<3, StatusLampSetting>;
@@ -29,7 +27,6 @@ pub(crate) struct StatusLampSetting {
     pub(crate) green: bool,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&StatusLampSetting> for hoshiguma_telemetry_protocol::payload::control::StatusLamp {
     fn from(value: &StatusLampSetting) -> Self {
         Self {
@@ -70,7 +67,6 @@ pub(crate) async fn task(r: StatusLampResources) {
     loop {
         let setting = rx.changed().await;
 
-        #[cfg(feature = "telemetry")]
         queue_telemetry_message(Payload::Control(ControlPayload::StatusLamp(
             (&setting).into(),
         )))

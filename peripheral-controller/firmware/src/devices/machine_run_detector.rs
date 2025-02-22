@@ -26,7 +26,6 @@ pub(crate) enum MachineRunStatus {
     Running,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&MachineRunStatus>
     for hoshiguma_telemetry_protocol::payload::observation::MachineRunStatus
 {

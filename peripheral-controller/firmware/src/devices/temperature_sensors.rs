@@ -1,12 +1,9 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
-use crate::OnewireResources;
+use crate::{telemetry::queue_telemetry_message, OnewireResources};
 use defmt::{info, Format};
 use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 use one_wire_bus::{Address, OneWire};
 
@@ -30,7 +27,6 @@ pub(crate) struct TemperatureReadings {
     pub(crate) coolant_pump: TemperatureReading,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&TemperatureReadings>
     for hoshiguma_telemetry_protocol::payload::observation::Temperatures
 {
@@ -126,7 +122,6 @@ pub(crate) async fn task(r: OnewireResources) {
             coolant_pump: read_sensor(&coolant_pump_sensor),
         };
 
-        #[cfg(feature = "telemetry")]
         queue_telemetry_message(Payload::Observation(ObservationPayload::Temperatures(
             (&readings).into(),
         )))

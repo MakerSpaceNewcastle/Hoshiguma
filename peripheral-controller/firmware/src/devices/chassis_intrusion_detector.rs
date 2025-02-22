@@ -26,7 +26,6 @@ pub(crate) enum ChassisIntrusion {
     Intruded,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&ChassisIntrusion>
     for hoshiguma_telemetry_protocol::payload::observation::ChassisIntrusion
 {

@@ -1,14 +1,14 @@
 use super::{alarms::ACTIVE_ALARMS_CHANGED, monitor::MonitorState};
-use crate::devices::{
-    laser_enable::{LaserEnableState, LASER_ENABLE},
-    machine_enable::{MachineEnableState, MACHINE_ENABLE},
-    machine_run_detector::{MachineRunStatus, MACHINE_RUNNING_CHANGED},
+use crate::{
+    devices::{
+        laser_enable::{LaserEnableState, LASER_ENABLE},
+        machine_enable::{MachineEnableState, MACHINE_ENABLE},
+        machine_run_detector::{MachineRunStatus, MACHINE_RUNNING_CHANGED},
+    },
+    telemetry::queue_telemetry_message,
 };
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use defmt::{info, Format};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{process::ProcessPayload, Payload};
 
 #[derive(Clone, Format)]
@@ -18,7 +18,6 @@ pub(crate) enum MachineOperationLockout {
     Denied,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&MachineOperationLockout>
     for hoshiguma_telemetry_protocol::payload::process::MachineOperationLockout
 {
@@ -69,7 +68,6 @@ pub(crate) async fn alarm_evaluation_task() {
         };
         info!("Machine operation lockout: {}", lockout);
 
-        #[cfg(feature = "telemetry")]
         queue_telemetry_message(Payload::Process(ProcessPayload::Lockout((&lockout).into()))).await;
 
         machine_lockout_tx.send(lockout);

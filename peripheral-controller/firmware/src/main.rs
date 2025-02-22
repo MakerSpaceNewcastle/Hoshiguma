@@ -6,7 +6,6 @@ mod devices;
 mod io_helpers;
 mod logic;
 mod maybe_timer;
-#[cfg(feature = "telemetry")]
 mod telemetry;
 
 use assign_resources::assign_resources;
@@ -45,11 +44,8 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     machine_enable.set(MachineEnableState::Inhibited);
 
     // Report the panic
-    #[cfg(feature = "telemetry")]
-    {
-        let mut uart: TelemetryUart = r.telemetry.into();
-        crate::telemetry::report_panic(&mut uart, info);
-    }
+    let mut uart: TelemetryUart = r.telemetry.into();
+    crate::telemetry::report_panic(&mut uart, info);
 
     // Set the status lamp to something distinctive
     let mut status_lamp: StatusLamp = r.status_lamp.into();
@@ -133,10 +129,7 @@ async fn main(_spawner: Spawner) {
     let _in2 = Input::new(p.PIN_13, Pull::Down);
     let _relay5 = Output::new(p.PIN_19, Level::Low);
 
-    #[cfg(feature = "telemetry")]
     let mut telemetry_uart: TelemetryUart = r.telemetry.into();
-
-    #[cfg(feature = "telemetry")]
     crate::telemetry::report_boot(&mut telemetry_uart).await;
 
     // Safety critical things go on core 1
@@ -196,7 +189,6 @@ async fn main(_spawner: Spawner) {
         unwrap!(spawner.spawn(logic::air_assist::task()));
 
         // Telemetry reporting tasks
-        #[cfg(feature = "telemetry")]
         crate::telemetry::spawn(spawner, telemetry_uart);
     });
 }

@@ -1,7 +1,6 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::queue_telemetry_message;
 use crate::{
     io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
+    telemetry::queue_telemetry_message,
     MachinePowerDetectResources,
 };
 use debouncr::{DebouncerStateful, Repeat2};
@@ -9,7 +8,6 @@ use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Ticker, Timer};
-#[cfg(feature = "telemetry")]
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 
 pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 4> =
@@ -31,7 +29,6 @@ pub(crate) enum MachinePower {
     On,
 }
 
-#[cfg(feature = "telemetry")]
 impl From<&MachinePower> for hoshiguma_telemetry_protocol::payload::observation::MachinePower {
     fn from(value: &MachinePower) -> Self {
         match value {
@@ -62,7 +59,6 @@ pub(crate) async fn task(r: MachinePowerDetectResources) {
         ticker.next().await;
 
         if let Some(state) = machine_power_detector.update() {
-            #[cfg(feature = "telemetry")]
             queue_telemetry_message(Payload::Observation(ObservationPayload::MachinePower(
                 (&state).into(),
             )))
