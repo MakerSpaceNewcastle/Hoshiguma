@@ -9,7 +9,7 @@ mod wifi;
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use defmt::{info, unwrap, warn};
 use defmt_rtt as _;
-use embassy_executor::{Executor, Spawner};
+use embassy_executor::Executor;
 use embassy_futures::select::{select, Either};
 use embassy_rp::{
     gpio::{Level, Output},
@@ -60,8 +60,8 @@ assign_resources::assign_resources! {
     }
 }
 
-#[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+#[cortex_m_rt::entry]
+fn main() -> ! {
     let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
