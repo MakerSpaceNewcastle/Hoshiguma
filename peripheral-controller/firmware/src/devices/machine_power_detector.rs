@@ -10,10 +10,7 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Ticker, Timer};
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 
-pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 4> =
-    Watch::new();
-
-pub(crate) type MachinePowerDetector =
+type MachinePowerDetector =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, MachinePower>;
 
 impl From<MachinePowerDetectResources> for MachinePowerDetector {
@@ -47,11 +44,14 @@ impl StateFromDigitalInputs<1> for MachinePower {
     }
 }
 
+pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 4> =
+    Watch::new();
+
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachinePowerDetectResources) {
     let mut machine_power_detector: MachinePowerDetector = r.into();
 
-    let mut ticker = Ticker::every(Duration::from_millis(10));
+    let mut ticker = Ticker::every(Duration::from_millis(100));
 
     let tx = MACHINE_POWER_CHANGED.sender();
 

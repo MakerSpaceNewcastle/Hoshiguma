@@ -1,16 +1,16 @@
 use crate::{
     io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
+    telemetry::queue_telemetry_message,
     MachineRunDetectResources,
 };
 use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
+use embassy_time::{Duration, Ticker};
+use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 
-pub(crate) static MACHINE_RUNNING_CHANGED: Watch<CriticalSectionRawMutex, MachineRunStatus, 4> =
-    Watch::new();
-
-pub(crate) type MachineRunDetector =
+type MachineRunDetector =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, MachineRunStatus>;
 
 impl From<MachineRunDetectResources> for MachineRunDetector {
@@ -42,6 +42,31 @@ impl StateFromDigitalInputs<1> for MachineRunStatus {
         match inputs[0] {
             Level::Low => Self::Idle,
             Level::High => Self::Running,
+        }
+    }
+}
+
+pub(crate) static MACHINE_RUNNING_CHANGED: Watch<CriticalSectionRawMutex, MachineRunStatus, 4> =
+    Watch::new();
+
+#[embassy_executor::task]
+pub(crate) async fn task(r: MachineRunDetectResources) {
+    let mut input: MachineRunDetector = r.into();
+
+    let mut ticker = Ticker::every(Duration::from_millis(50));
+
+    let tx = MACHINE_RUNNING_CHANGED.sender();
+
+    loop {
+        ticker.next().await;
+
+        if let Some(state) = input.update() {
+            queue_telemetry_message(Payload::Observation(ObservationPayload::MachineRun(
+                (&state).into(),
+            )))
+            .await;
+
+            tx.send(state);
         }
     }
 }
