@@ -1,8 +1,5 @@
 use crate::{
-    io_helpers::{
-        digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
-        digital_output::{DigitalOutputController, StateToDigitalOutputs},
-    },
+    io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
     telemetry::queue_telemetry_message,
     AirAssistDemandDetectResources, AirAssistPumpResources,
 };
@@ -22,15 +19,6 @@ impl From<AirAssistDemandDetectResources> for AirAssistDemandDetector {
     fn from(r: AirAssistDemandDetectResources) -> Self {
         let input = Input::new(r.detect, Pull::Down);
         Self::new([input])
-    }
-}
-
-type AirAssistPump = DigitalOutputController<1, AirAssistDemand>;
-
-impl From<AirAssistPumpResources> for AirAssistPump {
-    fn from(r: AirAssistPumpResources) -> Self {
-        let output = Output::new(r.relay, Level::Low);
-        Self::new([output])
     }
 }
 
@@ -69,15 +57,6 @@ impl StateFromDigitalInputs<1> for AirAssistDemand {
     }
 }
 
-impl StateToDigitalOutputs<1> for AirAssistDemand {
-    fn to_outputs(self) -> [Level; 1] {
-        match self {
-            Self::Idle => [Level::Low],
-            Self::Demand => [Level::High],
-        }
-    }
-}
-
 pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirAssistDemand, 2> =
     Watch::new();
 
@@ -108,18 +87,24 @@ pub(crate) static AIR_ASSIST_PUMP: Watch<CriticalSectionRawMutex, AirAssistDeman
 
 #[embassy_executor::task]
 pub(crate) async fn pump_task(r: AirAssistPumpResources) {
-    let mut air_assist_pump: AirAssistPump = r.into();
-
+    let mut output = Output::new(r.relay, Level::Low);
     let mut rx = unwrap!(AIR_ASSIST_PUMP.receiver());
 
     loop {
+        // Wait for a new setting
         let setting = rx.changed().await;
 
+        // Send telemetry update
         queue_telemetry_message(Payload::Control(ControlPayload::AirAssistPump(
             (&setting).into(),
         )))
         .await;
 
-        air_assist_pump.set(setting);
+        // Set relay output
+        let level = match setting {
+            AirAssistDemand::Idle => Level::Low,
+            AirAssistDemand::Demand => Level::High,
+        };
+        output.set_level(level);
     }
 }
