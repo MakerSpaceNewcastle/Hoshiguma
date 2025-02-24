@@ -1,26 +1,14 @@
 use crate::{
-    io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
-    telemetry::queue_telemetry_message,
-    AirAssistDemandDetectResources, AirAssistPumpResources,
+    io_helpers::PolledInput, telemetry::queue_telemetry_message, AirAssistDemandDetectResources,
+    AirAssistPumpResources,
 };
-use debouncr::{DebouncerStateful, Repeat2};
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use embassy_time::{Duration, Ticker};
+use embassy_time::Duration;
 use hoshiguma_telemetry_protocol::payload::{
     control::ControlPayload, observation::ObservationPayload, Payload,
 };
-
-type AirAssistDemandDetector =
-    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, AirAssistDemand>;
-
-impl From<AirAssistDemandDetectResources> for AirAssistDemandDetector {
-    fn from(r: AirAssistDemandDetectResources) -> Self {
-        let input = Input::new(r.detect, Pull::Down);
-        Self::new([input])
-    }
-}
 
 #[derive(Clone, Format)]
 pub(crate) enum AirAssistDemand {
@@ -48,37 +36,30 @@ impl From<&AirAssistDemand> for hoshiguma_telemetry_protocol::payload::control::
     }
 }
 
-impl StateFromDigitalInputs<1> for AirAssistDemand {
-    fn from_inputs(inputs: [Level; 1]) -> Self {
-        match inputs[0] {
-            Level::Low => Self::Idle,
-            Level::High => Self::Demand,
-        }
-    }
-}
-
 pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirAssistDemand, 2> =
     Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn demand_task(r: AirAssistDemandDetectResources) {
-    let mut input: AirAssistDemandDetector = r.into();
-
-    let mut ticker = Ticker::every(Duration::from_millis(100));
+    let pin = Input::new(r.detect, Pull::Down);
+    let mut input = PolledInput::new(pin, Duration::from_millis(100));
 
     let tx = AIR_ASSIST_DEMAND_CHANGED.sender();
 
     loop {
-        ticker.next().await;
+        let state = input.wait_for_change().await;
 
-        if let Some(state) = input.update() {
-            queue_telemetry_message(Payload::Observation(ObservationPayload::AirAssistDemand(
-                (&state).into(),
-            )))
-            .await;
+        let state = match state {
+            Level::Low => AirAssistDemand::Idle,
+            Level::High => AirAssistDemand::Demand,
+        };
 
-            tx.send(state);
-        }
+        queue_telemetry_message(Payload::Observation(ObservationPayload::AirAssistDemand(
+            (&state).into(),
+        )))
+        .await;
+
+        tx.send(state);
     }
 }
 

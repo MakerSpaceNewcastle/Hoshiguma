@@ -1,24 +1,11 @@
 use crate::{
-    io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
-    telemetry::queue_telemetry_message,
-    FumeExtractionModeSwitchResources,
+    io_helpers::PolledInput, telemetry::queue_telemetry_message, FumeExtractionModeSwitchResources,
 };
-use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use embassy_time::{Duration, Ticker};
+use embassy_time::Duration;
 use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
-
-type FumeExtractionModeSwitch =
-    DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, FumeExtractionMode>;
-
-impl From<FumeExtractionModeSwitchResources> for FumeExtractionModeSwitch {
-    fn from(r: FumeExtractionModeSwitchResources) -> Self {
-        let input = Input::new(r.switch, Pull::Down);
-        Self::new([input])
-    }
-}
 
 #[derive(Clone, Format)]
 pub(crate) enum FumeExtractionMode {
@@ -37,15 +24,6 @@ impl From<&FumeExtractionMode>
     }
 }
 
-impl StateFromDigitalInputs<1> for FumeExtractionMode {
-    fn from_inputs(inputs: [Level; 1]) -> Self {
-        match inputs[0] {
-            Level::Low => Self::Automatic,
-            Level::High => Self::OverrideRun,
-        }
-    }
-}
-
 pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
     CriticalSectionRawMutex,
     FumeExtractionMode,
@@ -54,22 +32,24 @@ pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: FumeExtractionModeSwitchResources) {
-    let mut input: FumeExtractionModeSwitch = r.into();
-
-    let mut ticker = Ticker::every(Duration::from_millis(250));
+    let pin = Input::new(r.switch, Pull::Down);
+    let mut input = PolledInput::new(pin, Duration::from_millis(100));
 
     let tx = FUME_EXTRACTION_MODE_CHANGED.sender();
 
     loop {
-        ticker.next().await;
+        let state = input.wait_for_change().await;
 
-        if let Some(state) = input.update() {
-            queue_telemetry_message(Payload::Observation(
-                ObservationPayload::FumeExtractionMode((&state).into()),
-            ))
-            .await;
+        let state = match state {
+            Level::Low => FumeExtractionMode::Automatic,
+            Level::High => FumeExtractionMode::OverrideRun,
+        };
 
-            tx.send(state);
-        }
+        queue_telemetry_message(Payload::Observation(
+            ObservationPayload::FumeExtractionMode((&state).into()),
+        ))
+        .await;
+
+        tx.send(state);
     }
 }
