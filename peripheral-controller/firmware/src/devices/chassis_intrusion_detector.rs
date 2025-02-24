@@ -1,16 +1,16 @@
 use crate::{
     io_helpers::digital_input::{DigitalInputStateChangeDetector, StateFromDigitalInputs},
+    telemetry::queue_telemetry_message,
     ChassisIntrusionDetectResources,
 };
 use debouncr::{DebouncerStateful, Repeat2};
 use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
+use embassy_time::{Duration, Ticker};
+use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
 
-pub(crate) static CHASSIS_INTRUSION_CHANGED: Watch<CriticalSectionRawMutex, ChassisIntrusion, 1> =
-    Watch::new();
-
-pub(crate) type ChassisIntrusionDetector =
+type ChassisIntrusionDetector =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, ChassisIntrusion>;
 
 impl From<ChassisIntrusionDetectResources> for ChassisIntrusionDetector {
@@ -42,6 +42,31 @@ impl StateFromDigitalInputs<1> for ChassisIntrusion {
         match inputs[0] {
             Level::Low => Self::Intruded,
             Level::High => Self::Normal,
+        }
+    }
+}
+
+pub(crate) static CHASSIS_INTRUSION_CHANGED: Watch<CriticalSectionRawMutex, ChassisIntrusion, 1> =
+    Watch::new();
+
+#[embassy_executor::task]
+pub(crate) async fn task(r: ChassisIntrusionDetectResources) {
+    let mut input: ChassisIntrusionDetector = r.into();
+
+    let mut ticker = Ticker::every(Duration::from_micros(50));
+
+    let tx = CHASSIS_INTRUSION_CHANGED.sender();
+
+    loop {
+        ticker.next().await;
+
+        if let Some(state) = input.update() {
+            queue_telemetry_message(Payload::Observation(ObservationPayload::ChassisIntrusion(
+                (&state).into(),
+            )))
+            .await;
+
+            tx.send(state);
         }
     }
 }

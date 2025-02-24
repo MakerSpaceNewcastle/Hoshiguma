@@ -150,12 +150,9 @@ fn main() -> ! {
             unwrap!(spawner.spawn(devices::machine_power_detector::task(
                 r.machine_power_detect
             )));
-            unwrap!(spawner.spawn(devices::digital_inputs::task(
-                r.chassis_intrusion_detect,
-                r.air_assist_demand_detect,
-                r.machine_run_detect,
-                r.fume_extraction_mode_switch,
-                r.coolant_resevoir_level_sensor,
+            unwrap!(spawner.spawn(devices::machine_run_detector::task(r.machine_run_detect)));
+            unwrap!(spawner.spawn(devices::chassis_intrusion_detector::task(
+                r.chassis_intrusion_detect
             )));
 
             // State monitor tasks
@@ -171,8 +168,11 @@ fn main() -> ! {
             unwrap!(spawner.spawn(devices::machine_enable::task(r.machine_enable)));
 
             // Fume extraction control tasks
-            unwrap!(spawner.spawn(logic::fume_extraction::task()));
+            unwrap!(spawner.spawn(devices::fume_extraction_mode_switch::task(
+                r.fume_extraction_mode_switch
+            )));
             unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
+            unwrap!(spawner.spawn(logic::fume_extraction::task()));
 
             loop {
                 let before = Instant::now().as_ticks();
@@ -191,6 +191,9 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::status_lamp::task()));
     unwrap!(spawner.spawn(devices::status_lamp::task(r.status_lamp)));
 
+    unwrap!(spawner.spawn(devices::coolant_resevoir_level_sensor::task(
+        r.coolant_resevoir_level_sensor
+    )));
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
 
     // State monitor tasks
@@ -199,6 +202,7 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::safety::monitor::temperatures::task()));
 
     // Air assist control tasks
+    unwrap!(spawner.spawn(devices::air_assist::demand_task(r.air_assist_demand_detect)));
     unwrap!(spawner.spawn(devices::air_assist::pump_task(r.air_assist_pump)));
     unwrap!(spawner.spawn(logic::air_assist::task()));
 

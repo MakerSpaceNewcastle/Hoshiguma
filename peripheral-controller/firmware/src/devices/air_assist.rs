@@ -10,9 +10,12 @@ use debouncr::{DebouncerStateful, Repeat2};
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
+use embassy_time::{Duration, Ticker};
+use hoshiguma_telemetry_protocol::payload::{
+    control::ControlPayload, observation::ObservationPayload, Payload,
+};
 
-pub(crate) type AirAssistDemandDetector =
+type AirAssistDemandDetector =
     DigitalInputStateChangeDetector<DebouncerStateful<u8, Repeat2>, 1, AirAssistDemand>;
 
 impl From<AirAssistDemandDetectResources> for AirAssistDemandDetector {
@@ -22,7 +25,7 @@ impl From<AirAssistDemandDetectResources> for AirAssistDemandDetector {
     }
 }
 
-pub(crate) type AirAssistPump = DigitalOutputController<1, AirAssistDemand>;
+type AirAssistPump = DigitalOutputController<1, AirAssistDemand>;
 
 impl From<AirAssistPumpResources> for AirAssistPump {
     fn from(r: AirAssistPumpResources) -> Self {
@@ -77,6 +80,29 @@ impl StateToDigitalOutputs<1> for AirAssistDemand {
 
 pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirAssistDemand, 2> =
     Watch::new();
+
+#[embassy_executor::task]
+pub(crate) async fn demand_task(r: AirAssistDemandDetectResources) {
+    let mut input: AirAssistDemandDetector = r.into();
+
+    let mut ticker = Ticker::every(Duration::from_millis(100));
+
+    let tx = AIR_ASSIST_DEMAND_CHANGED.sender();
+
+    loop {
+        ticker.next().await;
+
+        if let Some(state) = input.update() {
+            queue_telemetry_message(Payload::Observation(ObservationPayload::AirAssistDemand(
+                (&state).into(),
+            )))
+            .await;
+
+            tx.send(state);
+        }
+    }
+}
+
 pub(crate) static AIR_ASSIST_PUMP: Watch<CriticalSectionRawMutex, AirAssistDemand, 2> =
     Watch::new();
 
