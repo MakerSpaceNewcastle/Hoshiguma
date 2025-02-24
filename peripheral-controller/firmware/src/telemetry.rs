@@ -59,9 +59,9 @@ fn info_message() -> Info {
     }
 }
 
-pub(super) async fn report_boot(uart: &mut TelemetryUart) {
+pub(super) fn report_boot(uart: &mut TelemetryUart) {
     let msg = new_message(Payload::System(SystemMessagePayload::Boot(info_message())));
-    tx_message(uart, &msg).await;
+    tx_message_blocking(uart, &msg);
 }
 
 #[cfg(not(feature = "panic-probe"))]

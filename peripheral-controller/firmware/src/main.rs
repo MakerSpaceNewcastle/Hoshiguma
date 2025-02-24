@@ -11,7 +11,7 @@ mod telemetry;
 use assign_resources::assign_resources;
 use defmt::unwrap;
 use defmt_rtt as _;
-use embassy_executor::{Executor, Spawner};
+use embassy_executor::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
     multicore::{spawn_core1, Stack},
@@ -118,8 +118,8 @@ assign_resources! {
     },
 }
 
-#[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+#[cortex_m_rt::entry]
+fn main() -> ! {
     let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
@@ -130,7 +130,7 @@ async fn main(_spawner: Spawner) {
     let _relay5 = Output::new(p.PIN_19, Level::Low);
 
     let mut telemetry_uart: TelemetryUart = r.telemetry.into();
-    crate::telemetry::report_boot(&mut telemetry_uart).await;
+    crate::telemetry::report_boot(&mut telemetry_uart);
 
     // Safety critical things go on core 1
     spawn_core1(
