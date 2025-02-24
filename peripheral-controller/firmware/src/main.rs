@@ -29,32 +29,19 @@ use telemetry::TelemetryUart;
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    use devices::{
-        laser_enable::{LaserEnable, LaserEnableState},
-        machine_enable::{MachineEnable, MachineEnableState},
-        status_lamp::{StatusLamp, StatusLampSetting},
-    };
-
     let p = unsafe { embassy_rp::Peripherals::steal() };
     let r = split_resources!(p);
 
     // Disable the machine and laser
-    let mut laser_enable: LaserEnable = r.laser_enable.into();
-    let mut machine_enable: MachineEnable = r.machine_enable.into();
-    laser_enable.set(LaserEnableState::Inhibited);
-    machine_enable.set(MachineEnableState::Inhibited);
+    crate::devices::laser_enable::panic(r.laser_enable);
+    crate::devices::machine_enable::panic(r.machine_enable);
 
     // Report the panic
     let mut uart: TelemetryUart = r.telemetry.into();
     crate::telemetry::report_panic(&mut uart, info);
 
     // Set the status lamp to something distinctive
-    let mut status_lamp: StatusLamp = r.status_lamp.into();
-    status_lamp.set(StatusLampSetting {
-        red: true,
-        amber: true,
-        green: true,
-    });
+    crate::devices::status_lamp::panic(r.status_lamp);
 
     // Blink the on-board LED pretty fast
     let mut led = Output::new(r.status.led, Level::Low);

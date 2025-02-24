@@ -1,21 +1,8 @@
-use crate::{
-    io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
-    telemetry::queue_telemetry_message,
-    MachineEnableResources,
-};
+use crate::{telemetry::queue_telemetry_message, MachineEnableResources};
 use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
-
-pub(crate) type MachineEnable = DigitalOutputController<1, MachineEnableState>;
-
-impl From<MachineEnableResources> for MachineEnable {
-    fn from(r: MachineEnableResources) -> Self {
-        let output = Output::new(r.relay, Level::Low);
-        Self::new([output])
-    }
-}
 
 #[derive(Clone, Format)]
 pub(crate) enum MachineEnableState {
@@ -32,32 +19,35 @@ impl From<&MachineEnableState> for hoshiguma_telemetry_protocol::payload::contro
     }
 }
 
-impl StateToDigitalOutputs<1> for MachineEnableState {
-    fn to_outputs(self) -> [Level; 1] {
-        match self {
-            Self::Inhibited => [Level::Low],
-            Self::Enabled => [Level::High],
-        }
-    }
-}
-
 pub(crate) static MACHINE_ENABLE: Watch<CriticalSectionRawMutex, MachineEnableState, 2> =
     Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachineEnableResources) {
-    let mut machine_enable: MachineEnable = r.into();
-
+    let mut output = Output::new(r.relay, Level::Low);
     let mut rx = MACHINE_ENABLE.receiver().unwrap();
 
     loop {
+        // Wait for a new setting
         let setting = rx.changed().await;
 
+        // Send telemetry update
         queue_telemetry_message(Payload::Control(ControlPayload::MachineEnable(
             (&setting).into(),
         )))
         .await;
 
-        machine_enable.set(setting);
+        // Set relay output
+        let level = match setting {
+            MachineEnableState::Inhibited => Level::Low,
+            MachineEnableState::Enabled => Level::High,
+        };
+        output.set_level(level);
     }
+}
+
+pub(crate) fn panic(r: MachineEnableResources) {
+    // Ensure the machine enable relay is turned off, disabling the Ruida controller from
+    // attempting to operate the machine.
+    Output::new(r.relay, Level::Low);
 }

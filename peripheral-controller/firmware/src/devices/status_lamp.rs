@@ -1,30 +1,14 @@
-use crate::{
-    io_helpers::digital_output::{DigitalOutputController, StateToDigitalOutputs},
-    telemetry::queue_telemetry_message,
-    StatusLampResources,
-};
+use crate::{telemetry::queue_telemetry_message, StatusLampResources};
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
 
-pub(crate) type StatusLamp = DigitalOutputController<3, StatusLampSetting>;
-
-impl From<StatusLampResources> for StatusLamp {
-    fn from(r: StatusLampResources) -> Self {
-        let red = Output::new(r.red, Level::Low);
-        let amber = Output::new(r.amber, Level::Low);
-        let green = Output::new(r.green, Level::Low);
-
-        Self::new([red, amber, green])
-    }
-}
-
 #[derive(Default, Clone, Format)]
 pub(crate) struct StatusLampSetting {
-    pub(crate) red: bool,
-    pub(crate) amber: bool,
-    pub(crate) green: bool,
+    red: bool,
+    amber: bool,
+    green: bool,
 }
 
 impl From<&StatusLampSetting> for hoshiguma_telemetry_protocol::payload::control::StatusLamp {
@@ -34,12 +18,6 @@ impl From<&StatusLampSetting> for hoshiguma_telemetry_protocol::payload::control
             amber: value.amber,
             green: value.green,
         }
-    }
-}
-
-impl StateToDigitalOutputs<3> for StatusLampSetting {
-    fn to_outputs(self) -> [Level; 3] {
-        [self.red.into(), self.amber.into(), self.green.into()]
     }
 }
 
@@ -61,17 +39,40 @@ pub(crate) static STATUS_LAMP: Watch<CriticalSectionRawMutex, StatusLampSetting,
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: StatusLampResources) {
-    let mut status_lamp: StatusLamp = r.into();
+    let mut red = Output::new(r.red, Level::Low);
+    let mut amber = Output::new(r.amber, Level::Low);
+    let mut green = Output::new(r.green, Level::Low);
+
     let mut rx = unwrap!(STATUS_LAMP.receiver());
 
     loop {
+        // Wait for a new setting
         let setting = rx.changed().await;
 
+        // Send telemetry update
         queue_telemetry_message(Payload::Control(ControlPayload::StatusLamp(
             (&setting).into(),
         )))
         .await;
 
-        status_lamp.set(setting);
+        // Set relay output
+        red.set_level(lamp_on_to_level(setting.red));
+        amber.set_level(lamp_on_to_level(setting.amber));
+        green.set_level(lamp_on_to_level(setting.green));
     }
+}
+
+fn lamp_on_to_level(on: bool) -> Level {
+    match on {
+        true => Level::High,
+        false => Level::Low,
+    }
+}
+
+pub(crate) fn panic(r: StatusLampResources) {
+    // Set all lights to on, should never happen under normal circumstances (and is labelled on the
+    // light pillar as a "something is very wrong" indication).
+    Output::new(r.red, Level::High);
+    Output::new(r.amber, Level::High);
+    Output::new(r.green, Level::High);
 }
