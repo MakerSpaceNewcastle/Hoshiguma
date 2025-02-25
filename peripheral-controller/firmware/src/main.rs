@@ -20,6 +20,7 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
+use git_version::git_version;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic::AtomicU64;
@@ -114,6 +115,8 @@ static SLEEP_TICKS_CORE_1: AtomicU64 = AtomicU64::new(0);
 fn main() -> ! {
     let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
+
+    info!("Version: {}", git_version!());
 
     // Unused IO
     let _in0 = Input::new(p.PIN_15, Pull::Down);
