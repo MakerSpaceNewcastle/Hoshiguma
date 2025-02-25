@@ -35,7 +35,6 @@ async fn tx_message(uart: &mut TelemetryUart, msg: &Message) {
     }
 }
 
-#[cfg(not(feature = "panic-probe"))]
 fn tx_message_blocking(uart: &mut TelemetryUart, msg: &Message) {
     match postcard::to_vec_cobs::<Message, 128>(msg) {
         Ok(data) => match uart.blocking_write(&data) {

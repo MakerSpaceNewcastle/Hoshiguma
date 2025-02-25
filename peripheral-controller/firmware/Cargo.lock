@@ -740,6 +740,7 @@ name = "hoshiguma-periperal-controller"
 version = "0.1.0"
 dependencies = [
  "assign-resources",
+ "cortex-m",
  "cortex-m-rt",
  "debouncr",
  "defmt",
