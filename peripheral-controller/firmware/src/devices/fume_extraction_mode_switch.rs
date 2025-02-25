@@ -33,7 +33,7 @@ pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
 #[embassy_executor::task]
 pub(crate) async fn task(r: FumeExtractionModeSwitchResources) {
     let pin = Input::new(r.switch, Pull::Down);
-    let mut input = PolledInput::new(pin, Duration::from_millis(100));
+    let mut input = PolledInput::new(pin, Duration::from_millis(50));
 
     let tx = FUME_EXTRACTION_MODE_CHANGED.sender();
 

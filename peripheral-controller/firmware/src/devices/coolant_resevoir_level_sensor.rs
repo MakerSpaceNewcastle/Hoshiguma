@@ -49,7 +49,7 @@ pub(crate) async fn task(r: CoolantResevoirLevelSensorResources) {
     let empty = Input::new(r.empty, Pull::Up);
     let low = Input::new(r.low, Pull::Up);
 
-    let mut empty = PolledInput::new(empty, Duration::from_millis(500));
+    let mut empty = PolledInput::new(empty, Duration::from_millis(200));
     let mut low = PolledInput::new(low, Duration::from_millis(500));
 
     let tx = COOLANT_RESEVOIR_LEVEL_CHANGED.sender();
