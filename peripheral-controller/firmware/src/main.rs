@@ -3,9 +3,9 @@
 
 mod changed;
 mod devices;
-mod io_helpers;
 mod logic;
 mod maybe_timer;
+mod polled_input;
 mod telemetry;
 
 use assign_resources::assign_resources;

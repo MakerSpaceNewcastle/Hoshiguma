@@ -1,4 +1,4 @@
-use defmt::info;
+use defmt::{info, trace};
 use embassy_rp::gpio::{Input, Level};
 use embassy_time::{Duration, Ticker};
 
@@ -35,6 +35,7 @@ impl PolledInput {
 
     pub(crate) async fn level(&mut self) -> Level {
         if self.last_level.is_none() {
+            trace!("Getting initial level");
             self.last_level = Some(self.pin.get_level());
         }
 
