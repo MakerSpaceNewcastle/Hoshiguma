@@ -154,13 +154,6 @@ fn main() -> ! {
             unwrap!(spawner.spawn(devices::laser_enable::task(r.laser_enable)));
             unwrap!(spawner.spawn(devices::machine_enable::task(r.machine_enable)));
 
-            // Fume extraction control tasks
-            unwrap!(spawner.spawn(devices::fume_extraction_mode_switch::task(
-                r.fume_extraction_mode_switch
-            )));
-            unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
-            unwrap!(spawner.spawn(logic::fume_extraction::task()));
-
             loop {
                 let before = Instant::now().as_ticks();
                 cortex_m::asm::wfe();
@@ -192,6 +185,13 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::air_assist::demand_task(r.air_assist_demand_detect)));
     unwrap!(spawner.spawn(devices::air_assist::pump_task(r.air_assist_pump)));
     unwrap!(spawner.spawn(logic::air_assist::task()));
+
+    // Fume extraction control tasks
+    unwrap!(spawner.spawn(devices::fume_extraction_mode_switch::task(
+        r.fume_extraction_mode_switch
+    )));
+    unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
+    unwrap!(spawner.spawn(logic::fume_extraction::task()));
 
     // Telemetry reporting tasks
     crate::telemetry::spawn(spawner, telemetry_uart);
