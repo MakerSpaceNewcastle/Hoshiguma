@@ -1,5 +1,5 @@
 use crate::{
-    io_helpers::PolledInput, telemetry::queue_telemetry_message, MachinePowerDetectResources,
+    polled_input::PolledInput, telemetry::queue_telemetry_message, MachinePowerDetectResources,
 };
 use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};

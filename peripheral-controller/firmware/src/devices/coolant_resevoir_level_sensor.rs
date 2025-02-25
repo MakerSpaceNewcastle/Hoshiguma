@@ -1,5 +1,5 @@
 use crate::{
-    io_helpers::PolledInput, telemetry::queue_telemetry_message,
+    polled_input::PolledInput, telemetry::queue_telemetry_message,
     CoolantResevoirLevelSensorResources,
 };
 use defmt::Format;
