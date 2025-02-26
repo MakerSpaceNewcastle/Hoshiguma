@@ -3,15 +3,6 @@
 version = 4
 
 [[package]]
-name = "accelerometer"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a4586d95cb0695e748760c9a751141eebb68265b1b20392a0f14db608679f7a"
-dependencies = [
- "micromath",
-]
-
-[[package]]
 name = "ahash"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -901,18 +892,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lis3dh-async"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3964d73d6cdac4d06e733062301986c87b33f35c3b5be03f61f93b25277fa33"
-dependencies = [
- "accelerometer",
- "defmt",
- "embedded-hal-async",
- "num_enum",
-]
-
-[[package]]
 name = "litrs"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -939,15 +918,6 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
-
-[[package]]
-name = "micromath"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc4010833aea396656c2f91ee704d51a6f1329ec2ab56ffd00bfd56f7481ea94"
-dependencies = [
- "generic-array",
-]
 
 [[package]]
 name = "nb"
@@ -1826,7 +1796,6 @@ dependencies = [
  "embedded-hal-bus",
  "fixed",
  "fixed-macro",
- "lis3dh-async",
  "panic-probe",
  "pio",
  "pio-proc",
