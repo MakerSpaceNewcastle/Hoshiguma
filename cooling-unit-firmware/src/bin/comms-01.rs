@@ -5,7 +5,7 @@ use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::{
     peripherals::UART0,
-    uart::{BufferedInterruptHandler, BufferedUartRx, BufferedUartTx},
+    uart::{BufferedInterruptHandler, BufferedUartRx, BufferedUartTx, Parity},
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, mutex::Mutex};
 use postcard_rpc::{
@@ -68,6 +68,7 @@ async fn main(spawner: Spawner) {
 
     let u = {
         let mut config = embassy_rp::uart::Config::default();
+        config.parity = Parity::ParityNone;
         config.baudrate = 9600;
         embassy_rp::uart::BufferedUart::new(
             p.UART0,

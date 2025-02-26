@@ -8,8 +8,8 @@ path = "../icd"
 features = ["use-std"]
 
 [dependencies.postcard-rpc]
-version = "0.11"
-features = ["use-std", "raw-nusb"]
+version = "0.11.0"
+features = ["use-std", "cobs-serial"]
 
 [dependencies.postcard-schema]
 version = "0.2.1"
@@ -18,3 +18,6 @@ features = ["derive"]
 [dependencies.tokio]
 version = "1.37.0"
 features = ["rt-multi-thread", "macros", "time"]
+
+[patch.crates-io]
+postcard-rpc = { git = "https://github.com/jamesmunns/postcard-rpc", rev = "4bab5bcb4ad853b95592f742d9c8de3c3aa96b08"}
