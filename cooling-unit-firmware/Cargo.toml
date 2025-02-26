@@ -12,7 +12,7 @@ embassy-time            = { version = "0.4", features = ["defmt", "defmt-timesta
 embassy-usb             = { version = "0.4.0", features = ["defmt"] }
 embedded-hal-bus        = { version = "0.1",   features = ["async"] }
 panic-probe             = { version = "0.3",   features = ["print-defmt"] }
-postcard-rpc            = { version = "0.11",   features = ["embassy-usb-0_4-server"] }
+postcard-rpc            = { version = "0.11.0",   features = ["embedded-io-async-0_6-server"] }
 postcard                = { version = "1.0.10" }
 postcard-schema         = { version = "0.2.1", features = ["derive"] }
 portable-atomic         = { version = "1.6.0", features = ["critical-section"] }
@@ -38,6 +38,7 @@ codegen-units = 1
 incremental = false
 
 [patch.crates-io]
+postcard-rpc = { git = "https://github.com/jamesmunns/postcard-rpc", rev = "4bab5bcb4ad853b95592f742d9c8de3c3aa96b08"}
 embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy", rev = "51d87c6603631fda6fb59ca1a65a99c08138b081" }
 embassy-executor     = { git = "https://github.com/embassy-rs/embassy", rev = "51d87c6603631fda6fb59ca1a65a99c08138b081" }
 embassy-rp           = { git = "https://github.com/embassy-rs/embassy", rev = "51d87c6603631fda6fb59ca1a65a99c08138b081" }

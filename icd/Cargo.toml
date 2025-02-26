@@ -16,7 +16,7 @@ version = "0.2.1"
 features = ["derive"]
 
 [patch.crates-io]
-postcard-rpc = { path = "../../source/postcard-rpc" }
+postcard-rpc = { git = "https://github.com/jamesmunns/postcard-rpc", rev = "4bab5bcb4ad853b95592f742d9c8de3c3aa96b08"}
 
 [features]
 use-std = []
