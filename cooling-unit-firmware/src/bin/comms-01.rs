@@ -3,7 +3,7 @@
 
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_rp::{peripherals::USB, usb};
+use embassy_rp::{bind_interrupts, peripherals::USB, usb};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_usb::{Config, UsbDevice};
 use postcard_rpc::{
@@ -18,9 +18,12 @@ use postcard_rpc::{
     },
 };
 use static_cell::ConstStaticCell;
-use workbook_fw::{get_unique_id, Irqs};
 use workbook_icd::{PingEndpoint, ENDPOINT_LIST, TOPICS_IN_LIST, TOPICS_OUT_LIST};
 use {defmt_rtt as _, panic_probe as _};
+
+bind_interrupts!(pub struct Irqs {
+    USBCTRL_IRQ => usb::InterruptHandler<USB>;
+});
 
 pub struct Context;
 
@@ -78,9 +81,7 @@ define_dispatch! {
 async fn main(spawner: Spawner) {
     // SYSTEM INIT
     info!("Start");
-    let mut p = embassy_rp::init(Default::default());
-    let unique_id = defmt::unwrap!(get_unique_id(&mut p.FLASH));
-    info!("id: {=u64:016X}", unique_id);
+    let p = embassy_rp::init(Default::default());
 
     // USB/RPC INIT
     let driver = usb::Driver::new(p.USB, Irqs);
