@@ -8,14 +8,14 @@ on:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'devenv.*'
-      - 'peripheral-controller/telemetry-protocol/**'
-      - 'telemetry-module/firmware/**'
+      - 'telemetry-protocol/**'
+      - 'telemetry-module-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'devenv.*'
-      - 'peripheral-controller/telemetry-protocol/**'
-      - 'telemetry-module/firmware/**'
+      - 'telemetry-protocol/**'
+      - 'telemetry-module-firmware/**'
 
 jobs:
   quality:
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -x
 
-          cd ./telemetry-module/firmware
+          cd ./telemetry-module-firmware
 
           rustup target add thumbv6m-none-eabi
           rustup show
@@ -69,7 +69,7 @@ jobs:
         run: |
           set -x
 
-          cd ./telemetry-module/firmware
+          cd ./telemetry-module-firmware
 
           rustup target add thumbv6m-none-eabi
           rustup show
