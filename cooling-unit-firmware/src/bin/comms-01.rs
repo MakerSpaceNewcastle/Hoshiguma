@@ -7,7 +7,7 @@ use embassy_rp::{
     peripherals::UART0,
     uart::{BufferedInterruptHandler, BufferedUartRx, BufferedUartTx},
 };
-use embassy_sync::blocking_mutex::{raw::ThreadModeRawMutex, Mutex};
+use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, mutex::Mutex};
 use postcard_rpc::{
     define_dispatch,
     header::VarHeader,
@@ -66,10 +66,10 @@ async fn main(spawner: Spawner) {
     static TX_BUF: ConstStaticCell<[u8; 4096]> = ConstStaticCell::new([0u8; 4096]);
     static RX_BUF: ConstStaticCell<[u8; 4096]> = ConstStaticCell::new([0u8; 4096]);
 
-    let mut u = {
+    let u = {
         let mut config = embassy_rp::uart::Config::default();
         config.baudrate = 9600;
-        let uart = embassy_rp::uart::BufferedUart::new(
+        embassy_rp::uart::BufferedUart::new(
             p.UART0,
             Irqs,
             p.PIN_0,
@@ -77,8 +77,7 @@ async fn main(spawner: Spawner) {
             TX_BUF.take(),
             RX_BUF.take(),
             config,
-        );
-        uart
+        )
     };
 
     static TX_BUF2: ConstStaticCell<[u8; 4096]> = ConstStaticCell::new([0u8; 4096]);
