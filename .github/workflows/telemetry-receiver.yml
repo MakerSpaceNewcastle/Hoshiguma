@@ -8,14 +8,14 @@ on:
     paths:
       - '.github/workflows/telemetry-receiver.yml'
       - 'devenv.*'
-      - 'peripheral-controller/telemetry-protocol/**'
-      - 'peripheral-controller/telemetry-receiver/**'
+      - 'telemetry-protocol/**'
+      - 'telemetry-receiver/**'
   pull_request:
     paths:
       - '.github/workflows/telemetry-receiver.yml'
       - 'devenv.*'
-      - 'peripheral-controller/telemetry-protocol/**'
-      - 'peripheral-controller/telemetry-receiver/**'
+      - 'telemetry-protocol/**'
+      - 'telemetry-receiver/**'
 
 jobs:
   quality:
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -x
 
-          cd ./peripheral-controller/telemetry-receiver
+          cd ./telemetry-receiver
 
           rustup show
 
@@ -62,7 +62,7 @@ jobs:
         run: |
           set -x
 
-          cd ./peripheral-controller/telemetry-receiver
+          cd ./telemetry-receiver
 
           rustup show
 

@@ -8,14 +8,14 @@ on:
     paths:
       - '.github/workflows/peripheral-controller.yml'
       - 'devenv.*'
-      - 'peripheral-controller/telemetry-protocol/**'
-      - 'peripheral-controller/firmware/**'
+      - 'telemetry-protocol/**'
+      - 'peripheral-controller-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/peripheral-controller.yml'
       - 'devenv.*'
-      - 'peripheral-controller/telemetry-protocol/**'
-      - 'peripheral-controller/firmware/**'
+      - 'telemetry-protocol/**'
+      - 'peripheral-controller-firmware/**'
 
 jobs:
   quality:
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -x
 
-          cd ./peripheral-controller/firmware
+          cd ./peripheral-controller-firmware
 
           rustup target add thumbv6m-none-eabi
           rustup show
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -x
 
-          cd ./peripheral-controller/firmware
+          cd ./peripheral-controller-firmware
 
           rustup target add thumbv6m-none-eabi
           rustup show
