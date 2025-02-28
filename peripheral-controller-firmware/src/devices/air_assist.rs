@@ -42,7 +42,7 @@ pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirA
 #[embassy_executor::task]
 pub(crate) async fn demand_task(r: AirAssistDemandDetectResources) {
     let pin = Input::new(r.detect, Pull::Down);
-    let mut input = PolledInput::new(pin, Duration::from_millis(50));
+    let mut input = PolledInput::new(pin, Duration::from_millis(10));
 
     let tx = AIR_ASSIST_DEMAND_CHANGED.sender();
 
