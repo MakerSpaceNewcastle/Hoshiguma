@@ -88,7 +88,7 @@ pub(crate) async fn task(r: OnewireResources) {
 
     let tx = TEMPERATURES_READ.sender();
 
-    let onboard_sensor = Ds18b20::new::<()>(Address(77134400158196008)).unwrap();
+    let onboard_sensor = Ds18b20::new::<()>(Address(17628307574231425320)).unwrap();
     let electronics_bay_top = Ds18b20::new::<()>(Address(17305478839918682408)).unwrap();
     let laser_chamber_sensor = Ds18b20::new::<()>(Address(10321216763289396520)).unwrap();
     let ambient_sensor = Ds18b20::new::<()>(Address(17390119257909780776)).unwrap();
