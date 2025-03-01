@@ -16,7 +16,6 @@ pub type Vec<T, const N: usize> = heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-#[allow(dead_code)]
 pub struct Message {
     pub millis_since_boot: u64,
     pub payload: payload::Payload,

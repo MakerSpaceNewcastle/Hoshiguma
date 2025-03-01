@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-#[allow(dead_code)]
 pub struct Panic {
     pub file: Option<crate::String<32>>,
     pub line: Option<u32>,
