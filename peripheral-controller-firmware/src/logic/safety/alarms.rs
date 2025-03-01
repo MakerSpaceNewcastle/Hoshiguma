@@ -5,14 +5,14 @@ use crate::{
 };
 use defmt::{debug, info, unwrap, Format};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{process::ProcessPayload, Payload};
+use hoshiguma_protocol::payload::{process::ProcessPayload, Payload};
 
 #[derive(Clone, Default, Format)]
 pub(crate) struct ActiveAlarms {
     alarms: heapless::Vec<MonitorStatus, 16>,
 }
 
-impl From<&ActiveAlarms> for hoshiguma_telemetry_protocol::payload::process::ActiveAlarms {
+impl From<&ActiveAlarms> for hoshiguma_protocol::payload::process::ActiveAlarms {
     fn from(value: &ActiveAlarms) -> Self {
         let mut alarms = heapless::Vec::default();
 

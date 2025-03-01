@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use hoshiguma_telemetry_protocol::{
+use hoshiguma_protocol::{
     payload::{
         system::{Info, SystemMessagePayload},
         Payload,

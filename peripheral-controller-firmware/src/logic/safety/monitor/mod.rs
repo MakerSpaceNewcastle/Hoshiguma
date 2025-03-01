@@ -22,7 +22,7 @@ pub(crate) enum Monitor {
     CoolantResevoirTemperature,
 }
 
-impl From<&Monitor> for hoshiguma_telemetry_protocol::payload::process::Monitor {
+impl From<&Monitor> for hoshiguma_protocol::payload::process::Monitor {
     fn from(value: &Monitor) -> Self {
         match value {
             Monitor::LogicPowerSupplyNotPresent => Self::LogicPowerSupplyNotPresent,
@@ -43,7 +43,7 @@ pub(crate) enum MonitorState {
     Critical,
 }
 
-impl From<&MonitorState> for hoshiguma_telemetry_protocol::payload::process::MonitorState {
+impl From<&MonitorState> for hoshiguma_protocol::payload::process::MonitorState {
     fn from(value: &MonitorState) -> Self {
         match value {
             MonitorState::Normal => Self::Normal,
@@ -68,7 +68,7 @@ pub(crate) struct MonitorStatus {
     pub state: MonitorState,
 }
 
-impl From<&MonitorStatus> for hoshiguma_telemetry_protocol::payload::process::MonitorStatus {
+impl From<&MonitorStatus> for hoshiguma_protocol::payload::process::MonitorStatus {
     fn from(value: &MonitorStatus) -> Self {
         Self {
             since_millis: value.since.as_millis(),

@@ -6,7 +6,7 @@ use embassy_executor::Spawner;
 use embassy_rp::{peripherals::UART0, uart::Async, uart::UartTx};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Ticker};
-use hoshiguma_telemetry_protocol::{
+use hoshiguma_protocol::{
     payload::{
         system::{Info, SystemMessagePayload},
         Payload,
@@ -46,7 +46,7 @@ fn tx_message_blocking(uart: &mut TelemetryUart, msg: &Message) {
 }
 
 fn new_message(payload: Payload) -> Message {
-    hoshiguma_telemetry_protocol::Message {
+    hoshiguma_protocol::Message {
         millis_since_boot: embassy_time::Instant::now().as_millis(),
         payload,
     }

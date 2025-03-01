@@ -6,7 +6,7 @@ use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_telemetry_protocol::payload::{
+use hoshiguma_protocol::payload::{
     control::ControlPayload, observation::ObservationPayload, Payload,
 };
 
@@ -16,9 +16,7 @@ pub(crate) enum AirAssistDemand {
     Demand,
 }
 
-impl From<&AirAssistDemand>
-    for hoshiguma_telemetry_protocol::payload::observation::AirAssistDemand
-{
+impl From<&AirAssistDemand> for hoshiguma_protocol::payload::observation::AirAssistDemand {
     fn from(demand: &AirAssistDemand) -> Self {
         match demand {
             AirAssistDemand::Idle => Self::Idle,
@@ -27,7 +25,7 @@ impl From<&AirAssistDemand>
     }
 }
 
-impl From<&AirAssistDemand> for hoshiguma_telemetry_protocol::payload::control::AirAssistPump {
+impl From<&AirAssistDemand> for hoshiguma_protocol::payload::control::AirAssistPump {
     fn from(value: &AirAssistDemand) -> Self {
         match value {
             AirAssistDemand::Idle => Self::Idle,

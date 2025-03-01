@@ -5,7 +5,7 @@ use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum MachineRunStatus {
@@ -13,9 +13,7 @@ pub(crate) enum MachineRunStatus {
     Running,
 }
 
-impl From<&MachineRunStatus>
-    for hoshiguma_telemetry_protocol::payload::observation::MachineRunStatus
-{
+impl From<&MachineRunStatus> for hoshiguma_protocol::payload::observation::MachineRunStatus {
     fn from(value: &MachineRunStatus) -> Self {
         match value {
             MachineRunStatus::Idle => Self::Idle,

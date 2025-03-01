@@ -2,7 +2,7 @@ use crate::{telemetry::queue_telemetry_message, LaserEnableResources};
 use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
+use hoshiguma_protocol::payload::{control::ControlPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum LaserEnableState {
@@ -10,7 +10,7 @@ pub(crate) enum LaserEnableState {
     Enabled,
 }
 
-impl From<&LaserEnableState> for hoshiguma_telemetry_protocol::payload::control::LaserEnable {
+impl From<&LaserEnableState> for hoshiguma_protocol::payload::control::LaserEnable {
     fn from(value: &LaserEnableState) -> Self {
         match value {
             LaserEnableState::Inhibited => Self::Inhibited,

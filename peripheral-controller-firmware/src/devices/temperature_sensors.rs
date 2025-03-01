@@ -4,7 +4,7 @@ use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
 use one_wire_bus::{Address, OneWire};
 
 pub(crate) type TemperatureReading = Result<f32, ()>;
@@ -27,9 +27,7 @@ pub(crate) struct TemperatureReadings {
     pub(crate) coolant_pump: TemperatureReading,
 }
 
-impl From<&TemperatureReadings>
-    for hoshiguma_telemetry_protocol::payload::observation::Temperatures
-{
+impl From<&TemperatureReadings> for hoshiguma_protocol::payload::observation::Temperatures {
     fn from(value: &TemperatureReadings) -> Self {
         Self {
             onboard: value.onboard,

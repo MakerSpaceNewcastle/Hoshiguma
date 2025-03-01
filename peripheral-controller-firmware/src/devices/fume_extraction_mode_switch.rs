@@ -6,7 +6,7 @@ use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum FumeExtractionMode {
@@ -14,9 +14,7 @@ pub(crate) enum FumeExtractionMode {
     OverrideRun,
 }
 
-impl From<&FumeExtractionMode>
-    for hoshiguma_telemetry_protocol::payload::observation::FumeExtractionMode
-{
+impl From<&FumeExtractionMode> for hoshiguma_protocol::payload::observation::FumeExtractionMode {
     fn from(value: &FumeExtractionMode) -> Self {
         match value {
             FumeExtractionMode::Automatic => Self::Automatic,
