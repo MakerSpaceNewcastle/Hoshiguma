@@ -5,9 +5,14 @@ pub mod payload;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]
-pub type TelemString = std::string::String;
+pub type String = std::string::String;
 #[cfg(feature = "no-std")]
-pub type TelemString = heapless::String<64>;
+pub type String = heapless::String<64>;
+
+#[cfg(feature = "std")]
+pub type Vec<T, const N: usize>= std::vec::Vec<T>;
+#[cfg(not(feature = "std"))]
+pub type Vec<T, const N: usize>= heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
