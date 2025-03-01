@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "no-std", no_std)]
 
 pub mod payload;
 
@@ -11,7 +11,7 @@ pub type String<const N: usize> = heapless::String<N>;
 
 #[cfg(feature = "std")]
 pub type Vec<T, const N: usize> = std::vec::Vec<T>;
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "no-std")]
 pub type Vec<T, const N: usize> = heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
