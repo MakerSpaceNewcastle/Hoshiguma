@@ -1,21 +1,21 @@
 ---
-name: Peripheral Controller Telemetry Receiver
+name: Diagnostic CLI
 
 on:
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/telemetry-receiver.yml'
+      - '.github/workflows/diagnostic-cli.yml'
       - 'devenv.*'
-      - 'telemetry-protocol/**'
-      - 'telemetry-receiver/**'
+      - 'protocol/**'
+      - 'diagnostic-cli/**'
   pull_request:
     paths:
-      - '.github/workflows/telemetry-receiver.yml'
+      - '.github/workflows/diagnostic-cli.yml'
       - 'devenv.*'
-      - 'telemetry-protocol/**'
-      - 'telemetry-receiver/**'
+      - 'protocol/**'
+      - 'diagnostic-cli/**'
 
 jobs:
   quality:
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -x
 
-          cd ./telemetry-receiver
+          cd ./diagnostic-cli
 
           rustup show
 
@@ -62,7 +62,7 @@ jobs:
         run: |
           set -x
 
-          cd ./telemetry-receiver
+          cd ./diagnostic-cli
 
           rustup show
 
