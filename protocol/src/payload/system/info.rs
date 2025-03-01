@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 #[allow(dead_code)]
 pub struct Info {
-    pub git_revision: crate::String,
+    pub git_revision: crate::String<20>,
 }
