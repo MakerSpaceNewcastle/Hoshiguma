@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 pub type TemperatureReading = Result<f32, ()>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct Temperatures {
     pub onboard: TemperatureReading,
     pub electronics_bay_top: TemperatureReading,

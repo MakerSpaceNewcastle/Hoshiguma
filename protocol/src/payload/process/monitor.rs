@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Monitor {
     LogicPowerSupplyNotPresent,
 
@@ -15,6 +16,7 @@ pub enum Monitor {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MonitorState {
     Normal,
     Warn,
@@ -22,6 +24,7 @@ pub enum MonitorState {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct MonitorStatus {
     pub since_millis: u64,
     pub monitor: Monitor,
