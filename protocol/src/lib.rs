@@ -2,16 +2,19 @@
 
 // pub mod payload;
 
-use heapless as _;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "std")]
-pub type TelemString = std::string::String;
+pub type String<const N: usize> = std::string::String;
 #[cfg(not(feature = "std"))]
-pub type TelemString = heapless::String<64>;
+pub type String<const N: usize> = heapless::String<N>;
+
+#[cfg(feature = "std")]
+pub type Vec<T, const N: usize> = std::vec::Vec<T>;
+#[cfg(not(feature = "std"))]
+pub type Vec<T, const N: usize> = heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[allow(dead_code)]
 pub struct Payload {
     pub millis_since_boot: u64,
     pub msg: Message,
@@ -35,6 +38,6 @@ mod controller {
     #[derive(Debug, Serialize, Deserialize, Clone)]
     pub enum Rpc {
         Ping(super::RpcMessage<u32, u32>),
-        GetVersion(super::RpcMessage<(), crate::TelemString>),
+        GetVersion(super::RpcMessage<(), crate::String<16>>),
     }
 }
