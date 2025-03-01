@@ -10,7 +10,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
 };
-use hoshiguma_telemetry_protocol::payload::observation::{
+use hoshiguma_protocol::payload::observation::{
     AirAssistDemand, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionMode, MachinePower,
     MachineRunStatus,
 };

@@ -8,7 +8,7 @@ use embassy_net::StaticConfigV4;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult, signal::Signal,
 };
-use hoshiguma_telemetry_protocol::{
+use hoshiguma_protocol::{
     payload::{
         control::{
             AirAssistPump, ControlPayload, FumeExtractionFan, LaserEnable, MachineEnable,
