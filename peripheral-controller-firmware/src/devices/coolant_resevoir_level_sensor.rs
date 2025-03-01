@@ -46,8 +46,8 @@ pub(crate) static COOLANT_RESEVOIR_LEVEL_CHANGED: Watch<
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: CoolantResevoirLevelSensorResources) {
-    let empty = Input::new(r.empty, Pull::Up);
-    let low = Input::new(r.low, Pull::Up);
+    let empty = Input::new(r.empty, Pull::Down);
+    let low = Input::new(r.low, Pull::Down);
 
     let mut empty = PolledInput::new(empty, Duration::from_millis(200));
     let mut low = PolledInput::new(low, Duration::from_millis(500));
@@ -58,10 +58,10 @@ pub(crate) async fn task(r: CoolantResevoirLevelSensorResources) {
         select(empty.wait_for_change(), low.wait_for_change()).await;
 
         let state = CoolantResevoirLevelReading(match (empty.level().await, low.level().await) {
-            (Level::Low, Level::Low) => Ok(CoolantResevoirLevel::Empty),
+            (Level::Low, Level::Low) => Ok(CoolantResevoirLevel::Full),
             (Level::Low, Level::High) => Err(()),
             (Level::High, Level::Low) => Ok(CoolantResevoirLevel::Low),
-            (Level::High, Level::High) => Ok(CoolantResevoirLevel::Full),
+            (Level::High, Level::High) => Ok(CoolantResevoirLevel::Empty),
         });
 
         queue_telemetry_message(Payload::Observation(
