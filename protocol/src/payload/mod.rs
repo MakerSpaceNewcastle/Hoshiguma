@@ -12,20 +12,3 @@ pub enum Payload {
     Process(process::ProcessPayload),
     Control(control::ControlPayload),
 }
-
-pub enum Message {
-    Rpc(cooler::Rpc),
-    Publish,
-}
-
-pub enum RpcMessage<REQ, RES> {
-    Request(REQ),
-    Response(RES),
-}
-
-mod cooler {
-    pub enum Rpc {
-        Ping(super::RpcMessage<u32, u32>),
-        GetVersion(super::RpcMessage<(), crate::TelemString>),
-    }
-}
