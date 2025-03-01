@@ -81,8 +81,8 @@ assign_resources! {
         switch: PIN_10, // Input 5
     },
     coolant_resevoir_level_sensor: CoolantResevoirLevelSensorResources {
-        empty: PIN_4, // Level shifted IO 4
-        low: PIN_5, // Level shifted IO 5
+        empty: PIN_14, // Input 1
+        low: PIN_13, // Input 2
     },
     air_assist_pump: AirAssistPumpResources {
         relay: PIN_20, // Relay 6
@@ -120,8 +120,6 @@ fn main() -> ! {
 
     // Unused IO
     let _in0 = Input::new(p.PIN_15, Pull::Down);
-    let _in1 = Input::new(p.PIN_14, Pull::Down);
-    let _in2 = Input::new(p.PIN_13, Pull::Down);
     let _relay5 = Output::new(p.PIN_19, Level::Low);
 
     let mut telemetry_uart: TelemetryUart = r.telemetry.into();
