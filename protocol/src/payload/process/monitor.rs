@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Monitor {
     LogicPowerSupplyNotPresent,
@@ -15,7 +15,7 @@ pub enum Monitor {
     CoolantResevoirTemperature,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MonitorState {
     Normal,

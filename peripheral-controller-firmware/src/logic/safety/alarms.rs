@@ -1,32 +1,21 @@
-use super::monitor::{MonitorState, MonitorStatus, NEW_MONITOR_STATUS};
+use super::monitor::NEW_MONITOR_STATUS;
 use crate::{
     changed::{checked_set, Changed},
     telemetry::queue_telemetry_message,
 };
-use defmt::{debug, info, unwrap, Format};
+use defmt::{debug, info, unwrap};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{process::ProcessPayload, Payload};
+use hoshiguma_protocol::payload::{
+    process::{ActiveAlarms, MonitorState, MonitorStatus, ProcessPayload},
+    Payload,
+};
 
-#[derive(Clone, Default, Format)]
-pub(crate) struct ActiveAlarms {
-    alarms: heapless::Vec<MonitorStatus, 16>,
+pub(super) trait ActiveAlarmsExt {
+    fn update(&mut self, status: MonitorStatus) -> Changed;
+    fn overall_state(&self) -> MonitorState;
 }
 
-impl From<&ActiveAlarms> for hoshiguma_protocol::payload::process::ActiveAlarms {
-    fn from(value: &ActiveAlarms) -> Self {
-        let mut alarms = heapless::Vec::default();
-
-        for a in &value.alarms {
-            // Should not fail unless telemetry payload and firmware `Vec`s have different capacities.
-            // But if it does: oh dead, how sad, never mind
-            let _ = alarms.push(a.into());
-        }
-
-        Self { alarms }
-    }
-}
-
-impl ActiveAlarms {
+impl ActiveAlarmsExt for ActiveAlarms {
     fn update(&mut self, status: MonitorStatus) -> Changed {
         match status.state {
             MonitorState::Normal => {
@@ -41,7 +30,7 @@ impl ActiveAlarms {
                 }
             }
             _ => match self.alarms.iter_mut().find(|s| s.monitor == status.monitor) {
-                Some(existing) => checked_set(&mut existing.since, status.since)
+                Some(existing) => checked_set(&mut existing.since_millis, status.since_millis)
                     .or(checked_set(&mut existing.state, status.state)),
                 None => {
                     unwrap!(self.alarms.push(status));
@@ -51,7 +40,7 @@ impl ActiveAlarms {
         }
     }
 
-    pub(super) fn overall_state(&self) -> MonitorState {
+    fn overall_state(&self) -> MonitorState {
         let mut state = MonitorState::Normal;
 
         for a in &self.alarms {
@@ -69,7 +58,9 @@ pub(crate) static ACTIVE_ALARMS_CHANGED: Watch<CriticalSectionRawMutex, ActiveAl
 pub(crate) async fn monitor_observation_task() {
     let tx = ACTIVE_ALARMS_CHANGED.sender();
 
-    let mut alarms = ActiveAlarms::default();
+    let mut alarms = ActiveAlarms {
+        alarms: Default::default(),
+    };
 
     // No alarms at boot time
     tx.send(alarms.clone());
@@ -78,13 +69,12 @@ pub(crate) async fn monitor_observation_task() {
         let monitor = NEW_MONITOR_STATUS.receive().await;
         debug!("Monitor changed: {}", monitor);
 
-        queue_telemetry_message(Payload::Process(ProcessPayload::Monitor((&monitor).into()))).await;
+        queue_telemetry_message(Payload::Process(ProcessPayload::Monitor(monitor.clone()))).await;
 
         if alarms.update(monitor) == Changed::Yes {
             info!("New alarms: {}", alarms);
 
-            queue_telemetry_message(Payload::Process(ProcessPayload::Alarms((&alarms).into())))
-                .await;
+            queue_telemetry_message(Payload::Process(ProcessPayload::Alarms(alarms.clone()))).await;
 
             tx.send(alarms.clone());
         }

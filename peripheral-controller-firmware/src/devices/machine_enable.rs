@@ -1,26 +1,12 @@
 use crate::{telemetry::queue_telemetry_message, MachineEnableResources};
-use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{control::ControlPayload, Payload};
+use hoshiguma_protocol::payload::{
+    control::{ControlPayload, MachineEnable},
+    Payload,
+};
 
-#[derive(Clone, Format)]
-pub(crate) enum MachineEnableState {
-    Inhibited,
-    Enabled,
-}
-
-impl From<&MachineEnableState> for hoshiguma_protocol::payload::control::MachineEnable {
-    fn from(value: &MachineEnableState) -> Self {
-        match value {
-            MachineEnableState::Inhibited => Self::Inhibited,
-            MachineEnableState::Enabled => Self::Enabled,
-        }
-    }
-}
-
-pub(crate) static MACHINE_ENABLE: Watch<CriticalSectionRawMutex, MachineEnableState, 2> =
-    Watch::new();
+pub(crate) static MACHINE_ENABLE: Watch<CriticalSectionRawMutex, MachineEnable, 2> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachineEnableResources) {
@@ -33,14 +19,14 @@ pub(crate) async fn task(r: MachineEnableResources) {
 
         // Send telemetry update
         queue_telemetry_message(Payload::Control(ControlPayload::MachineEnable(
-            (&setting).into(),
+            setting.clone(),
         )))
         .await;
 
         // Set relay output
         let level = match setting {
-            MachineEnableState::Inhibited => Level::Low,
-            MachineEnableState::Enabled => Level::High,
+            MachineEnable::Inhibit => Level::Low,
+            MachineEnable::Enable => Level::High,
         };
         output.set_level(level);
     }

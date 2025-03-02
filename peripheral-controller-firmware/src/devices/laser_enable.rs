@@ -1,25 +1,12 @@
 use crate::{telemetry::queue_telemetry_message, LaserEnableResources};
-use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{control::ControlPayload, Payload};
+use hoshiguma_protocol::payload::{
+    control::{ControlPayload, LaserEnable},
+    Payload,
+};
 
-#[derive(Clone, Format)]
-pub(crate) enum LaserEnableState {
-    Inhibited,
-    Enabled,
-}
-
-impl From<&LaserEnableState> for hoshiguma_protocol::payload::control::LaserEnable {
-    fn from(value: &LaserEnableState) -> Self {
-        match value {
-            LaserEnableState::Inhibited => Self::Inhibited,
-            LaserEnableState::Enabled => Self::Enabled,
-        }
-    }
-}
-
-pub(crate) static LASER_ENABLE: Watch<CriticalSectionRawMutex, LaserEnableState, 2> = Watch::new();
+pub(crate) static LASER_ENABLE: Watch<CriticalSectionRawMutex, LaserEnable, 2> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: LaserEnableResources) {
@@ -32,14 +19,14 @@ pub(crate) async fn task(r: LaserEnableResources) {
 
         // Send telemetry update
         queue_telemetry_message(Payload::Control(ControlPayload::LaserEnable(
-            (&setting).into(),
+            setting.clone(),
         )))
         .await;
 
         // Set relay output
         let level = match setting {
-            LaserEnableState::Inhibited => Level::Low,
-            LaserEnableState::Enabled => Level::High,
+            LaserEnable::Inhibit => Level::Low,
+            LaserEnable::Enable => Level::High,
         };
         output.set_level(level);
     }

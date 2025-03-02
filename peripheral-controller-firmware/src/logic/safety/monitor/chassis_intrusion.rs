@@ -1,9 +1,10 @@
-use crate::{
-    changed::Changed,
-    devices::chassis_intrusion_detector::{ChassisIntrusion, CHASSIS_INTRUSION_CHANGED},
-    logic::safety::monitor::{Monitor, MonitorState, MonitorStatus, NEW_MONITOR_STATUS},
-};
+use super::{MonitorStatusExt, NEW_MONITOR_STATUS};
+use crate::{changed::Changed, devices::chassis_intrusion_detector::CHASSIS_INTRUSION_CHANGED};
 use defmt::unwrap;
+use hoshiguma_protocol::payload::{
+    observation::ChassisIntrusion,
+    process::{Monitor, MonitorState, MonitorStatus},
+};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

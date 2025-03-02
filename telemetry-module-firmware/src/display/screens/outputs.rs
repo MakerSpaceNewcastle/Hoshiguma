@@ -75,8 +75,8 @@ impl DrawTypeDrawable for Outputs<'_> {
             value_offset,
             "Mach En",
             self.state.machine_enable.as_ref().map(|v| match v {
-                MachineEnable::Inhibited => "Inhibited",
-                MachineEnable::Enabled => "Enabled",
+                MachineEnable::Inhibit => "Inhibited",
+                MachineEnable::Enable => "Enabled",
             }),
             None,
         )
@@ -88,8 +88,8 @@ impl DrawTypeDrawable for Outputs<'_> {
             value_offset,
             "Laser En",
             self.state.laser_enable.as_ref().map(|v| match v {
-                LaserEnable::Inhibited => "Inhibited",
-                LaserEnable::Enabled => "Enabled",
+                LaserEnable::Inhibit => "Inhibited",
+                LaserEnable::Enable => "Enabled",
             }),
             None,
         )
@@ -102,7 +102,7 @@ impl DrawTypeDrawable for Outputs<'_> {
             "Air Pump",
             self.state.air_assist_pump.as_ref().map(|v| match v {
                 AirAssistPump::Idle => "Idle",
-                AirAssistPump::Demand => "Run",
+                AirAssistPump::Run => "Run",
             }),
             None,
         )
@@ -115,7 +115,7 @@ impl DrawTypeDrawable for Outputs<'_> {
             "Fume Extr",
             self.state.fume_extraction_fan.as_ref().map(|v| match v {
                 FumeExtractionFan::Idle => "Idle",
-                FumeExtractionFan::Demand => "Run",
+                FumeExtractionFan::Run => "Run",
             }),
             None,
         )

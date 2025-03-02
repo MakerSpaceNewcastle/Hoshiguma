@@ -183,8 +183,10 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::safety::monitor::temperatures::task()));
 
     // Air assist control tasks
-    unwrap!(spawner.spawn(devices::air_assist::demand_task(r.air_assist_demand_detect)));
-    unwrap!(spawner.spawn(devices::air_assist::pump_task(r.air_assist_pump)));
+    unwrap!(spawner.spawn(devices::air_assist_demand_detector::task(
+        r.air_assist_demand_detect
+    )));
+    unwrap!(spawner.spawn(devices::air_assist_pump::task(r.air_assist_pump)));
     unwrap!(spawner.spawn(logic::air_assist::task()));
 
     // Fume extraction control tasks

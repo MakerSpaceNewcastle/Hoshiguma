@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum AirAssistPump {
     Idle,
-    Demand,
+    Run,
 }

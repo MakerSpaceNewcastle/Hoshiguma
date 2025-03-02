@@ -1,11 +1,12 @@
+use super::{MonitorStatusExt, NEW_MONITOR_STATUS};
 use crate::{
-    changed::Changed,
-    devices::coolant_resevoir_level_sensor::{
-        CoolantResevoirLevel, COOLANT_RESEVOIR_LEVEL_CHANGED,
-    },
-    logic::safety::monitor::{Monitor, MonitorState, MonitorStatus, NEW_MONITOR_STATUS},
+    changed::Changed, devices::coolant_resevoir_level_sensor::COOLANT_RESEVOIR_LEVEL_CHANGED,
 };
 use defmt::unwrap;
+use hoshiguma_protocol::payload::{
+    observation::CoolantResevoirLevel,
+    process::{Monitor, MonitorState, MonitorStatus},
+};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
@@ -17,7 +18,7 @@ pub(crate) async fn task() {
     loop {
         let state = rx.changed().await;
 
-        let sensor_state = if state.0.is_ok() {
+        let sensor_state = if state.is_ok() {
             MonitorState::Normal
         } else {
             MonitorState::Warn
@@ -27,7 +28,7 @@ pub(crate) async fn task() {
             NEW_MONITOR_STATUS.send(sensor_status.clone()).await;
         }
 
-        if let Ok(level_state) = state.0 {
+        if let Ok(level_state) = state {
             let level_state = match level_state {
                 CoolantResevoirLevel::Full => MonitorState::Normal,
                 CoolantResevoirLevel::Low => MonitorState::Warn,

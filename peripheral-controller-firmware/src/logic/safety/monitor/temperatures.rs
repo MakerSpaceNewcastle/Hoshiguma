@@ -1,9 +1,13 @@
-use super::{Monitor, MonitorState, MonitorStatus, NEW_MONITOR_STATUS};
+use super::{MonitorStateExt, MonitorStatusExt, NEW_MONITOR_STATUS};
 use crate::{
     changed::Changed,
-    devices::temperature_sensors::{TemperatureReading, TEMPERATURES_READ},
+    devices::temperature_sensors::{TemperaturesExt, TEMPERATURES_READ},
 };
 use defmt::{debug, unwrap, warn};
+use hoshiguma_protocol::payload::{
+    observation::TemperatureReading,
+    process::{Monitor, MonitorState, MonitorStatus},
+};
 
 fn temperature_to_state(
     warn: f32,

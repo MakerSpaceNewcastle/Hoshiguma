@@ -12,7 +12,7 @@ use embedded_graphics::{
 };
 use hoshiguma_protocol::payload::observation::{
     AirAssistDemand, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionMode, MachinePower,
-    MachineRunStatus,
+    MachineRun,
 };
 
 pub(super) struct Inputs<'a> {
@@ -61,8 +61,8 @@ impl DrawTypeDrawable for Inputs<'_> {
             value_offset,
             "Mach Run",
             self.state.machine_run_status.as_ref().map(|v| match v {
-                MachineRunStatus::Idle => "Idle",
-                MachineRunStatus::Running => "Running",
+                MachineRun::Idle => "Idle",
+                MachineRun::Running => "Running",
             }),
             None,
         )

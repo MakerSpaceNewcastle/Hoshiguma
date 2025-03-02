@@ -11,9 +11,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
 };
-use hoshiguma_protocol::payload::{
-    observation::MachineRunStatus, process::MachineOperationLockout,
-};
+use hoshiguma_protocol::payload::{observation::MachineRun, process::MachineOperationLockout};
 
 pub(super) struct Summary<'a> {
     state: &'a DisplayDataState,
@@ -83,12 +81,12 @@ impl DrawTypeDrawable for Summary<'_> {
             value_offset,
             "Run",
             self.state.machine_run_status.as_ref().map(|v| match v {
-                MachineRunStatus::Idle => "Idle",
-                MachineRunStatus::Running => "Running",
+                MachineRun::Idle => "Idle",
+                MachineRun::Running => "Running",
             }),
             self.state.machine_run_status.as_ref().map(|v| match v {
-                MachineRunStatus::Idle => Severity::Normal,
-                MachineRunStatus::Running => Severity::Warning,
+                MachineRun::Idle => Severity::Normal,
+                MachineRun::Running => Severity::Warning,
             }),
         )
         .draw(target, draw_type)?;

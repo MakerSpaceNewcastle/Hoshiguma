@@ -1,12 +1,16 @@
 use crate::{
     devices::{
-        air_assist::{AirAssistDemand, AIR_ASSIST_DEMAND_CHANGED, AIR_ASSIST_PUMP},
-        machine_power_detector::{MachinePower, MACHINE_POWER_CHANGED},
+        air_assist_demand_detector::AIR_ASSIST_DEMAND_CHANGED, air_assist_pump::AIR_ASSIST_PUMP,
+        machine_power_detector::MACHINE_POWER_CHANGED,
     },
     maybe_timer::MaybeTimer,
 };
 use defmt::{debug, info, unwrap, Format};
 use embassy_time::{Duration, Instant};
+use hoshiguma_protocol::payload::{
+    control::AirAssistPump,
+    observation::{AirAssistDemand, MachinePower},
+};
 
 #[derive(Clone, Format)]
 enum AirAssistState {
@@ -15,12 +19,12 @@ enum AirAssistState {
     Demand,
 }
 
-impl From<&AirAssistState> for AirAssistDemand {
+impl From<&AirAssistState> for AirAssistPump {
     fn from(state: &AirAssistState) -> Self {
         match state {
             AirAssistState::Idle => Self::Idle,
-            AirAssistState::RunOn(_) => Self::Demand,
-            AirAssistState::Demand => Self::Demand,
+            AirAssistState::RunOn(_) => Self::Run,
+            AirAssistState::Demand => Self::Run,
         }
     }
 }
@@ -75,9 +79,9 @@ pub(crate) async fn task() {
 
         info!("Air assist state {} -> {}", state, new_state);
 
-        // Turn off demand relay if the 24V bus is not powered.
+        // Turn off demand relay if the machine is not powered.
         pump_tx.send(match machine_power {
-            MachinePower::Off => AirAssistDemand::Idle,
+            MachinePower::Off => AirAssistPump::Idle,
             MachinePower::On => (&new_state).into(),
         });
 

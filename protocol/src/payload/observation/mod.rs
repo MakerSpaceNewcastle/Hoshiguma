@@ -12,8 +12,8 @@ pub use self::{
     coolant_resevoir_level::{CoolantResevoirLevel, CoolantResevoirLevelReading},
     fume_extraction_mode::FumeExtractionMode,
     machine_power::MachinePower,
-    machine_run::MachineRunStatus,
-    temperatures::Temperatures,
+    machine_run::MachineRun,
+    temperatures::{TemperatureReading, Temperatures},
 };
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +25,6 @@ pub enum ObservationPayload {
     CoolantResevoirLevel(CoolantResevoirLevelReading),
     FumeExtractionMode(FumeExtractionMode),
     MachinePower(MachinePower),
-    MachineRun(MachineRunStatus),
+    MachineRun(MachineRun),
     Temperatures(Temperatures),
 }

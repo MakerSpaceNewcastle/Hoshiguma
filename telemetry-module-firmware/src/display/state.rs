@@ -8,21 +8,17 @@ use embassy_net::StaticConfigV4;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult, signal::Signal,
 };
-use hoshiguma_protocol::{
-    payload::{
-        control::{
-            AirAssistPump, ControlPayload, FumeExtractionFan, LaserEnable, MachineEnable,
-            StatusLamp,
-        },
-        observation::{
-            AirAssistDemand, ChassisIntrusion, CoolantResevoirLevelReading, FumeExtractionMode,
-            MachinePower, MachineRunStatus, ObservationPayload, Temperatures,
-        },
-        process::{ActiveAlarms, MachineOperationLockout, ProcessPayload},
-        system::SystemMessagePayload,
-        Payload,
+use hoshiguma_protocol::payload::{
+    control::{
+        AirAssistPump, ControlPayload, FumeExtractionFan, LaserEnable, MachineEnable, StatusLamp,
     },
-    String,
+    observation::{
+        AirAssistDemand, ChassisIntrusion, CoolantResevoirLevelReading, FumeExtractionMode,
+        MachinePower, MachineRun, ObservationPayload, Temperatures,
+    },
+    process::{ActiveAlarms, MachineOperationLockout, ProcessPayload},
+    system::{GitRevisionString, SystemMessagePayload},
+    Payload,
 };
 
 #[derive(Default, Clone)]
@@ -32,7 +28,7 @@ pub(crate) struct DisplayDataState {
     pub(crate) mqtt_broker_connected: bool,
 
     // Controller system
-    pub(crate) controller_git_rev: Option<String<20>>,
+    pub(crate) controller_git_rev: Option<GitRevisionString>,
     pub(crate) controller_uptime: Option<u64>,
 
     // Controller observation
@@ -41,7 +37,7 @@ pub(crate) struct DisplayDataState {
     pub(crate) coolant_resevoir_level: Option<CoolantResevoirLevelReading>,
     pub(crate) fume_extraction_mode: Option<FumeExtractionMode>,
     pub(crate) machine_power: Option<MachinePower>,
-    pub(crate) machine_run_status: Option<MachineRunStatus>,
+    pub(crate) machine_run_status: Option<MachineRun>,
     pub(crate) temperatures: Option<Temperatures>,
 
     // Controller processes

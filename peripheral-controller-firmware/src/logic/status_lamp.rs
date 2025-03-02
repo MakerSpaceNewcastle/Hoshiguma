@@ -1,12 +1,16 @@
 use crate::{
     devices::{
-        machine_power_detector::{MachinePower, MACHINE_POWER_CHANGED},
-        machine_run_detector::{MachineRunStatus, MACHINE_RUNNING_CHANGED},
-        status_lamp::{StatusLampSetting, STATUS_LAMP},
+        machine_power_detector::MACHINE_POWER_CHANGED,
+        machine_run_detector::MACHINE_RUNNING_CHANGED, status_lamp::STATUS_LAMP,
     },
-    logic::safety::lockout::{MachineOperationLockout, MACHINE_LOCKOUT_CHANGED},
+    logic::safety::lockout::MACHINE_LOCKOUT_CHANGED,
 };
 use defmt::unwrap;
+use hoshiguma_protocol::payload::{
+    control::StatusLamp,
+    observation::{MachinePower, MachineRun},
+    process::MachineOperationLockout,
+};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
@@ -16,7 +20,11 @@ pub(crate) async fn task() {
 
     let status_lamp_tx = STATUS_LAMP.sender();
 
-    let mut lamp = StatusLampSetting::default();
+    let mut lamp = StatusLamp {
+        red: true,
+        amber: false,
+        green: false,
+    };
     let mut machine_power = MachinePower::Off;
 
     loop {
@@ -34,26 +42,26 @@ pub(crate) async fn task() {
             }
             Either3::Second(running) => {
                 // The amber light is lit when the machine is running
-                lamp.set_amber(match running {
-                    MachineRunStatus::Idle => false,
-                    MachineRunStatus::Running => true,
-                });
+                lamp.amber = match running {
+                    MachineRun::Idle => false,
+                    MachineRun::Running => true,
+                };
             }
             Either3::Third(lockout) => {
                 // The red lamp is lit when operation of the machine is denied
-                lamp.set_red(match lockout {
+                lamp.red = match lockout {
                     MachineOperationLockout::Permitted => false,
                     MachineOperationLockout::PermittedUntilIdle => false,
                     MachineOperationLockout::Denied => true,
-                });
+                };
 
                 // The green lamp is lit when operation of the machine is permitted and will
                 // continue to be permitted
-                lamp.set_green(match lockout {
+                lamp.green = match lockout {
                     MachineOperationLockout::Permitted => true,
                     MachineOperationLockout::PermittedUntilIdle => false,
                     MachineOperationLockout::Denied => false,
-                });
+                };
             }
         }
 
@@ -61,7 +69,11 @@ pub(crate) async fn task() {
         // (the lamps would not be lit anyway, this is to save realys being powered constantly for
         // no reason)
         status_lamp_tx.send(match machine_power {
-            MachinePower::Off => StatusLampSetting::default(),
+            MachinePower::Off => StatusLamp {
+                red: false,
+                amber: false,
+                green: false,
+            },
             MachinePower::On => lamp.clone(),
         });
     }

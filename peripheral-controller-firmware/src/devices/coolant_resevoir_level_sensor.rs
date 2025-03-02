@@ -2,41 +2,14 @@ use crate::{
     polled_input::PolledInput, telemetry::queue_telemetry_message,
     CoolantResevoirLevelSensorResources,
 };
-use defmt::Format;
 use embassy_futures::select::select;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
-
-#[derive(Clone, Format)]
-pub(crate) struct CoolantResevoirLevelReading(pub(crate) Result<CoolantResevoirLevel, ()>);
-
-impl From<&CoolantResevoirLevelReading>
-    for hoshiguma_protocol::payload::observation::CoolantResevoirLevelReading
-{
-    fn from(value: &CoolantResevoirLevelReading) -> Self {
-        match value.0 {
-            Ok(CoolantResevoirLevel::Full) => {
-                Ok(hoshiguma_protocol::payload::observation::CoolantResevoirLevel::Full)
-            }
-            Ok(CoolantResevoirLevel::Low) => {
-                Ok(hoshiguma_protocol::payload::observation::CoolantResevoirLevel::Low)
-            }
-            Ok(CoolantResevoirLevel::Empty) => {
-                Ok(hoshiguma_protocol::payload::observation::CoolantResevoirLevel::Empty)
-            }
-            Err(_) => Err(()),
-        }
-    }
-}
-
-#[derive(Clone, Format)]
-pub(crate) enum CoolantResevoirLevel {
-    Full,
-    Low,
-    Empty,
-}
+use hoshiguma_protocol::payload::{
+    observation::{CoolantResevoirLevel, CoolantResevoirLevelReading, ObservationPayload},
+    Payload,
+};
 
 pub(crate) static COOLANT_RESEVOIR_LEVEL_CHANGED: Watch<
     CriticalSectionRawMutex,
@@ -57,15 +30,15 @@ pub(crate) async fn task(r: CoolantResevoirLevelSensorResources) {
     loop {
         select(empty.wait_for_change(), low.wait_for_change()).await;
 
-        let state = CoolantResevoirLevelReading(match (empty.level().await, low.level().await) {
+        let state = match (empty.level().await, low.level().await) {
             (Level::Low, Level::Low) => Ok(CoolantResevoirLevel::Full),
             (Level::Low, Level::High) => Err(()),
             (Level::High, Level::Low) => Ok(CoolantResevoirLevel::Low),
             (Level::High, Level::High) => Ok(CoolantResevoirLevel::Empty),
-        });
+        };
 
         queue_telemetry_message(Payload::Observation(
-            ObservationPayload::CoolantResevoirLevel((&state).into()),
+            ObservationPayload::CoolantResevoirLevel(state.clone()),
         ))
         .await;
 

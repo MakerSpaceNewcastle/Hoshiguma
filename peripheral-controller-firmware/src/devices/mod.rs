@@ -1,4 +1,5 @@
-pub(crate) mod air_assist;
+pub(crate) mod air_assist_demand_detector;
+pub(crate) mod air_assist_pump;
 pub(crate) mod chassis_intrusion_detector;
 pub(crate) mod coolant_resevoir_level_sensor;
 pub(crate) mod fume_extraction_fan;

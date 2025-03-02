@@ -1,9 +1,10 @@
-use crate::{
-    changed::Changed,
-    devices::machine_power_detector::{MachinePower, MACHINE_POWER_CHANGED},
-    logic::safety::monitor::{Monitor, MonitorState, MonitorStatus, NEW_MONITOR_STATUS},
-};
+use super::{MonitorStatusExt, NEW_MONITOR_STATUS};
+use crate::{changed::Changed, devices::machine_power_detector::MACHINE_POWER_CHANGED};
 use defmt::unwrap;
+use hoshiguma_protocol::payload::{
+    observation::MachinePower,
+    process::{Monitor, MonitorState, MonitorStatus},
+};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
