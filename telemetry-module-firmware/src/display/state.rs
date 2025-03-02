@@ -8,7 +8,7 @@ use embassy_net::StaticConfigV4;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult, signal::Signal,
 };
-use hoshiguma_telemetry_protocol::{
+use hoshiguma_protocol::{
     payload::{
         control::{
             AirAssistPump, ControlPayload, FumeExtractionFan, LaserEnable, MachineEnable,
@@ -22,7 +22,7 @@ use hoshiguma_telemetry_protocol::{
         system::SystemMessagePayload,
         Payload,
     },
-    TelemString,
+    String,
 };
 
 #[derive(Default, Clone)]
@@ -32,7 +32,7 @@ pub(crate) struct DisplayDataState {
     pub(crate) mqtt_broker_connected: bool,
 
     // Controller system
-    pub(crate) controller_git_rev: Option<TelemString>,
+    pub(crate) controller_git_rev: Option<String<20>>,
     pub(crate) controller_uptime: Option<u64>,
 
     // Controller observation

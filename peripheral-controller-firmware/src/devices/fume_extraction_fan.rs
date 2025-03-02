@@ -2,7 +2,7 @@ use crate::{telemetry::queue_telemetry_message, FumeExtractionFanResources};
 use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
+use hoshiguma_protocol::payload::{control::ControlPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum FumeExtractionDemand {
@@ -10,9 +10,7 @@ pub(crate) enum FumeExtractionDemand {
     Demand,
 }
 
-impl From<&FumeExtractionDemand>
-    for hoshiguma_telemetry_protocol::payload::control::FumeExtractionFan
-{
+impl From<&FumeExtractionDemand> for hoshiguma_protocol::payload::control::FumeExtractionFan {
     fn from(value: &FumeExtractionDemand) -> Self {
         match value {
             FumeExtractionDemand::Idle => Self::Idle,

@@ -2,7 +2,7 @@ use crate::{telemetry::queue_telemetry_message, MachineEnableResources};
 use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
+use hoshiguma_protocol::payload::{control::ControlPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum MachineEnableState {
@@ -10,7 +10,7 @@ pub(crate) enum MachineEnableState {
     Enabled,
 }
 
-impl From<&MachineEnableState> for hoshiguma_telemetry_protocol::payload::control::MachineEnable {
+impl From<&MachineEnableState> for hoshiguma_protocol::payload::control::MachineEnable {
     fn from(value: &MachineEnableState) -> Self {
         match value {
             MachineEnableState::Inhibited => Self::Inhibited,

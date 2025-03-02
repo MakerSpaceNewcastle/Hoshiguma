@@ -7,24 +7,24 @@ use embassy_futures::select::select;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) struct CoolantResevoirLevelReading(pub(crate) Result<CoolantResevoirLevel, ()>);
 
 impl From<&CoolantResevoirLevelReading>
-    for hoshiguma_telemetry_protocol::payload::observation::CoolantResevoirLevelReading
+    for hoshiguma_protocol::payload::observation::CoolantResevoirLevelReading
 {
     fn from(value: &CoolantResevoirLevelReading) -> Self {
         match value.0 {
             Ok(CoolantResevoirLevel::Full) => {
-                Ok(hoshiguma_telemetry_protocol::payload::observation::CoolantResevoirLevel::Full)
+                Ok(hoshiguma_protocol::payload::observation::CoolantResevoirLevel::Full)
             }
             Ok(CoolantResevoirLevel::Low) => {
-                Ok(hoshiguma_telemetry_protocol::payload::observation::CoolantResevoirLevel::Low)
+                Ok(hoshiguma_protocol::payload::observation::CoolantResevoirLevel::Low)
             }
             Ok(CoolantResevoirLevel::Empty) => {
-                Ok(hoshiguma_telemetry_protocol::payload::observation::CoolantResevoirLevel::Empty)
+                Ok(hoshiguma_protocol::payload::observation::CoolantResevoirLevel::Empty)
             }
             Err(_) => Err(()),
         }
