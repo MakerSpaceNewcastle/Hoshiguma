@@ -1,0 +1,19 @@
+[package]
+name = "hoshiguma-protocol"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2021"
+license = "MIT"
+
+[features]
+default = ["std"]
+std = ["serde/std"]
+no-std = ["dep:defmt", "dep:heapless"]
+
+[dependencies]
+defmt = { version = "0.3.10", optional = true }
+heapless = { version = "0.8.0", optional = true, features = ["defmt-03", "serde"] }
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+
+[lints.rust]
+unused_crate_dependencies = "deny"

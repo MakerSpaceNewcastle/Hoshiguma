@@ -8,13 +8,13 @@ on:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'devenv.*'
-      - 'telemetry-protocol/**'
+      - 'protocol/**'
       - 'telemetry-module-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'devenv.*'
-      - 'telemetry-protocol/**'
+      - 'protocol/**'
       - 'telemetry-module-firmware/**'
 
 jobs:

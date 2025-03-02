@@ -738,7 +738,7 @@ dependencies = [
  "embassy-time-driver",
  "git-version",
  "heapless 0.8.0",
- "hoshiguma-telemetry-protocol",
+ "hoshiguma-protocol",
  "one-wire-bus",
  "panic-probe",
  "portable-atomic",
@@ -747,9 +747,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "hoshiguma-telemetry-protocol"
+name = "hoshiguma-protocol"
 version = "0.1.0"
 dependencies = [
+ "defmt",
  "heapless 0.8.0",
  "serde",
 ]

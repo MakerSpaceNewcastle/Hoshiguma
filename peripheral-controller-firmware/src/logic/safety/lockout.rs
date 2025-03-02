@@ -9,7 +9,7 @@ use crate::{
 };
 use defmt::{info, Format};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{process::ProcessPayload, Payload};
+use hoshiguma_protocol::payload::{process::ProcessPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum MachineOperationLockout {
@@ -19,7 +19,7 @@ pub(crate) enum MachineOperationLockout {
 }
 
 impl From<&MachineOperationLockout>
-    for hoshiguma_telemetry_protocol::payload::process::MachineOperationLockout
+    for hoshiguma_protocol::payload::process::MachineOperationLockout
 {
     fn from(value: &MachineOperationLockout) -> Self {
         match value {

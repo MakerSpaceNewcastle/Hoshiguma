@@ -2,7 +2,7 @@ use crate::{telemetry::queue_telemetry_message, StatusLampResources};
 use defmt::{unwrap, Format};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_telemetry_protocol::payload::{control::ControlPayload, Payload};
+use hoshiguma_protocol::payload::{control::ControlPayload, Payload};
 
 #[derive(Default, Clone, Format)]
 pub(crate) struct StatusLampSetting {
@@ -11,7 +11,7 @@ pub(crate) struct StatusLampSetting {
     green: bool,
 }
 
-impl From<&StatusLampSetting> for hoshiguma_telemetry_protocol::payload::control::StatusLamp {
+impl From<&StatusLampSetting> for hoshiguma_protocol::payload::control::StatusLamp {
     fn from(value: &StatusLampSetting) -> Self {
         Self {
             red: value.red,

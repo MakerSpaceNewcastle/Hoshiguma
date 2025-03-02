@@ -5,7 +5,7 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use heapless::Vec;
-use hoshiguma_telemetry_protocol::Message;
+use hoshiguma_protocol::Message;
 
 pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Message, 16, 2, 1> =
     PubSubChannel::new();

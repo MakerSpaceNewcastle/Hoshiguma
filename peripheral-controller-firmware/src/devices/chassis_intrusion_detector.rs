@@ -5,7 +5,7 @@ use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[derive(Clone, Format)]
 pub(crate) enum ChassisIntrusion {
@@ -13,9 +13,7 @@ pub(crate) enum ChassisIntrusion {
     Intruded,
 }
 
-impl From<&ChassisIntrusion>
-    for hoshiguma_telemetry_protocol::payload::observation::ChassisIntrusion
-{
+impl From<&ChassisIntrusion> for hoshiguma_protocol::payload::observation::ChassisIntrusion {
     fn from(value: &ChassisIntrusion) -> Self {
         match value {
             ChassisIntrusion::Normal => Self::Normal,

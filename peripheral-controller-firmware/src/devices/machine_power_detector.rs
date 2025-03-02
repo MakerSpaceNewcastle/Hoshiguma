@@ -5,7 +5,7 @@ use defmt::Format;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Timer};
-use hoshiguma_telemetry_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
 
 #[derive(Clone, PartialEq, Eq, Format)]
 pub(crate) enum MachinePower {
@@ -13,7 +13,7 @@ pub(crate) enum MachinePower {
     On,
 }
 
-impl From<&MachinePower> for hoshiguma_telemetry_protocol::payload::observation::MachinePower {
+impl From<&MachinePower> for hoshiguma_protocol::payload::observation::MachinePower {
     fn from(value: &MachinePower) -> Self {
         match value {
             MachinePower::Off => Self::Off,

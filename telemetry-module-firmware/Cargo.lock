@@ -918,6 +918,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbf6a919d6cf397374f7dfeeea91d974c7c0a7221d0d0f4f20d859d329e53fcc"
 
 [[package]]
+name = "hoshiguma-protocol"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "heapless 0.8.0",
+ "serde",
+]
+
+[[package]]
 name = "hoshiguma-telemetry-module"
 version = "0.1.0"
 dependencies = [
@@ -939,7 +948,7 @@ dependencies = [
  "embedded-io-async",
  "git-version",
  "heapless 0.8.0",
- "hoshiguma-telemetry-protocol",
+ "hoshiguma-protocol",
  "mipidsi",
  "panic-probe",
  "portable-atomic",
@@ -948,14 +957,6 @@ dependencies = [
  "rust-mqtt",
  "serde-json-core",
  "static_cell",
-]
-
-[[package]]
-name = "hoshiguma-telemetry-protocol"
-version = "0.1.0"
-dependencies = [
- "heapless 0.8.0",
- "serde",
 ]
 
 [[package]]

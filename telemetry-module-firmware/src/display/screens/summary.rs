@@ -11,7 +11,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
 };
-use hoshiguma_telemetry_protocol::payload::{
+use hoshiguma_protocol::payload::{
     observation::MachineRunStatus, process::MachineOperationLockout,
 };
 

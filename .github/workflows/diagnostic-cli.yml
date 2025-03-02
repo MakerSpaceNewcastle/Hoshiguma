@@ -1,21 +1,21 @@
 ---
-name: Peripheral Controller Firmware
+name: Diagnostic CLI
 
 on:
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/peripheral-controller.yml'
+      - '.github/workflows/diagnostic-cli.yml'
       - 'devenv.*'
       - 'protocol/**'
-      - 'peripheral-controller-firmware/**'
+      - 'diagnostic-cli/**'
   pull_request:
     paths:
-      - '.github/workflows/peripheral-controller.yml'
+      - '.github/workflows/diagnostic-cli.yml'
       - 'devenv.*'
       - 'protocol/**'
-      - 'peripheral-controller-firmware/**'
+      - 'diagnostic-cli/**'
 
 jobs:
   quality:
@@ -36,9 +36,8 @@ jobs:
         run: |
           set -x
 
-          cd ./peripheral-controller-firmware
+          cd ./diagnostic-cli
 
-          rustup target add thumbv6m-none-eabi
           rustup show
 
           cargo clippy -- -Dwarnings
@@ -63,10 +62,8 @@ jobs:
         run: |
           set -x
 
-          cd ./peripheral-controller-firmware
+          cd ./diagnostic-cli
 
-          rustup target add thumbv6m-none-eabi
           rustup show
 
-          cargo build --release --no-default-features
-          cargo build --release --no-default-features --features panic-probe
+          cargo build --release
