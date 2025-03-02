@@ -1,7 +1,10 @@
 mod info;
 mod panic;
 
-pub use self::{info::Info, panic::Panic};
+pub use self::{
+    info::{GitRevisionString, Info},
+    panic::Panic,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

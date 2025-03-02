@@ -737,7 +737,6 @@ dependencies = [
  "embassy-time",
  "embassy-time-driver",
  "git-version",
- "heapless 0.8.0",
  "hoshiguma-protocol",
  "one-wire-bus",
  "panic-probe",

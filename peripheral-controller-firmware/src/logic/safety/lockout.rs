@@ -1,34 +1,19 @@
-use super::{alarms::ACTIVE_ALARMS_CHANGED, monitor::MonitorState};
+use super::alarms::{ActiveAlarmsExt, ACTIVE_ALARMS_CHANGED};
 use crate::{
     devices::{
-        laser_enable::{LaserEnableState, LASER_ENABLE},
-        machine_enable::{MachineEnableState, MACHINE_ENABLE},
-        machine_run_detector::{MachineRunStatus, MACHINE_RUNNING_CHANGED},
+        laser_enable::LASER_ENABLE, machine_enable::MACHINE_ENABLE,
+        machine_run_detector::MACHINE_RUNNING_CHANGED,
     },
     telemetry::queue_telemetry_message,
 };
-use defmt::{info, Format};
+use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{process::ProcessPayload, Payload};
-
-#[derive(Clone, Format)]
-pub(crate) enum MachineOperationLockout {
-    Permitted,
-    PermittedUntilIdle,
-    Denied,
-}
-
-impl From<&MachineOperationLockout>
-    for hoshiguma_protocol::payload::process::MachineOperationLockout
-{
-    fn from(value: &MachineOperationLockout) -> Self {
-        match value {
-            MachineOperationLockout::Permitted => Self::Permitted,
-            MachineOperationLockout::PermittedUntilIdle => Self::PermittedUntilIdle,
-            MachineOperationLockout::Denied => Self::Denied,
-        }
-    }
-}
+use hoshiguma_protocol::payload::{
+    control::{LaserEnable, MachineEnable},
+    observation::MachineRun,
+    process::{MachineOperationLockout, MonitorState, ProcessPayload},
+    Payload,
+};
 
 pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
     CriticalSectionRawMutex,
@@ -43,7 +28,7 @@ pub(crate) async fn alarm_evaluation_task() {
 
     let machine_lockout_tx = MACHINE_LOCKOUT_CHANGED.sender();
 
-    let mut is_running = MachineRunStatus::Idle;
+    let mut is_running = MachineRun::Idle;
     let mut alarm_state = MonitorState::Normal;
 
     loop {
@@ -61,14 +46,14 @@ pub(crate) async fn alarm_evaluation_task() {
         let lockout = match alarm_state {
             MonitorState::Normal => MachineOperationLockout::Permitted,
             MonitorState::Warn => match is_running {
-                MachineRunStatus::Idle => MachineOperationLockout::Denied,
-                MachineRunStatus::Running => MachineOperationLockout::PermittedUntilIdle,
+                MachineRun::Idle => MachineOperationLockout::Denied,
+                MachineRun::Running => MachineOperationLockout::PermittedUntilIdle,
             },
             MonitorState::Critical => MachineOperationLockout::Denied,
         };
         info!("Machine operation lockout: {}", lockout);
 
-        queue_telemetry_message(Payload::Process(ProcessPayload::Lockout((&lockout).into()))).await;
+        queue_telemetry_message(Payload::Process(ProcessPayload::Lockout(lockout.clone()))).await;
 
         machine_lockout_tx.send(lockout);
     }
@@ -85,15 +70,15 @@ pub(crate) async fn machine_lockout_task() {
         let lockout = machine_locout_rx.changed().await;
 
         machine_enable_tx.send(match lockout {
-            MachineOperationLockout::Permitted => MachineEnableState::Enabled,
-            MachineOperationLockout::PermittedUntilIdle => MachineEnableState::Enabled,
-            MachineOperationLockout::Denied => MachineEnableState::Inhibited,
+            MachineOperationLockout::Permitted => MachineEnable::Enable,
+            MachineOperationLockout::PermittedUntilIdle => MachineEnable::Enable,
+            MachineOperationLockout::Denied => MachineEnable::Inhibit,
         });
 
         laser_enable_tx.send(match lockout {
-            MachineOperationLockout::Permitted => LaserEnableState::Enabled,
-            MachineOperationLockout::PermittedUntilIdle => LaserEnableState::Enabled,
-            MachineOperationLockout::Denied => LaserEnableState::Inhibited,
+            MachineOperationLockout::Permitted => LaserEnable::Enable,
+            MachineOperationLockout::PermittedUntilIdle => LaserEnable::Enable,
+            MachineOperationLockout::Denied => LaserEnable::Inhibit,
         });
     }
 }

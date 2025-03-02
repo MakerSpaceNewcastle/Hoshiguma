@@ -1,14 +1,18 @@
 use crate::{
     devices::{
-        fume_extraction_fan::{FumeExtractionDemand, FUME_EXTRACTION_FAN},
-        fume_extraction_mode_switch::{FumeExtractionMode, FUME_EXTRACTION_MODE_CHANGED},
-        machine_power_detector::{MachinePower, MACHINE_POWER_CHANGED},
-        machine_run_detector::{MachineRunStatus, MACHINE_RUNNING_CHANGED},
+        fume_extraction_fan::FUME_EXTRACTION_FAN,
+        fume_extraction_mode_switch::FUME_EXTRACTION_MODE_CHANGED,
+        machine_power_detector::MACHINE_POWER_CHANGED,
+        machine_run_detector::MACHINE_RUNNING_CHANGED,
     },
     maybe_timer::MaybeTimer,
 };
 use defmt::{debug, info, unwrap, Format};
 use embassy_time::{Duration, Instant};
+use hoshiguma_protocol::payload::{
+    control::FumeExtractionFan,
+    observation::{FumeExtractionMode, MachinePower, MachineRun},
+};
 
 #[derive(Clone, Format)]
 enum FumeExtractionAutomaticState {
@@ -17,12 +21,12 @@ enum FumeExtractionAutomaticState {
     Demand,
 }
 
-impl From<&FumeExtractionAutomaticState> for FumeExtractionDemand {
+impl From<&FumeExtractionAutomaticState> for FumeExtractionFan {
     fn from(state: &FumeExtractionAutomaticState) -> Self {
         match state {
             FumeExtractionAutomaticState::Idle => Self::Idle,
-            FumeExtractionAutomaticState::RunOn(_) => Self::Demand,
-            FumeExtractionAutomaticState::Demand => Self::Demand,
+            FumeExtractionAutomaticState::RunOn(_) => Self::Run,
+            FumeExtractionAutomaticState::Demand => Self::Run,
         }
     }
 }
@@ -42,11 +46,11 @@ impl Default for FumeExtractionState {
     }
 }
 
-impl From<&FumeExtractionState> for FumeExtractionDemand {
+impl From<&FumeExtractionState> for FumeExtractionFan {
     fn from(state: &FumeExtractionState) -> Self {
         match state.mode {
             FumeExtractionMode::Automatic => (&state.auto).into(),
-            FumeExtractionMode::OverrideRun => Self::Demand,
+            FumeExtractionMode::OverrideRun => Self::Run,
         }
     }
 }
@@ -90,7 +94,7 @@ pub(crate) async fn task() {
                 Either4::Second(run_state) => FumeExtractionState {
                     mode: state.mode.clone(),
                     auto: match run_state {
-                        MachineRunStatus::Idle => match state.auto {
+                        MachineRun::Idle => match state.auto {
                             FumeExtractionAutomaticState::Idle => {
                                 FumeExtractionAutomaticState::Idle
                             }
@@ -101,7 +105,7 @@ pub(crate) async fn task() {
                                 FumeExtractionAutomaticState::RunOn(Instant::now() + TIMEOUT)
                             }
                         },
-                        MachineRunStatus::Running => FumeExtractionAutomaticState::Demand,
+                        MachineRun::Running => FumeExtractionAutomaticState::Demand,
                     },
                 },
                 Either4::Third(mode) => FumeExtractionState {
@@ -120,9 +124,9 @@ pub(crate) async fn task() {
 
         info!("Fume extraction fan state {} -> {}", state, new_state);
 
-        // Turn off demand relay if the 24V bus is not powered.
+        // Turn off demand relay if the machine is not powered.
         fan_tx.send(match machine_power {
-            MachinePower::Off => FumeExtractionDemand::Idle,
+            MachinePower::Off => FumeExtractionFan::Idle,
             MachinePower::On => (&new_state).into(),
         });
 

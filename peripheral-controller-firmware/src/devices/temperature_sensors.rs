@@ -1,50 +1,21 @@
 use crate::{telemetry::queue_telemetry_message, OnewireResources};
-use defmt::{info, Format};
+use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_protocol::payload::{observation::ObservationPayload, Payload};
+use hoshiguma_protocol::payload::{
+    observation::{ObservationPayload, TemperatureReading, Temperatures},
+    Payload,
+};
 use one_wire_bus::{Address, OneWire};
 
-pub(crate) type TemperatureReading = Result<f32, ()>;
-
-#[derive(Clone, Format)]
-pub(crate) struct TemperatureReadings {
-    pub(crate) onboard: TemperatureReading,
-    pub(crate) electronics_bay_top: TemperatureReading,
-
-    pub(crate) laser_chamber: TemperatureReading,
-
-    pub(crate) ambient: TemperatureReading,
-
-    pub(crate) coolant_flow: TemperatureReading,
-    pub(crate) coolant_return: TemperatureReading,
-
-    pub(crate) coolant_resevoir_bottom: TemperatureReading,
-    pub(crate) coolant_resevoir_top: TemperatureReading,
-
-    pub(crate) coolant_pump: TemperatureReading,
+pub(crate) trait TemperaturesExt {
+    fn overall_result(&self) -> Result<(), ()>;
 }
 
-impl From<&TemperatureReadings> for hoshiguma_protocol::payload::observation::Temperatures {
-    fn from(value: &TemperatureReadings) -> Self {
-        Self {
-            onboard: value.onboard,
-            electronics_bay_top: value.electronics_bay_top,
-            laser_chamber: value.laser_chamber,
-            ambient: value.ambient,
-            coolant_flow: value.coolant_flow,
-            coolant_return: value.coolant_return,
-            coolant_resevoir_bottom: value.coolant_resevoir_bottom,
-            coolant_resevoir_top: value.coolant_resevoir_top,
-            coolant_pump: value.coolant_pump,
-        }
-    }
-}
-
-impl TemperatureReadings {
-    pub(crate) fn overall_result(&self) -> Result<(), ()> {
+impl TemperaturesExt for Temperatures {
+    fn overall_result(&self) -> Result<(), ()> {
         let sensors = [
             &self.onboard,
             &self.electronics_bay_top,
@@ -66,8 +37,7 @@ impl TemperatureReadings {
     }
 }
 
-pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, TemperatureReadings, 5> =
-    Watch::new();
+pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 5> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: OnewireResources) {
@@ -108,7 +78,7 @@ pub(crate) async fn task(r: OnewireResources) {
                 .map_err(|_| ())
         };
 
-        let readings = TemperatureReadings {
+        let readings = Temperatures {
             onboard: read_sensor(&onboard_sensor),
             electronics_bay_top: read_sensor(&electronics_bay_top),
             laser_chamber: read_sensor(&laser_chamber_sensor),
@@ -121,7 +91,7 @@ pub(crate) async fn task(r: OnewireResources) {
         };
 
         queue_telemetry_message(Payload::Observation(ObservationPayload::Temperatures(
-            (&readings).into(),
+            readings.clone(),
         )))
         .await;
 
