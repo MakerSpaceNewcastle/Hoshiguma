@@ -6,11 +6,36 @@ use hoshiguma_protocol::payload::{
     Payload,
 };
 
+pub(crate) struct LaserEnableOutput {
+    relay: Output<'static>,
+}
+
+impl LaserEnableOutput {
+    pub(crate) fn new(r: LaserEnableResources) -> Self {
+        let relay = Output::new(r.relay, Level::Low);
+        Self { relay }
+    }
+
+    pub(crate) fn set(&mut self, setting: LaserEnable) {
+        let level = match setting {
+            LaserEnable::Inhibit => Level::Low,
+            LaserEnable::Enable => Level::High,
+        };
+        self.relay.set_level(level);
+    }
+
+    /// Ensure the laser enable relay is turned off, disabling the laser power supply from turning
+    /// on.
+    pub(crate) fn set_panic(&mut self) {
+        self.set(LaserEnable::Inhibit);
+    }
+}
+
 pub(crate) static LASER_ENABLE: Watch<CriticalSectionRawMutex, LaserEnable, 2> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: LaserEnableResources) {
-    let mut output = Output::new(r.relay, Level::Low);
+    let mut output = LaserEnableOutput::new(r);
     let mut rx = LASER_ENABLE.receiver().unwrap();
 
     loop {
@@ -24,16 +49,6 @@ pub(crate) async fn task(r: LaserEnableResources) {
         .await;
 
         // Set relay output
-        let level = match setting {
-            LaserEnable::Inhibit => Level::Low,
-            LaserEnable::Enable => Level::High,
-        };
-        output.set_level(level);
+        output.set(setting);
     }
-}
-
-pub(crate) fn panic(r: LaserEnableResources) {
-    // Ensure the laser enable relay is turned off, disabling the laser power supply from turning
-    // on.
-    Output::new(r.relay, Level::Low);
 }

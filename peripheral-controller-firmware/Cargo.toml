@@ -8,6 +8,8 @@ license = "MIT"
 [features]
 default = []
 panic-probe = ["dep:panic-probe"]
+test-panic-on-core-0 = []
+test-panic-on-core-1 = []
 
 [dependencies]
 cortex-m = "0.7.7"

@@ -23,31 +23,56 @@ use embassy_time::{Duration, Instant, Ticker, Timer};
 use git_version::git_version;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use portable_atomic::AtomicU64;
+use portable_atomic::{AtomicBool, AtomicU64};
 use static_cell::StaticCell;
 use telemetry::TelemetryUart;
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
+    use crate::devices::{
+        laser_enable::LaserEnableOutput, machine_enable::MachineEnableOutput,
+        status_lamp::StatusLampOutput,
+    };
+
+    // Flag the panic, indicating that executors should stop scheduling work
+    PANIC_HALT.store(true, Ordering::Relaxed);
+
     let p = unsafe { embassy_rp::Peripherals::steal() };
     let r = split_resources!(p);
 
     // Disable the machine and laser
-    crate::devices::laser_enable::panic(r.laser_enable);
-    crate::devices::machine_enable::panic(r.machine_enable);
+    let mut laser_enable = LaserEnableOutput::new(r.laser_enable);
+    laser_enable.set_panic();
+    let mut machine_enable = MachineEnableOutput::new(r.machine_enable);
+    machine_enable.set_panic();
+
+    // Set the status lamp to something distinctive
+    let mut status_lamp = StatusLampOutput::new(r.status_lamp);
+    status_lamp.set_panic();
 
     // Report the panic
     let mut uart: TelemetryUart = r.telemetry.into();
     crate::telemetry::report_panic(&mut uart, info);
 
-    // Set the status lamp to something distinctive
-    crate::devices::status_lamp::panic(r.status_lamp);
-
-    // Blink the on-board LED pretty fast
+    let mut watchdog = Watchdog::new(r.status.watchdog);
     let mut led = Output::new(r.status.led, Level::Low);
+
     loop {
+        // Keep feeding the watchdog so that we do not quickly reset.
+        // Panics should be properly investigated.
+        watchdog.feed();
+
+        // Keep setting the enable and status lamp outputs.
+        // Not strictly needed, as no other tasks should be using the outputs at this point, but
+        // here for belt and braces.
+        laser_enable.set_panic();
+        machine_enable.set_panic();
+        status_lamp.set_panic();
+
+        // Blink the on-board LED pretty fast
         led.toggle();
+
         embassy_time::block_for(Duration::from_millis(50));
     }
 }
@@ -111,6 +136,8 @@ static EXECUTOR_1: StaticCell<Executor> = StaticCell::new();
 static SLEEP_TICKS_CORE_0: AtomicU64 = AtomicU64::new(0);
 static SLEEP_TICKS_CORE_1: AtomicU64 = AtomicU64::new(0);
 
+static PANIC_HALT: AtomicBool = AtomicBool::new(false);
+
 #[cortex_m_rt::entry]
 fn main() -> ! {
     let p = embassy_rp::init(Default::default());
@@ -155,12 +182,17 @@ fn main() -> ! {
             unwrap!(spawner.spawn(devices::laser_enable::task(r.laser_enable)));
             unwrap!(spawner.spawn(devices::machine_enable::task(r.machine_enable)));
 
+            #[cfg(feature = "test-panic-on-core-1")]
+            unwrap!(spawner.spawn(dummy_panic()));
+
             loop {
                 let before = Instant::now().as_ticks();
                 cortex_m::asm::wfe();
                 let after = Instant::now().as_ticks();
                 SLEEP_TICKS_CORE_1.fetch_add(after - before, Ordering::Relaxed);
-                unsafe { executor_1.poll() };
+                if !PANIC_HALT.load(Ordering::Relaxed) {
+                    unsafe { executor_1.poll() };
+                }
             }
         },
     );
@@ -202,12 +234,17 @@ fn main() -> ! {
     // CPU usage reporting
     unwrap!(spawner.spawn(report_cpu_usage()));
 
+    #[cfg(feature = "test-panic-on-core-0")]
+    unwrap!(spawner.spawn(dummy_panic()));
+
     loop {
         let before = Instant::now().as_ticks();
         cortex_m::asm::wfe();
         let after = Instant::now().as_ticks();
         SLEEP_TICKS_CORE_0.fetch_add(after - before, Ordering::Relaxed);
-        unsafe { executor_0.poll() };
+        if !PANIC_HALT.load(Ordering::Relaxed) {
+            unsafe { executor_0.poll() };
+        }
     }
 }
 
@@ -216,7 +253,7 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(550));
+    watchdog.start(Duration::from_millis(600));
 
     loop {
         watchdog.feed();
@@ -259,4 +296,10 @@ async fn report_cpu_usage() {
             usage_core_0, usage_core_1
         );
     }
+}
+
+#[embassy_executor::task]
+async fn dummy_panic() {
+    embassy_time::Timer::after_secs(5).await;
+    panic!("oh dear, how sad. nevermind...");
 }
