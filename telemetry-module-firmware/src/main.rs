@@ -6,24 +6,20 @@ mod telemetry;
 mod ui_button;
 mod wifi;
 
-use core::sync::atomic::Ordering;
-
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use defmt::{info, unwrap, warn};
 use defmt_rtt as _;
-use embassy_executor::raw::Executor;
+use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
 use embassy_rp::{
     gpio::{Level, Output},
-    multicore::{spawn_core1, Stack},
     peripherals,
     watchdog::Watchdog,
 };
 use embassy_sync::pubsub::WaitResult;
-use embassy_time::{Duration, Instant, Ticker, Timer};
+use embassy_time::{Duration, Ticker, Timer};
 use panic_probe as _;
-use portable_atomic::{self as _, AtomicU64};
-use static_cell::StaticCell;
+use portable_atomic as _;
 
 assign_resources::assign_resources! {
     display: DisplayResources {
@@ -58,59 +54,21 @@ assign_resources::assign_resources! {
     }
 }
 
-static mut STACK_CORE_1: Stack<4096> = Stack::new();
-
-static EXECUTOR_0: StaticCell<Executor> = StaticCell::new();
-static EXECUTOR_1: StaticCell<Executor> = StaticCell::new();
-
-static SLEEP_TICKS_CORE_0: AtomicU64 = AtomicU64::new(0);
-static SLEEP_TICKS_CORE_1: AtomicU64 = AtomicU64::new(0);
-
-#[cortex_m_rt::entry]
-fn main() -> ! {
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
-    spawn_core1(
-        p.CORE1,
-        unsafe { &mut *core::ptr::addr_of_mut!(STACK_CORE_1) },
-        move || {
-            let executor_1 = EXECUTOR_1.init(Executor::new(usize::MAX as *mut ()));
-            let spawner = executor_1.spawner();
+    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
-            unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
+    unwrap!(spawner.spawn(crate::telemetry::task(r.telemetry_uart)));
 
-            unwrap!(spawner.spawn(crate::telemetry::task(r.telemetry_uart)));
-
-            unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
-
-            unwrap!(spawner.spawn(report_cpu_usage()));
-
-            loop {
-                let before = Instant::now().as_ticks();
-                cortex_m::asm::wfe();
-                let after = Instant::now().as_ticks();
-                SLEEP_TICKS_CORE_1.fetch_add(after - before, Ordering::Relaxed);
-                unsafe { executor_1.poll() };
-            }
-        },
-    );
-
-    let executor_0 = EXECUTOR_0.init(Executor::new(usize::MAX as *mut ()));
-    let spawner = executor_0.spawner();
+    unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
 
     unwrap!(spawner.spawn(crate::display::state::task()));
     unwrap!(spawner.spawn(crate::display::task(r.display)));
 
     unwrap!(spawner.spawn(crate::wifi::task(r.wifi, spawner)));
-
-    loop {
-        let before = Instant::now().as_ticks();
-        cortex_m::asm::wfe();
-        let after = Instant::now().as_ticks();
-        SLEEP_TICKS_CORE_0.fetch_add(after - before, Ordering::Relaxed);
-        unsafe { executor_0.poll() };
-    }
 }
 
 #[embassy_executor::task]
@@ -148,41 +106,5 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
             }
             _ => {}
         }
-    }
-}
-
-#[embassy_executor::task]
-async fn report_cpu_usage() {
-    let mut previous_tick = 0u64;
-    let mut previous_sleep_tick_core_0 = 0u64;
-    let mut previous_sleep_tick_core_1 = 0u64;
-
-    let mut ticker = Ticker::every(Duration::from_secs(1));
-
-    loop {
-        ticker.next().await;
-
-        let current_tick = Instant::now().as_ticks();
-        let tick_difference = (current_tick - previous_tick) as f32;
-
-        let current_sleep_tick_core_0 = SLEEP_TICKS_CORE_0.load(Ordering::Relaxed);
-        let current_sleep_tick_core_1 = SLEEP_TICKS_CORE_1.load(Ordering::Relaxed);
-
-        let calc_cpu_usage = |current_sleep_tick: u64, previous_sleep_tick: u64| -> f32 {
-            let sleep_tick_difference = (current_sleep_tick - previous_sleep_tick) as f32;
-            1f32 - sleep_tick_difference / tick_difference
-        };
-
-        let usage_core_0 = calc_cpu_usage(current_sleep_tick_core_0, previous_sleep_tick_core_0);
-        let usage_core_1 = calc_cpu_usage(current_sleep_tick_core_1, previous_sleep_tick_core_1);
-
-        previous_tick = current_tick;
-        previous_sleep_tick_core_0 = current_sleep_tick_core_0;
-        previous_sleep_tick_core_1 = current_sleep_tick_core_1;
-
-        info!(
-            "Usage: core 0 = {}, core 1 = {}",
-            usage_core_0, usage_core_1
-        );
     }
 }
