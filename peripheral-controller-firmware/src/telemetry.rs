@@ -11,7 +11,7 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channe
 use embassy_time::{Duration, Ticker};
 use hoshiguma_protocol::{
     payload::{
-        system::{Info, SystemMessagePayload},
+        system::{Boot, BootReason, Info, SystemMessagePayload},
         Payload,
     },
     Message,
@@ -55,14 +55,23 @@ fn new_message(payload: Payload) -> Message {
     }
 }
 
-fn info_message() -> Info {
-    Info {
-        git_revision: git_version::git_version!().try_into().unwrap(),
+fn boot_reason() -> BootReason {
+    let reason = embassy_rp::pac::WATCHDOG.reason().read();
+
+    if reason.force() {
+        BootReason::WatchdogForced
+    } else if reason.timer() {
+        BootReason::WatchdogTimeout
+    } else {
+        BootReason::Normal
     }
 }
 
 pub(super) fn report_boot(uart: &mut TelemetryUart) {
-    let msg = new_message(Payload::System(SystemMessagePayload::Boot(info_message())));
+    let msg = new_message(Payload::System(SystemMessagePayload::Boot(Boot {
+        git_revision: git_version::git_version!().try_into().unwrap(),
+        reason: boot_reason(),
+    })));
     tx_message_blocking(uart, &msg);
 }
 
@@ -94,9 +103,9 @@ pub(super) async fn heartbeat_task() {
     loop {
         ticker.next().await;
 
-        let msg = new_message(Payload::System(SystemMessagePayload::Heartbeat(
-            info_message(),
-        )));
+        let msg = new_message(Payload::System(SystemMessagePayload::Heartbeat(Info {
+            git_revision: git_version::git_version!().try_into().unwrap(),
+        })));
         TELEMETRY_MESSAGES.send(msg).await;
     }
 }
