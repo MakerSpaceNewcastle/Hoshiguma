@@ -1,6 +1,6 @@
 use crate::{
+    network::{NetworkEvent, NETWORK_EVENTS},
     telemetry::TELEMETRY_MESSAGES,
-    wifi::{NetworkEvent, NETWORK_EVENTS},
 };
 use defmt::warn;
 use embassy_futures::select::{select, Either};

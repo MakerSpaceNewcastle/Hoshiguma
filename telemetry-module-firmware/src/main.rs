@@ -2,9 +2,9 @@
 #![no_main]
 
 mod display;
+mod network;
 mod telemetry;
 mod ui_button;
-mod wifi;
 
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use defmt::{info, unwrap, warn};
@@ -68,7 +68,7 @@ async fn main(spawner: Spawner) {
     unwrap!(spawner.spawn(crate::display::state::task()));
     unwrap!(spawner.spawn(crate::display::task(r.display)));
 
-    unwrap!(spawner.spawn(crate::wifi::task(r.wifi, spawner)));
+    unwrap!(spawner.spawn(crate::network::task(r.wifi, spawner)));
 }
 
 #[embassy_executor::task]
