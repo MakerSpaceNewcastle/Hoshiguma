@@ -53,6 +53,23 @@ impl DrawTypeDrawable for Device<'_> {
         let cursor =
             Measurement::new(cursor, value_offset, "Up", Some(&s), None).draw(target, draw_type)?;
 
+        // Boot reason of the telemetry module
+        let boot_reason = embassy_rp::pac::WATCHDOG.reason().read();
+        let cursor = Measurement::new(
+            cursor,
+            value_offset,
+            "Bt.",
+            Some(if boot_reason.force() {
+                "Forced Reset"
+            } else if boot_reason.timer() {
+                "Watchdog Timeout"
+            } else {
+                "Normal"
+            }),
+            None,
+        )
+        .draw(target, draw_type)?;
+
         let cursor = cursor + Point::new(0, 5);
 
         let cursor = Subtitle::new(cursor, "Controller").draw(target, draw_type)?;
