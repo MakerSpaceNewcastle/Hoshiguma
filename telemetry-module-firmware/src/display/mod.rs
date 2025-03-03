@@ -55,7 +55,7 @@ trait DrawTypeDrawable {
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::DisplayResources) {
     let mut config = SpiConfig::default();
-    config.frequency = 16_000_000;
+    config.frequency = 64_000_000;
 
     let spi = Spi::new_blocking(r.spi, r.clk, r.mosi, r.miso, config.clone());
     let spi_bus: Mutex<NoopRawMutex, _> = Mutex::new(RefCell::new(spi));
