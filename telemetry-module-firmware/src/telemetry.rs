@@ -1,7 +1,7 @@
 use defmt::{info, trace, warn};
 use embassy_rp::{
     peripherals::UART0,
-    uart::{Config, InterruptHandler},
+    uart::{Config as UartConfig, InterruptHandler, UartRx},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use heapless::Vec;
@@ -17,9 +17,9 @@ embassy_rp::bind_interrupts!(pub(super) struct Irqs {
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::TelemetryUartResources) {
     let mut rx = {
-        let mut config = Config::default();
+        let mut config = UartConfig::default();
         config.baudrate = 9600;
-        embassy_rp::uart::UartRx::new(r.uart, r.rx_pin, Irqs, r.dma_ch, config)
+        UartRx::new(r.uart, r.rx_pin, Irqs, r.dma_ch, config)
     };
     let tx = TELEMETRY_MESSAGES.publisher().unwrap();
 
