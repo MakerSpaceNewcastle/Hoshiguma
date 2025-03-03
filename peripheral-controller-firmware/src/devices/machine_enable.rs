@@ -6,11 +6,36 @@ use hoshiguma_protocol::payload::{
     Payload,
 };
 
+pub(crate) struct MachineEnableOutput {
+    relay: Output<'static>,
+}
+
+impl MachineEnableOutput {
+    pub(crate) fn new(r: MachineEnableResources) -> Self {
+        let relay = Output::new(r.relay, Level::Low);
+        Self { relay }
+    }
+
+    pub(crate) fn set(&mut self, setting: MachineEnable) {
+        let level = match setting {
+            MachineEnable::Inhibit => Level::Low,
+            MachineEnable::Enable => Level::High,
+        };
+        self.relay.set_level(level);
+    }
+
+    /// Ensure the machine enable relay is turned off, disabling the Ruida controller from
+    /// attempting to operate the machine.
+    pub(crate) fn set_panic(&mut self) {
+        self.set(MachineEnable::Inhibit);
+    }
+}
+
 pub(crate) static MACHINE_ENABLE: Watch<CriticalSectionRawMutex, MachineEnable, 2> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachineEnableResources) {
-    let mut output = Output::new(r.relay, Level::Low);
+    let mut output = MachineEnableOutput::new(r);
     let mut rx = MACHINE_ENABLE.receiver().unwrap();
 
     loop {
@@ -24,16 +49,6 @@ pub(crate) async fn task(r: MachineEnableResources) {
         .await;
 
         // Set relay output
-        let level = match setting {
-            MachineEnable::Inhibit => Level::Low,
-            MachineEnable::Enable => Level::High,
-        };
-        output.set_level(level);
+        output.set(setting);
     }
-}
-
-pub(crate) fn panic(r: MachineEnableResources) {
-    // Ensure the machine enable relay is turned off, disabling the Ruida controller from
-    // attempting to operate the machine.
-    Output::new(r.relay, Level::Low);
 }
