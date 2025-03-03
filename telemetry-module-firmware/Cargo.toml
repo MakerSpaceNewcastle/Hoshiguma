@@ -40,8 +40,7 @@ postcard = "1.0.10"
 
 # Display
 embedded-graphics = "0.8.1"
-mipidsi = "0.8.0"
-display-interface-spi = "0.5.0"
+mipidsi = "0.9.0"
 
 # MQTT telemetry TX
 rust-mqtt = { git = "https://github.com/DanNixon/rust-mqtt", default-features = false, features = ["defmt"] }

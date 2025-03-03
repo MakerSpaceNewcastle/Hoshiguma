@@ -9,13 +9,12 @@ use self::{
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use core::cell::RefCell;
 use defmt::{debug, warn, Format};
-use display_interface_spi::SPIInterface;
 use drawables::{boot_screen::BootScreen, screen::Screen};
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
 use embassy_futures::select::{select3, Either3};
 use embassy_rp::{
     gpio::{Level, Output},
-    spi::Config,
+    spi::{Config as SpiConfig, Spi},
 };
 use embassy_sync::{
     blocking_mutex::{raw::NoopRawMutex, Mutex},
@@ -28,6 +27,7 @@ use embedded_graphics::{
     Drawable,
 };
 use mipidsi::{
+    interface::SpiInterface,
     models::ST7735s,
     options::{ColorOrder, Orientation, Rotation},
 };
@@ -54,10 +54,10 @@ trait DrawTypeDrawable {
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::DisplayResources) {
-    let mut config = Config::default();
+    let mut config = SpiConfig::default();
     config.frequency = 16_000_000;
 
-    let spi = embassy_rp::spi::Spi::new_blocking(r.spi, r.clk, r.mosi, r.miso, config.clone());
+    let spi = Spi::new_blocking(r.spi, r.clk, r.mosi, r.miso, config.clone());
     let spi_bus: Mutex<NoopRawMutex, _> = Mutex::new(RefCell::new(spi));
 
     let display_spi = SpiDeviceWithConfig::new(&spi_bus, Output::new(r.cs, Level::High), config);
@@ -66,7 +66,8 @@ pub(super) async fn task(r: crate::DisplayResources) {
     let rst = Output::new(r.rst, Level::Low);
     let _led = Output::new(r.led, Level::Low);
 
-    let interface = SPIInterface::new(display_spi, dc);
+    let mut buffer = [0_u8; 512];
+    let interface = SpiInterface::new(display_spi, dc, &mut buffer);
 
     let mut display = mipidsi::Builder::new(ST7735s, interface)
         .display_size(SCREEN_WIDTH, SCREEN_HEIGHT)
