@@ -3,7 +3,10 @@ use crate::TelemetryResources;
 use core::panic::PanicInfo;
 use defmt::{debug, error, unwrap};
 use embassy_executor::Spawner;
-use embassy_rp::{peripherals::UART0, uart::Async, uart::UartTx};
+use embassy_rp::{
+    peripherals::UART0,
+    uart::{Async, Config as UartConfig, UartTx},
+};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Ticker};
 use hoshiguma_protocol::{
@@ -18,7 +21,7 @@ pub(crate) type TelemetryUart = UartTx<'static, UART0, Async>;
 
 impl From<TelemetryResources> for TelemetryUart {
     fn from(r: TelemetryResources) -> Self {
-        let mut config = embassy_rp::uart::Config::default();
+        let mut config = UartConfig::default();
         config.baudrate = 9600;
 
         embassy_rp::uart::UartTx::new(r.uart, r.tx_pin, r.dma_ch, config)
