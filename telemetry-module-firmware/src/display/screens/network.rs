@@ -8,7 +8,7 @@ use crate::{
         state::DisplayDataState,
         DrawType, DrawTypeDrawable,
     },
-    wifi::MQTT_BROKER_IP,
+    network::mqtt::config::MQTT_BROKER_IP,
 };
 use core::fmt::Write;
 use embedded_graphics::{

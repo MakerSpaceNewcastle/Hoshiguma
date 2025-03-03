@@ -43,6 +43,7 @@ embedded-graphics = "0.8.1"
 mipidsi = "0.9.0"
 
 # MQTT telemetry TX
+const_format = "0.2.34"
 rust-mqtt = { git = "https://github.com/DanNixon/rust-mqtt", default-features = false, features = ["defmt"] }
 serde-json-core = { version = "0.6.0", features = ["defmt"] }
 
