@@ -7,7 +7,7 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubC
 use heapless::Vec;
 use hoshiguma_protocol::Message;
 
-pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Message, 16, 2, 1> =
+pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Message, 64, 2, 1> =
     PubSubChannel::new();
 
 embassy_rp::bind_interrupts!(pub(super) struct Irqs {

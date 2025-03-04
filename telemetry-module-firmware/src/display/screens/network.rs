@@ -8,7 +8,7 @@ use crate::{
         state::DisplayDataState,
         DrawType, DrawTypeDrawable,
     },
-    network::mqtt::config::MQTT_BROKER_IP,
+    network::mqtt::BROKER_IP,
 };
 use core::fmt::Write;
 use embedded_graphics::{
@@ -119,7 +119,7 @@ impl DrawTypeDrawable for Network<'_> {
         // MQTT broker IP address
         let mqtt_broker_ip_str = {
             let mut s = heapless::String::<16>::new();
-            s.write_fmt(format_args!("{}", MQTT_BROKER_IP)).unwrap();
+            s.write_fmt(format_args!("{}", BROKER_IP)).unwrap();
             s
         };
         Measurement::new(
