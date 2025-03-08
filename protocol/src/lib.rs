@@ -42,17 +42,3 @@ mod common {
     pub type GetUptime = super::Rpc<(), u64>;
     pub type Reset = super::Rpc<(), ()>;
 }
-
-mod peripheral_controller {
-    use serde::{Deserialize, Serialize};
-
-    pub type ControllerMessage = super::Message<Rpc, ()>;
-
-    #[derive(Debug, Serialize, Deserialize, Clone)]
-    pub enum Rpc {
-        Ping(crate::common::Ping),
-        GetVersion(crate::common::GetVersion),
-        GetUptime(crate::common::GetUptime),
-        Reset(crate::common::Reset),
-    }
-}
