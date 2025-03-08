@@ -26,3 +26,12 @@ pub enum StreamMessage<T> {
     Pub { seq: u32, payload: T },
     Ack { seq: u32 },
 }
+
+impl<T> StreamMessage<T> {
+    pub fn get_ack(&self) -> Self {
+        match self {
+            Self::Pub { seq, payload: _ } => Self::Ack { seq: *seq },
+            _ => panic!("should not ack an ack"),
+        }
+    }
+}
