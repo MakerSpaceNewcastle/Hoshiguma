@@ -42,6 +42,7 @@ jobs:
           rustup show
 
           cargo clippy -- -Dwarnings
+          cargo clippy -F panic-probe -- -Dwarnings
 
   build:
     name: Build
@@ -69,4 +70,4 @@ jobs:
           rustup show
 
           cargo build --release --no-default-features
-          cargo build --release --no-default-features --features panic-probe
+          cargo build --release --no-default-features -F panic-probe

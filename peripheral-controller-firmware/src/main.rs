@@ -20,12 +20,12 @@ use embassy_rp::{
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use git_version::git_version;
+use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
 use portable_atomic::{AtomicBool, AtomicU64};
 use static_cell::StaticCell;
-use telemetry::TelemetryUart;
 
 assign_resources! {
     status: StatusResources {
@@ -75,13 +75,12 @@ assign_resources! {
         tx_pin: IO_0,
         rx_pin: IO_1,
         uart: UART0,
-        dma_ch: DMA_CH0,
     },
 }
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
+fn panic(_: &core::panic::PanicInfo) -> ! {
     use crate::devices::{
         laser_enable::LaserEnableOutput, machine_enable::MachineEnableOutput,
         status_lamp::StatusLampOutput,
@@ -102,10 +101,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     // Set the status lamp to something distinctive
     let mut status_lamp = StatusLampOutput::new(r.status_lamp);
     status_lamp.set_panic();
-
-    // Report the panic
-    let mut uart: TelemetryUart = r.telemetry.into();
-    crate::telemetry::report_panic(&mut uart, info);
 
     let mut watchdog = Watchdog::new(r.status.watchdog);
     let mut led = Output::new(r.status.led, Level::Low);
@@ -149,9 +144,6 @@ fn main() -> ! {
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
     let _relay5 = Output::new(p.RELAY_5, Level::Low);
-
-    let mut telemetry_uart: TelemetryUart = r.telemetry.into();
-    crate::telemetry::report_boot(&mut telemetry_uart);
 
     // Safety critical things go on core 1
     spawn_core1(
@@ -229,8 +221,8 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
     unwrap!(spawner.spawn(logic::fume_extraction::task()));
 
-    // Telemetry reporting tasks
-    crate::telemetry::spawn(spawner, telemetry_uart);
+    // Telemetry reporting
+    unwrap!(spawner.spawn(telemetry::task(r.telemetry)));
 
     // CPU usage reporting
     unwrap!(spawner.spawn(report_cpu_usage()));
@@ -303,4 +295,24 @@ async fn report_cpu_usage() {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
+}
+
+fn system_information() -> SystemInformation {
+    SystemInformation {
+        git_revision: git_version::git_version!().try_into().unwrap(),
+        last_boot_reason: boot_reason(),
+        uptime_milliseconds: Instant::now().as_millis(),
+    }
+}
+
+fn boot_reason() -> BootReason {
+    let reason = embassy_rp::pac::WATCHDOG.reason().read();
+
+    if reason.force() {
+        BootReason::WatchdogForced
+    } else if reason.timer() {
+        BootReason::WatchdogTimeout
+    } else {
+        BootReason::Normal
+    }
 }

@@ -9,18 +9,13 @@ use embassy_futures::select::{select, Either};
 use embassy_net::{tcp::TcpSocket, IpAddress, Ipv4Address, Stack};
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_protocol::{
-    payload::{
-        control::{AirAssistPump, ControlPayload, FumeExtractionFan, LaserEnable, MachineEnable},
-        observation::{
-            AirAssistDemand, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionMode,
-            MachinePower, MachineRun, ObservationPayload, TemperatureReading,
-        },
-        process::{MachineOperationLockout, ProcessPayload},
-        system::SystemMessagePayload,
-        Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{ControlEvent, Event, EventKind, ObservationEvent, ProcessEvent},
+    types::{
+        AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionFan,
+        FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout, MachinePower,
+        MachineRun, TemperatureReading,
     },
-    Message,
 };
 use rust_mqtt::{
     client::{
@@ -195,34 +190,34 @@ pub(super) async fn run_client(stack: Stack<'_>) -> Result<(), ()> {
                     return Err(());
                 }
             },
-            Either::Second(msg) => match msg {
+            Either::Second(event) => match event {
                 WaitResult::Lagged(msg_count) => {
                     warn!(
                         "Telemetry message receiver lagged, missed {} messages",
                         msg_count
                     );
                 }
-                WaitResult::Message(msg) => {
-                    publish_telemetry_message(&mut client, msg).await?;
+                WaitResult::Message(event) => {
+                    publish_telemetry_event(&mut client, event).await?;
                 }
             },
         }
     }
 }
 
-async fn publish_telemetry_message<
+async fn publish_telemetry_event<
     W: embedded_io_async::Read + embedded_io_async::Write,
     R: rand::RngCore,
 >(
     client: &mut MqttClient<'_, W, 5, R>,
-    msg: Message,
+    event: Event,
 ) -> Result<(), ()> {
     const ROOT: &str = formatcp!("{TOPIC_ROOT}/telemetry");
 
     {
         let mut time_since_boot = heapless::String::<16>::new();
         time_since_boot
-            .write_fmt(format_args!("{}", msg.millis_since_boot))
+            .write_fmt(format_args!("{}", event.timestamp_milliseconds))
             .unwrap();
         client
             .publish_telem_value_str(
@@ -232,35 +227,35 @@ async fn publish_telemetry_message<
             .await?;
     }
 
-    match msg.payload {
-        Payload::Observation(msg) => match msg {
-            ObservationPayload::AirAssistDemand(msg) => {
+    match event.kind {
+        EventKind::Observation(event) => match event {
+            ObservationEvent::AirAssistDemand(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/air_assist_demand"),
-                        match msg {
+                        match event {
                             AirAssistDemand::Idle => "idle",
                             AirAssistDemand::Demand => "demand",
                         },
                     )
                     .await
             }
-            ObservationPayload::ChassisIntrusion(msg) => {
+            ObservationEvent::ChassisIntrusion(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/chassis_intrusion"),
-                        match msg {
+                        match event {
                             ChassisIntrusion::Normal => "normal",
                             ChassisIntrusion::Intruded => "intruded",
                         },
                     )
                     .await
             }
-            ObservationPayload::CoolantResevoirLevel(msg) => {
+            ObservationEvent::CoolantResevoirLevel(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/coolant_resevoir_level"),
-                        match msg {
+                        match event {
                             Ok(CoolantResevoirLevel::Full) => "full",
                             Ok(CoolantResevoirLevel::Low) => "low",
                             Ok(CoolantResevoirLevel::Empty) => "empty",
@@ -269,98 +264,99 @@ async fn publish_telemetry_message<
                     )
                     .await
             }
-            ObservationPayload::FumeExtractionMode(msg) => {
+            ObservationEvent::FumeExtractionMode(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/fume_extraction_mode"),
-                        match msg {
+                        match event {
                             FumeExtractionMode::Automatic => "automatic",
                             FumeExtractionMode::OverrideRun => "override_run",
                         },
                     )
                     .await
             }
-            ObservationPayload::MachinePower(msg) => {
+            ObservationEvent::MachinePower(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/machine_power"),
-                        match msg {
+                        match event {
                             MachinePower::On => "on",
                             MachinePower::Off => "off",
                         },
                     )
                     .await
             }
-            ObservationPayload::MachineRun(msg) => {
+            ObservationEvent::MachineRun(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/machine_run"),
-                        match msg {
+                        match event {
                             MachineRun::Idle => "idle",
                             MachineRun::Running => "running",
                         },
                     )
                     .await
             }
-            ObservationPayload::Temperatures(msg) => {
+            ObservationEvent::Temperatures(event) => {
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/onboard"),
-                        msg.onboard,
+                        event.onboard,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/ambient"),
-                        msg.ambient,
+                        event.ambient,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/coolant_flow"),
-                        msg.coolant_flow,
+                        event.coolant_flow,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/coolant_return"),
-                        msg.coolant_return,
+                        event.coolant_return,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/coolant_pump"),
-                        msg.coolant_pump,
+                        event.coolant_pump,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/laser_chamber"),
-                        msg.laser_chamber,
+                        event.laser_chamber,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/electronics_bay_top"),
-                        msg.electronics_bay_top,
+                        event.electronics_bay_top,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/coolant_resevoir_top"),
-                        msg.coolant_resevoir_top,
+                        event.coolant_resevoir_top,
                     )
                     .await?;
                 client
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/coolant_resevoir_bottom"),
-                        msg.coolant_resevoir_bottom,
+                        event.coolant_resevoir_bottom,
                     )
                     .await
             }
         },
-        Payload::Process(msg) => match msg {
-            ProcessPayload::Monitor(msg) => match serde_json_core::to_vec::<_, BUFFER_SIZE>(&msg) {
+        EventKind::Process(event) => match event {
+            ProcessEvent::Monitor(event) => match serde_json_core::to_vec::<_, BUFFER_SIZE>(&event)
+            {
                 Ok(data) => {
                     client
                         .publish(formatcp!("{ROOT}/monitor_change"), &data, true)
@@ -371,8 +367,8 @@ async fn publish_telemetry_message<
                     Err(())
                 }
             },
-            ProcessPayload::Alarms(msg) => {
-                match serde_json_core::to_vec::<_, BUFFER_SIZE>(&msg.alarms) {
+            ProcessEvent::Alarms(event) => {
+                match serde_json_core::to_vec::<_, BUFFER_SIZE>(&event.alarms) {
                     Ok(data) => {
                         client
                             .publish(formatcp!("{ROOT}/alarms"), &data, true)
@@ -384,11 +380,11 @@ async fn publish_telemetry_message<
                     }
                 }
             }
-            ProcessPayload::Lockout(msg) => {
+            ProcessEvent::Lockout(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/lockout"),
-                        match msg {
+                        match event {
                             MachineOperationLockout::Permitted => "permitted",
                             MachineOperationLockout::PermittedUntilIdle => "permitted_until_idle",
                             MachineOperationLockout::Denied => "denied",
@@ -397,68 +393,64 @@ async fn publish_telemetry_message<
                     .await
             }
         },
-        Payload::Control(msg) => match msg {
-            ControlPayload::AirAssistPump(msg) => {
+        EventKind::Control(event) => match event {
+            ControlEvent::AirAssistPump(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/air_assist_pump"),
-                        match msg {
+                        match event {
                             AirAssistPump::Idle => "idle",
                             AirAssistPump::Run => "running",
                         },
                     )
                     .await
             }
-            ControlPayload::FumeExtractionFan(msg) => {
+            ControlEvent::FumeExtractionFan(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/fume_extraction_fan"),
-                        match msg {
+                        match event {
                             FumeExtractionFan::Idle => "idle",
                             FumeExtractionFan::Run => "running",
                         },
                     )
                     .await
             }
-            ControlPayload::LaserEnable(msg) => {
+            ControlEvent::LaserEnable(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/laser_enable"),
-                        match msg {
+                        match event {
                             LaserEnable::Inhibit => "inhibited",
                             LaserEnable::Enable => "enabled",
                         },
                     )
                     .await
             }
-            ControlPayload::MachineEnable(msg) => {
+            ControlEvent::MachineEnable(event) => {
                 client
                     .publish_telem_value_str(
                         formatcp!("{ROOT}/machine_enable"),
-                        match msg {
+                        match event {
                             MachineEnable::Inhibit => "inhibited",
                             MachineEnable::Enable => "enabled",
                         },
                     )
                     .await
             }
-            ControlPayload::StatusLamp(msg) => {
+            ControlEvent::StatusLamp(event) => {
                 client
-                    .publish_telem_value_bool(formatcp!("{ROOT}/status_lamp/red"), msg.red)
+                    .publish_telem_value_bool(formatcp!("{ROOT}/status_lamp/red"), event.red)
                     .await?;
                 client
-                    .publish_telem_value_bool(formatcp!("{ROOT}/status_lamp/amber"), msg.amber)
+                    .publish_telem_value_bool(formatcp!("{ROOT}/status_lamp/amber"), event.amber)
                     .await?;
                 client
-                    .publish_telem_value_bool(formatcp!("{ROOT}/status_lamp/green"), msg.green)
+                    .publish_telem_value_bool(formatcp!("{ROOT}/status_lamp/green"), event.green)
                     .await
             }
         },
-        Payload::System(SystemMessagePayload::Heartbeat(_)) => {
-            // Ignore heartbeat messages
-            Ok(())
-        }
-        msg => match serde_json_core::to_vec::<_, BUFFER_SIZE>(&msg) {
+        event => match serde_json_core::to_vec::<_, BUFFER_SIZE>(&event) {
             Ok(data) => {
                 client
                     .publish(formatcp!("{ROOT}/events"), &data, false)

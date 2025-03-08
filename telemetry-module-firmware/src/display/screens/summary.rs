@@ -11,7 +11,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
 };
-use hoshiguma_protocol::payload::{observation::MachineRun, process::MachineOperationLockout};
+use hoshiguma_protocol::peripheral_controller::types::{MachineOperationLockout, MachineRun};
 
 pub(super) struct Summary<'a> {
     state: &'a DisplayDataState,

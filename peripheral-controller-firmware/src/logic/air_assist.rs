@@ -7,9 +7,8 @@ use crate::{
 };
 use defmt::{debug, info, unwrap, Format};
 use embassy_time::{Duration, Instant};
-use hoshiguma_protocol::payload::{
-    control::AirAssistPump,
-    observation::{AirAssistDemand, MachinePower},
+use hoshiguma_protocol::peripheral_controller::types::{
+    AirAssistDemand, AirAssistPump, MachinePower,
 };
 
 #[derive(Clone, Format)]

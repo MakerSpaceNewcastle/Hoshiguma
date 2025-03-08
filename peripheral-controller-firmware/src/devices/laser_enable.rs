@@ -1,9 +1,9 @@
-use crate::{telemetry::queue_telemetry_message, LaserEnableResources};
+use crate::{telemetry::queue_telemetry_event, LaserEnableResources};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    control::{ControlPayload, LaserEnable},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{ControlEvent, EventKind},
+    types::LaserEnable,
 };
 
 pub(crate) struct LaserEnableOutput {
@@ -26,6 +26,7 @@ impl LaserEnableOutput {
 
     /// Ensure the laser enable relay is turned off, disabling the laser power supply from turning
     /// on.
+    #[cfg(not(feature = "panic-probe"))]
     pub(crate) fn set_panic(&mut self) {
         self.set(LaserEnable::Inhibit);
     }
@@ -43,7 +44,7 @@ pub(crate) async fn task(r: LaserEnableResources) {
         let setting = rx.changed().await;
 
         // Send telemetry update
-        queue_telemetry_message(Payload::Control(ControlPayload::LaserEnable(
+        queue_telemetry_event(EventKind::Control(ControlEvent::LaserEnable(
             setting.clone(),
         )))
         .await;

@@ -1,13 +1,13 @@
 use super::monitor::NEW_MONITOR_STATUS;
 use crate::{
     changed::{checked_set, Changed},
-    telemetry::queue_telemetry_message,
+    telemetry::queue_telemetry_event,
 };
 use defmt::{debug, info, unwrap};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    process::{ActiveAlarms, MonitorState, MonitorStatus, ProcessPayload},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{EventKind, ProcessEvent},
+    types::{ActiveAlarms, MonitorState, MonitorStatus},
 };
 
 pub(super) trait ActiveAlarmsExt {
@@ -69,12 +69,12 @@ pub(crate) async fn monitor_observation_task() {
         let monitor = NEW_MONITOR_STATUS.receive().await;
         debug!("Monitor changed: {}", monitor);
 
-        queue_telemetry_message(Payload::Process(ProcessPayload::Monitor(monitor.clone()))).await;
+        queue_telemetry_event(EventKind::Process(ProcessEvent::Monitor(monitor.clone()))).await;
 
         if alarms.update(monitor) == Changed::Yes {
             info!("New alarms: {}", alarms);
 
-            queue_telemetry_message(Payload::Process(ProcessPayload::Alarms(alarms.clone()))).await;
+            queue_telemetry_event(EventKind::Process(ProcessEvent::Alarms(alarms.clone()))).await;
 
             tx.send(alarms.clone());
         }

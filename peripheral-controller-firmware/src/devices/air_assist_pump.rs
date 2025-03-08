@@ -1,10 +1,10 @@
-use crate::{telemetry::queue_telemetry_message, AirAssistPumpResources};
+use crate::{telemetry::queue_telemetry_event, AirAssistPumpResources};
 use defmt::unwrap;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    control::{AirAssistPump, ControlPayload},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{ControlEvent, EventKind},
+    types::AirAssistPump,
 };
 
 pub(crate) static AIR_ASSIST_PUMP: Watch<CriticalSectionRawMutex, AirAssistPump, 2> = Watch::new();
@@ -19,7 +19,7 @@ pub(crate) async fn task(r: AirAssistPumpResources) {
         let setting = rx.changed().await;
 
         // Send telemetry update
-        queue_telemetry_message(Payload::Control(ControlPayload::AirAssistPump(
+        queue_telemetry_event(EventKind::Control(ControlEvent::AirAssistPump(
             setting.clone(),
         )))
         .await;

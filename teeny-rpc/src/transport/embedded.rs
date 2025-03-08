@@ -70,7 +70,7 @@ impl<T: Read + Write, M: Serialize + DeserializeOwned> super::Transport<M> for E
             postcard::to_slice_cobs(&msg, &mut buffer).map_err(|_| crate::Error::SerializeError)?;
 
         self.port
-            .write_all(&buffer)
+            .write_all(buffer)
             .await
             .map_err(|_| crate::Error::TransportError)
     }

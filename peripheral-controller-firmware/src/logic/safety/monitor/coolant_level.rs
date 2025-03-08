@@ -3,9 +3,8 @@ use crate::{
     changed::Changed, devices::coolant_resevoir_level_sensor::COOLANT_RESEVOIR_LEVEL_CHANGED,
 };
 use defmt::unwrap;
-use hoshiguma_protocol::payload::{
-    observation::CoolantResevoirLevel,
-    process::{Monitor, MonitorState, MonitorStatus},
+use hoshiguma_protocol::peripheral_controller::types::{
+    CoolantResevoirLevel, Monitor, MonitorState, MonitorStatus,
 };
 
 #[embassy_executor::task]

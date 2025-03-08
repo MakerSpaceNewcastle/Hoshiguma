@@ -1,10 +1,10 @@
-use crate::{telemetry::queue_telemetry_message, StatusLampResources};
+use crate::{telemetry::queue_telemetry_event, StatusLampResources};
 use defmt::unwrap;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    control::{ControlPayload, StatusLamp},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{ControlEvent, EventKind},
+    types::StatusLamp,
 };
 
 pub(crate) struct StatusLampOutput {
@@ -29,6 +29,7 @@ impl StatusLampOutput {
 
     /// Set all lights to on, should never happen under normal circumstances (and is labelled on the
     /// light pillar as a "something is very wrong" indication).
+    #[cfg(not(feature = "panic-probe"))]
     pub(crate) fn set_panic(&mut self) {
         self.red.set_high();
         self.amber.set_high();
@@ -55,7 +56,7 @@ pub(crate) async fn task(r: StatusLampResources) {
         let setting = rx.changed().await;
 
         // Send telemetry update
-        queue_telemetry_message(Payload::Control(ControlPayload::StatusLamp(
+        queue_telemetry_event(EventKind::Control(ControlEvent::StatusLamp(
             setting.clone(),
         )))
         .await;

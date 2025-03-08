@@ -1,53 +1,70 @@
-use defmt::{info, trace, warn};
+use defmt::{info, warn};
 use embassy_rp::{
+    bind_interrupts,
     peripherals::UART0,
-    uart::{Config as UartConfig, InterruptHandler, UartRx},
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
-use heapless::Vec;
-use hoshiguma_protocol::{serial::TELEMETRY_BAUD, Message};
+use embassy_time::{Duration, Ticker};
+use hoshiguma_protocol::peripheral_controller::{
+    event::Event,
+    rpc::{Request, Response},
+};
+use static_cell::StaticCell;
+use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
-pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Message, 64, 2, 1> =
+pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Event, 64, 2, 1> =
     PubSubChannel::new();
 
-embassy_rp::bind_interrupts!(pub(super) struct Irqs {
-    UART0_IRQ => InterruptHandler<UART0>;
+bind_interrupts!(struct Irqs {
+    UART0_IRQ  => BufferedInterruptHandler<UART0>;
 });
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::TelemetryUartResources) {
-    let mut rx = {
-        let mut config = UartConfig::default();
-        config.baudrate = TELEMETRY_BAUD;
-        UartRx::new(r.uart, r.rx_pin, Irqs, r.dma_ch, config)
-    };
+    const TX_BUFFER_SIZE: usize = 256;
+    static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
+    let tx_buf = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
+
+    const RX_BUFFER_SIZE: usize = 32;
+    static RX_BUFFER: StaticCell<[u8; RX_BUFFER_SIZE]> = StaticCell::new();
+    let rx_buf = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
+
+    let mut config = UartConfig::default();
+    config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
+
+    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
+
+    // Setup RPC client
+    let transport = EioTransport::new(uart);
+    let mut client = Client::<_, Request, Response>::new(transport);
+
     let tx = TELEMETRY_MESSAGES.publisher().unwrap();
 
-    let mut buffer: Vec<u8, 100> = Vec::new();
+    let mut ticker = Ticker::every(Duration::from_millis(200));
 
     loop {
-        let mut b = [0u8];
+        ticker.next().await;
 
-        match rx.read(&mut b).await {
-            Ok(_) => {
-                buffer.extend(b);
-
-                if buffer.last() == Some(&0u8) {
-                    match postcard::from_bytes_cobs::<Message>(buffer.as_mut_slice()) {
-                        Ok(msg) => {
-                            info!("Received message: {}", msg);
-                            tx.publish(msg).await;
-                        }
-                        Err(_) => warn!(
-                            "Failed to decode message with {} bytes in buffer",
-                            buffer.len(),
-                        ),
-                    }
-
-                    buffer.clear();
+        match client
+            .call(
+                Request::GetOldestEvents(8),
+                core::time::Duration::from_millis(50),
+            )
+            .await
+        {
+            Ok(Response::GetOldestEvents(events)) => {
+                info!("Got {} events from controller", events.len());
+                for event in events {
+                    tx.publish(event).await;
                 }
             }
-            Err(_) => trace!("UART read fail"),
+            Ok(_) => {
+                warn!("Unexpected RPC response");
+            }
+            Err(e) => {
+                warn!("RPC error: {}", e);
+            }
         }
     }
 }

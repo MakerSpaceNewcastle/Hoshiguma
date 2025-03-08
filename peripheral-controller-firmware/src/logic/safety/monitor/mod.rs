@@ -6,7 +6,7 @@ pub(crate) mod temperatures;
 use crate::changed::Changed;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Instant;
-use hoshiguma_protocol::payload::process::{Monitor, MonitorState, MonitorStatus};
+use hoshiguma_protocol::peripheral_controller::types::{Monitor, MonitorState, MonitorStatus};
 
 trait MonitorStateExt {
     fn upgrade(&mut self, other: Self);

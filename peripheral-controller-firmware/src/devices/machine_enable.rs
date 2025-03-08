@@ -1,9 +1,9 @@
-use crate::{telemetry::queue_telemetry_message, MachineEnableResources};
+use crate::{telemetry::queue_telemetry_event, MachineEnableResources};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    control::{ControlPayload, MachineEnable},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{ControlEvent, EventKind},
+    types::MachineEnable,
 };
 
 pub(crate) struct MachineEnableOutput {
@@ -26,6 +26,7 @@ impl MachineEnableOutput {
 
     /// Ensure the machine enable relay is turned off, disabling the Ruida controller from
     /// attempting to operate the machine.
+    #[cfg(not(feature = "panic-probe"))]
     pub(crate) fn set_panic(&mut self) {
         self.set(MachineEnable::Inhibit);
     }
@@ -43,7 +44,7 @@ pub(crate) async fn task(r: MachineEnableResources) {
         let setting = rx.changed().await;
 
         // Send telemetry update
-        queue_telemetry_message(Payload::Control(ControlPayload::MachineEnable(
+        queue_telemetry_event(EventKind::Control(ControlEvent::MachineEnable(
             setting.clone(),
         )))
         .await;

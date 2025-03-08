@@ -15,7 +15,7 @@ use embedded_graphics::{
     text::{renderer::CharacterStyle, Alignment, Text},
     Drawable,
 };
-use hoshiguma_protocol::payload::process::{Monitor, MonitorState};
+use hoshiguma_protocol::peripheral_controller::types::{Monitor, MonitorState};
 
 pub(super) struct AlarmList<'a> {
     state: &'a DisplayDataState,

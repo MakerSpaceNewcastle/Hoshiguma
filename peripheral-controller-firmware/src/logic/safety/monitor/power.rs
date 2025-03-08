@@ -1,9 +1,8 @@
 use super::{MonitorStatusExt, NEW_MONITOR_STATUS};
 use crate::{changed::Changed, devices::machine_power_detector::MACHINE_POWER_CHANGED};
 use defmt::unwrap;
-use hoshiguma_protocol::payload::{
-    observation::MachinePower,
-    process::{Monitor, MonitorState, MonitorStatus},
+use hoshiguma_protocol::peripheral_controller::types::{
+    MachinePower, Monitor, MonitorState, MonitorStatus,
 };
 
 #[embassy_executor::task]

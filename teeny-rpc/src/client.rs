@@ -1,5 +1,5 @@
 use crate::{
-    debug, info, transport::Transport, warn, RpcMessage, RpcMessageKind, TRANSMIT_ATTEMPTS,
+    debug, trace, transport::Transport, warn, RpcMessage, RpcMessageKind, TRANSMIT_ATTEMPTS,
 };
 use core::{marker::PhantomData, time::Duration};
 use serde::{Deserialize, Serialize};
@@ -45,12 +45,12 @@ where
             seq: self.seq,
             kind: RpcMessageKind::Request { payload: request },
         };
-        info!("New request {}", request.seq);
+        debug!("New request {}", request.seq);
 
         let mut got_ack = false;
         'tx_attempt: for attempt in 0..TRANSMIT_ATTEMPTS {
             // Send the request
-            debug!(
+            trace!(
                 "Sending request {}, attempt {} of {}",
                 request.seq,
                 attempt + 1,
@@ -71,7 +71,7 @@ where
                         });
                     }
 
-                    debug!("Received ack for request {}", request.seq);
+                    trace!("Received ack for request {}", request.seq);
                     got_ack = true;
                     break 'tx_attempt;
                 }
@@ -90,7 +90,7 @@ where
         }
 
         // Receive the response
-        debug!("Waiting for response for request {}", request.seq);
+        trace!("Waiting for response for request {}", request.seq);
         let resp = self.transport.receive_message(timeout).await?;
         if resp.seq != self.seq {
             return Err(crate::Error::IncorrectSequenceNumber {
@@ -101,14 +101,14 @@ where
 
         if let RpcMessageKind::Response { payload } = resp.kind {
             // Send the response acknowledgement
-            debug!("Sending ack for response {}", request.seq);
+            trace!("Sending ack for response {}", request.seq);
             let ack = RpcMessage {
                 seq: self.seq,
                 kind: RpcMessageKind::ResponseAck,
             };
             self.transport.transmit_message(ack).await?;
 
-            info!("Request {} complete", request.seq);
+            debug!("Request {} complete", request.seq);
             Ok(payload)
         } else {
             Err(crate::Error::IncorrectMessageType)
