@@ -123,6 +123,7 @@ assign_resources! {
     },
     telemetry: TelemetryResources {
         tx_pin: PIN_0,
+        rx_pin: PIN_1,
         uart: UART0,
         dma_ch: DMA_CH0,
     },
