@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "no-std", no_std)]
 
 pub mod payload;
+pub mod serial;
 
 use serde::{Deserialize, Serialize};
 

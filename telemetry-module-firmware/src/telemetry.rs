@@ -5,7 +5,7 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use heapless::Vec;
-use hoshiguma_protocol::Message;
+use hoshiguma_protocol::{serial::TELEMETRY_BAUD, Message};
 
 pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Message, 64, 2, 1> =
     PubSubChannel::new();
@@ -18,7 +18,7 @@ embassy_rp::bind_interrupts!(pub(super) struct Irqs {
 pub(super) async fn task(r: crate::TelemetryUartResources) {
     let mut rx = {
         let mut config = UartConfig::default();
-        config.baudrate = 9600;
+        config.baudrate = TELEMETRY_BAUD;
         UartRx::new(r.uart, r.rx_pin, Irqs, r.dma_ch, config)
     };
     let tx = TELEMETRY_MESSAGES.publisher().unwrap();
@@ -35,10 +35,7 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
                 if buffer.last() == Some(&0u8) {
                     match postcard::from_bytes_cobs::<Message>(buffer.as_mut_slice()) {
                         Ok(msg) => {
-                            info!(
-                                "Received telemetry message (with time {}ms since boot)",
-                                msg.millis_since_boot
-                            );
+                            info!("Received message: {}", msg);
                             tx.publish(msg).await;
                         }
                         Err(_) => warn!(

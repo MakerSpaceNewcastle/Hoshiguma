@@ -33,6 +33,7 @@ assign_resources::assign_resources! {
         spi: SPI1,
     }
     telemetry_uart: TelemetryUartResources {
+        tx_pin: PIN_0,
         rx_pin: PIN_1,
         uart: UART0,
         dma_ch: DMA_CH1,

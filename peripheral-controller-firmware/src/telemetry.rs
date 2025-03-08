@@ -14,6 +14,7 @@ use hoshiguma_protocol::{
         system::{Boot, BootReason, Info, SystemMessagePayload},
         Payload,
     },
+    serial::TELEMETRY_BAUD,
     Message,
 };
 
@@ -22,7 +23,7 @@ pub(crate) type TelemetryUart = UartTx<'static, UART0, Async>;
 impl From<TelemetryResources> for TelemetryUart {
     fn from(r: TelemetryResources) -> Self {
         let mut config = UartConfig::default();
-        config.baudrate = 9600;
+        config.baudrate = TELEMETRY_BAUD;
 
         embassy_rp::uart::UartTx::new(r.uart, r.tx_pin, r.dma_ch, config)
     }
