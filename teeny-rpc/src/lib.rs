@@ -4,9 +4,9 @@ use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "no-std")]
-use defmt::{debug, error, info, warn};
+use defmt::{debug, error, trace, warn};
 #[cfg(feature = "std")]
-use log::{debug, error, info, warn};
+use log::{debug, error, trace, warn};
 
 pub mod client;
 pub mod server;

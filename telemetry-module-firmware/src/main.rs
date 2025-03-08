@@ -36,7 +36,6 @@ assign_resources::assign_resources! {
         tx_pin: PIN_0,
         rx_pin: PIN_1,
         uart: UART0,
-        dma_ch: DMA_CH1,
     }
     ui: UiResources {
         button: PIN_17,

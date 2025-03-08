@@ -1,5 +1,5 @@
 use crate::{
-    debug, info, transport::Transport, warn, RpcMessage, RpcMessageKind, TRANSMIT_ATTEMPTS,
+    debug, trace, transport::Transport, warn, RpcMessage, RpcMessageKind, TRANSMIT_ATTEMPTS,
 };
 use core::{marker::PhantomData, time::Duration};
 use serde::{Deserialize, Serialize};
@@ -46,9 +46,9 @@ where
         let request = self.transport.receive_message(timeout).await?;
 
         if let RpcMessageKind::Request { payload } = request.kind {
-            info!("Received request {}", request.seq);
+            debug!("Received request {}", request.seq);
 
-            debug!("Received ack for request {}", request.seq);
+            trace!("Sending ack for request {}", request.seq);
             self.transport
                 .transmit_message(RpcMessage {
                     seq: request.seq,
@@ -74,7 +74,7 @@ where
 
             // Send the response
             'tx_attempt: for attempt in 0..TRANSMIT_ATTEMPTS {
-                debug!(
+                trace!(
                     "Sending response {} (attempt {} of {}",
                     seq,
                     attempt + 1,
@@ -95,9 +95,9 @@ where
                             });
                         }
 
-                        debug!("Received ack for response {}", seq);
+                        trace!("Received ack for response {}", seq);
 
-                        info!("Request {} complete", seq);
+                        debug!("Request {} complete", seq);
                         return Ok(());
                     }
                     Err(crate::Error::Timeout) => {

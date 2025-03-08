@@ -1,18 +1,17 @@
-use super::alarms::{ActiveAlarmsExt, ACTIVE_ALARMS_CHANGED};
+use super::alarms::ACTIVE_ALARMS_CHANGED;
 use crate::{
     devices::{
         laser_enable::LASER_ENABLE, machine_enable::MACHINE_ENABLE,
         machine_run_detector::MACHINE_RUNNING_CHANGED,
     },
-    telemetry::queue_telemetry_message,
+    logic::safety::alarms::ActiveAlarmsExt,
+    telemetry::queue_telemetry_event,
 };
 use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    control::{LaserEnable, MachineEnable},
-    observation::MachineRun,
-    process::{MachineOperationLockout, MonitorState, ProcessPayload},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{EventKind, ProcessEvent},
+    types::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun, MonitorState},
 };
 
 pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
@@ -53,7 +52,7 @@ pub(crate) async fn alarm_evaluation_task() {
         };
         info!("Machine operation lockout: {}", lockout);
 
-        queue_telemetry_message(Payload::Process(ProcessPayload::Lockout(lockout.clone()))).await;
+        queue_telemetry_event(EventKind::Process(ProcessEvent::Lockout(lockout.clone()))).await;
 
         machine_lockout_tx.send(lockout);
     }

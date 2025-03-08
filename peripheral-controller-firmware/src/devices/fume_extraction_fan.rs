@@ -1,9 +1,9 @@
-use crate::{telemetry::queue_telemetry_message, FumeExtractionFanResources};
+use crate::{telemetry::queue_telemetry_event, FumeExtractionFanResources};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::payload::{
-    control::{ControlPayload, FumeExtractionFan},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{ControlEvent, EventKind},
+    types::FumeExtractionFan,
 };
 
 pub(crate) static FUME_EXTRACTION_FAN: Watch<CriticalSectionRawMutex, FumeExtractionFan, 2> =
@@ -19,7 +19,7 @@ pub(crate) async fn task(r: FumeExtractionFanResources) {
         let setting = rx.changed().await;
 
         // Send telemetry update
-        queue_telemetry_message(Payload::Control(ControlPayload::FumeExtractionFan(
+        queue_telemetry_event(EventKind::Control(ControlEvent::FumeExtractionFan(
             setting.clone(),
         )))
         .await;

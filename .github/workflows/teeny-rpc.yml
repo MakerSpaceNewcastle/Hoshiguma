@@ -36,6 +36,7 @@ jobs:
           cd ./teeny-rpc
           rustup show
           cargo clippy -- -Dwarnings
+          cargo clippy --no-default-features -F no-std -- -Dwarnings
 
       - name: Tests
         shell: devenv shell bash -- -e {0}
@@ -45,20 +46,13 @@ jobs:
           rustup show
           cargo test
 
-      - name: Build (std)
+      - name: Build
         shell: devenv shell bash -- -e {0}
         run: |
           set -x
           cd ./teeny-rpc
           rustup show
           cargo build
-
-      - name: Build (no-std)
-        shell: devenv shell bash -- -e {0}
-        run: |
-          set -x
-          cd ./teeny-rpc
-          rustup show
           cargo build --no-default-features -F no-std
 
   example-pc:

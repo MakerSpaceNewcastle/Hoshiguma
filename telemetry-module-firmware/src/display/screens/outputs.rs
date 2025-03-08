@@ -8,7 +8,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
 };
-use hoshiguma_protocol::payload::control::{
+use hoshiguma_protocol::peripheral_controller::types::{
     AirAssistPump, FumeExtractionFan, LaserEnable, MachineEnable,
 };
 

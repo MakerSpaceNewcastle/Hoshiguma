@@ -1,13 +1,12 @@
+use std::time::Duration;
+
 use clap::{Parser, ValueEnum};
 use hoshiguma_protocol::{
-    payload::{
-        system::{Boot, SystemMessagePayload},
-        Payload,
-    },
-    Message,
+    peripheral_controller::rpc::{Request, Response},
+    types::SystemInformation,
 };
-use std::{io::Read, time::Duration};
-use tracing::{debug, error, info, warn};
+use teeny_rpc::{client::Client, transport::serialport::SerialTransport};
+use tracing::{debug, info, warn};
 
 /// Tool to receive data from coprocessors via the postcard protocol.
 #[derive(Parser)]
@@ -17,7 +16,7 @@ struct Cli {
     port: String,
 
     /// Serial baud rate
-    #[arg(short, long, default_value = "9600")]
+    #[arg(short, long, default_value_t = 115_200)]
     baud: u32,
 
     /// Format to print received messages in
@@ -29,72 +28,53 @@ struct Cli {
 enum PrintFormat {
     Debug,
     DebugPretty,
-    Json,
-    JsonPretty,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     tracing_subscriber::fmt::init();
 
     let cli = Cli::parse();
 
-    let port = serialport::new(cli.port, cli.baud)
-        .timeout(Duration::from_millis(10))
-        .open();
+    let transport = SerialTransport::new(&cli.port, cli.baud).unwrap();
+    let mut client = Client::<_, Request, Response>::new(transport);
 
-    match port {
-        Ok(port) => {
-            let mut rx_buffer: Vec<u8> = vec![];
+    const TIMEOUT: Duration = Duration::from_millis(100);
 
-            for b in port.bytes().flatten() {
-                rx_buffer.push(b);
+    let info = client
+        .call(Request::GetSystemInformation, TIMEOUT)
+        .await
+        .unwrap();
+    if let Response::GetSystemInformation(info) = info {
+        info!("Device: {:?}", info);
+        check_firmware_version(&info);
+    } else {
+        panic!("Incorrect response from request");
+    }
 
-                if b == 0 {
-                    debug!("Received {} bytes: {:?}", rx_buffer.len(), rx_buffer);
-                    debug!("Receive buffer: {:?} (len {})", rx_buffer, rx_buffer.len());
+    let mut ticker = tokio::time::interval(Duration::from_millis(250));
 
-                    match postcard::from_bytes_cobs::<Message>(&mut rx_buffer) {
-                        Ok(msg) => {
-                            if let Payload::System(SystemMessagePayload::Boot(ref msg)) =
-                                msg.payload
-                            {
-                                check_firmware_version(msg);
-                            }
+    loop {
+        ticker.tick().await;
 
-                            match cli.format {
-                                PrintFormat::Debug => println!("{:?}", msg),
-                                PrintFormat::DebugPretty => info!("Received:\n{:#?}", msg),
-                                PrintFormat::Json => match serde_json::to_string(&msg) {
-                                    Ok(s) => println!("{s}"),
-                                    Err(e) => warn!("Failed to JSON serialise message: {e}"),
-                                },
-                                PrintFormat::JsonPretty => {
-                                    match serde_json::to_string_pretty(&msg) {
-                                        Ok(s) => println!("{s}"),
-                                        Err(e) => warn!("Failed to JSON serialise message: {e}"),
-                                    }
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            warn!("Failed to parse message: {e}");
-                        }
+        match client.call(Request::GetOldestEvents(8), TIMEOUT).await {
+            Ok(Response::GetOldestEvents(events)) => {
+                for event in events {
+                    match cli.format {
+                        PrintFormat::Debug => println!("{:?}", event),
+                        PrintFormat::DebugPretty => info!("Received:\n{:#?}", event),
                     }
-
-                    rx_buffer.clear();
                 }
             }
-        }
-        Err(e) => {
-            error!("Failed to open port: {}", e);
-            ::std::process::exit(1);
+            Ok(_) => warn!("Incorrect response from request"),
+            Err(e) => warn!("Call error: {e}"),
         }
     }
 }
 
-fn check_firmware_version(msg: &Boot) {
+fn check_firmware_version(info: &SystemInformation) {
     let our_version = git_version::git_version!();
-    let their_version = &msg.git_revision;
+    let their_version = &info.git_revision;
 
     debug!("Host Git revision: {}", our_version);
     debug!("Device Git revision: {}", their_version);

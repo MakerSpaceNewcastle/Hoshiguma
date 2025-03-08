@@ -1,12 +1,12 @@
 use crate::{
-    polled_input::PolledInput, telemetry::queue_telemetry_message, MachinePowerDetectResources,
+    polled_input::PolledInput, telemetry::queue_telemetry_event, MachinePowerDetectResources,
 };
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Timer};
-use hoshiguma_protocol::payload::{
-    observation::{MachinePower, ObservationPayload},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{EventKind, ObservationEvent},
+    types::MachinePower,
 };
 
 pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 4> =
@@ -27,7 +27,7 @@ pub(crate) async fn task(r: MachinePowerDetectResources) {
             Level::High => MachinePower::On,
         };
 
-        queue_telemetry_message(Payload::Observation(ObservationPayload::MachinePower(
+        queue_telemetry_event(EventKind::Observation(ObservationEvent::MachinePower(
             state.clone(),
         )))
         .await;

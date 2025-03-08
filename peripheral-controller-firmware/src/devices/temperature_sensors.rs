@@ -1,12 +1,12 @@
-use crate::{telemetry::queue_telemetry_message, OnewireResources};
+use crate::{telemetry::queue_telemetry_event, OnewireResources};
 use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_protocol::payload::{
-    observation::{ObservationPayload, TemperatureReading, Temperatures},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{EventKind, ObservationEvent},
+    types::{TemperatureReading, Temperatures},
 };
 use one_wire_bus::{Address, OneWire};
 
@@ -90,7 +90,7 @@ pub(crate) async fn task(r: OnewireResources) {
             coolant_pump: read_sensor(&coolant_pump_sensor),
         };
 
-        queue_telemetry_message(Payload::Observation(ObservationPayload::Temperatures(
+        queue_telemetry_event(EventKind::Observation(ObservationEvent::Temperatures(
             readings.clone(),
         )))
         .await;

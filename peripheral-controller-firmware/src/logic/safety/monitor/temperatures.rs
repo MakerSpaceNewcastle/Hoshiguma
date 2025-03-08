@@ -4,9 +4,8 @@ use crate::{
     devices::temperature_sensors::{TemperaturesExt, TEMPERATURES_READ},
 };
 use defmt::{debug, unwrap, warn};
-use hoshiguma_protocol::payload::{
-    observation::TemperatureReading,
-    process::{Monitor, MonitorState, MonitorStatus},
+use hoshiguma_protocol::peripheral_controller::types::{
+    Monitor, MonitorState, MonitorStatus, TemperatureReading,
 };
 
 fn temperature_to_state(

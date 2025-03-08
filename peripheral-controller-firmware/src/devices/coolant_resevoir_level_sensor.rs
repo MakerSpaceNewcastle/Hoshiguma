@@ -1,14 +1,14 @@
 use crate::{
-    polled_input::PolledInput, telemetry::queue_telemetry_message,
+    polled_input::PolledInput, telemetry::queue_telemetry_event,
     CoolantResevoirLevelSensorResources,
 };
 use embassy_futures::select::select;
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_protocol::payload::{
-    observation::{CoolantResevoirLevel, CoolantResevoirLevelReading, ObservationPayload},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{EventKind, ObservationEvent},
+    types::{CoolantResevoirLevel, CoolantResevoirLevelReading},
 };
 
 pub(crate) static COOLANT_RESEVOIR_LEVEL_CHANGED: Watch<
@@ -37,8 +37,8 @@ pub(crate) async fn task(r: CoolantResevoirLevelSensorResources) {
             (Level::High, Level::High) => Ok(CoolantResevoirLevel::Empty),
         };
 
-        queue_telemetry_message(Payload::Observation(
-            ObservationPayload::CoolantResevoirLevel(state.clone()),
+        queue_telemetry_event(EventKind::Observation(
+            ObservationEvent::CoolantResevoirLevel(state.clone()),
         ))
         .await;
 

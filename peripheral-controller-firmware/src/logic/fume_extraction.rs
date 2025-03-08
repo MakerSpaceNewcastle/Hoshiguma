@@ -9,9 +9,8 @@ use crate::{
 };
 use defmt::{debug, info, unwrap, Format};
 use embassy_time::{Duration, Instant};
-use hoshiguma_protocol::payload::{
-    control::FumeExtractionFan,
-    observation::{FumeExtractionMode, MachinePower, MachineRun},
+use hoshiguma_protocol::peripheral_controller::types::{
+    FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun,
 };
 
 #[derive(Clone, Format)]

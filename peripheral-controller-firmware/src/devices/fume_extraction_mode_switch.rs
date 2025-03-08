@@ -1,13 +1,12 @@
 use crate::{
-    polled_input::PolledInput, telemetry::queue_telemetry_message,
-    FumeExtractionModeSwitchResources,
+    polled_input::PolledInput, telemetry::queue_telemetry_event, FumeExtractionModeSwitchResources,
 };
 use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_protocol::payload::{
-    observation::{FumeExtractionMode, ObservationPayload},
-    Payload,
+use hoshiguma_protocol::peripheral_controller::{
+    event::{EventKind, ObservationEvent},
+    types::FumeExtractionMode,
 };
 
 pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
@@ -31,8 +30,8 @@ pub(crate) async fn task(r: FumeExtractionModeSwitchResources) {
             Level::High => FumeExtractionMode::OverrideRun,
         };
 
-        queue_telemetry_message(Payload::Observation(
-            ObservationPayload::FumeExtractionMode(state.clone()),
+        queue_telemetry_event(EventKind::Observation(
+            ObservationEvent::FumeExtractionMode(state.clone()),
         ))
         .await;
 

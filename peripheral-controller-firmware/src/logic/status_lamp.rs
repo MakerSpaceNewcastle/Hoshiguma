@@ -6,10 +6,8 @@ use crate::{
     logic::safety::lockout::MACHINE_LOCKOUT_CHANGED,
 };
 use defmt::unwrap;
-use hoshiguma_protocol::payload::{
-    control::StatusLamp,
-    observation::{MachinePower, MachineRun},
-    process::MachineOperationLockout,
+use hoshiguma_protocol::peripheral_controller::types::{
+    MachineOperationLockout, MachinePower, MachineRun, StatusLamp,
 };
 
 #[embassy_executor::task]

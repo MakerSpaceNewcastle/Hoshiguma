@@ -34,9 +34,9 @@ static_cell = "2.1.0"
 heapless = { version = "0.8.0", features = ["defmt-03"] }
 
 # Telemetry RX
+teeny-rpc = { path = "../teeny-rpc", default-features = false, features = ["no-std"] }
 hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 git-version = "0.3.5"
-postcard = "1.0.10"
 
 # Display
 embedded-graphics = "0.8.1"
