@@ -918,8 +918,12 @@ name = "hoshiguma-protocol"
 version = "0.1.0"
 dependencies = [
  "defmt",
+ "embassy-time",
+ "embedded-io-async",
  "heapless 0.8.0",
+ "postcard",
  "serde",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
