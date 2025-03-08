@@ -1,44 +1,28 @@
 #![cfg_attr(feature = "no-std", no_std)]
 
-// pub mod payload;
+pub mod common;
+pub mod peripheral_controller;
 pub mod serial;
 
 use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "std")]
-pub type String<const N: usize> = std::string::String;
-#[cfg(feature = "no-std")]
-pub type String<const N: usize> = heapless::String<N>;
-
-#[cfg(feature = "std")]
-pub type Vec<T, const N: usize> = std::vec::Vec<T>;
-#[cfg(feature = "no-std")]
-pub type Vec<T, const N: usize> = heapless::Vec<T, N>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Message<R, S> {
     Rpc(R),
-    Stream(Stream<S>),
+    Stream(StreamMessage<S>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Rpc<REQ, RESP> {
+pub enum RpcMessage<REQ, RESP> {
     Request(REQ),
     Response(RESP),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Stream<T> {
+pub enum StreamMessage<T> {
     Pub { seq: u32, payload: T },
     Ack { seq: u32 },
-}
-
-mod common {
-    pub type Ping = super::Rpc<u32, u32>;
-    pub type GetVersion = super::Rpc<(), crate::String<16>>;
-    pub type GetUptime = super::Rpc<(), u64>;
-    pub type Reset = super::Rpc<(), ()>;
 }

@@ -7,8 +7,8 @@ pub type ControllerMessage = super::Message<Rpc, stream::StreamPayload>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Rpc {
-    Ping(crate::common::Ping),
-    GetVersion(crate::common::GetVersion),
-    GetUptime(crate::common::GetUptime),
-    Reset(crate::common::Reset),
+    Ping(crate::common::rpc::Ping),
+    GetVersion(crate::common::rpc::GetVersion),
+    GetUptime(crate::common::rpc::GetUptime),
+    Reset(crate::common::rpc::Reset),
 }

@@ -1,3 +1,4 @@
+use crate::common::types::Vec;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -84,7 +85,7 @@ pub struct MonitorStatus {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct ActiveAlarms {
-    pub alarms: crate::Vec<MonitorStatus, 16>,
+    pub alarms: Vec<MonitorStatus, 16>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
