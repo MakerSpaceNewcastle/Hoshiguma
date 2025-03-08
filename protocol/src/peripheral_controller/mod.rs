@@ -1,14 +1,7 @@
+pub mod rpc;
 pub mod stream;
 pub mod types;
 
-use serde::{Deserialize, Serialize};
+pub const SERIAL_BAUD: u32 = 9600;
 
-pub type ControllerMessage = super::Message<Rpc, stream::StreamPayload>;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Rpc {
-    Ping(crate::common::rpc::Ping),
-    GetVersion(crate::common::rpc::GetVersion),
-    GetUptime(crate::common::rpc::GetUptime),
-    Reset(crate::common::rpc::Reset),
-}
+pub type ControllerMessage = super::Message<rpc::Rpc, stream::StreamPayload>;
