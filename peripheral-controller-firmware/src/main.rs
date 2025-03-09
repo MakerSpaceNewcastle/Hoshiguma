@@ -10,6 +10,7 @@ mod polled_input;
 mod telemetry;
 
 use assign_resources::assign_resources;
+use cooler::CoolerUart;
 use core::sync::atomic::Ordering;
 use defmt::{info, unwrap};
 use defmt_rtt as _;
@@ -246,6 +247,9 @@ fn main() -> ! {
     #[cfg(feature = "test-panic-on-core-0")]
     unwrap!(spawner.spawn(dummy_panic()));
 
+    // WIP
+    unwrap!(spawner.spawn(cooler_uart_test(r.cooler_communication.into())));
+
     loop {
         let before = Instant::now().as_ticks();
         cortex_m::asm::wfe();
@@ -311,4 +315,10 @@ async fn report_cpu_usage() {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
+}
+
+// WIP
+#[embassy_executor::task]
+async fn cooler_uart_test(uart: CoolerUart) {
+    // TODO
 }
