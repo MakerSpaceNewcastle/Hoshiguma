@@ -4,8 +4,9 @@ use core::panic::PanicInfo;
 use defmt::{debug, error, unwrap};
 use embassy_executor::Spawner;
 use embassy_rp::{
+    bind_interrupts,
     peripherals::UART0,
-    uart::{Async, Config as UartConfig, UartTx},
+    uart::{Async, Config as UartConfig, InterruptHandler, Uart},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Ticker};
@@ -18,14 +19,26 @@ use hoshiguma_protocol::{
     Message,
 };
 
-pub(crate) type TelemetryUart = UartTx<'static, UART0, Async>;
+bind_interrupts!(pub struct Irqs {
+    UART0_IRQ  => InterruptHandler<UART0>;
+});
+
+pub(crate) type TelemetryUart = Uart<'static, UART0, Async>;
 
 impl From<TelemetryResources> for TelemetryUart {
     fn from(r: TelemetryResources) -> Self {
         let mut config = UartConfig::default();
         config.baudrate = TELEMETRY_BAUD;
 
-        embassy_rp::uart::UartTx::new(r.uart, r.tx_pin, r.dma_ch, config)
+        Uart::new(
+            r.uart,
+            r.tx_pin,
+            r.rx_pin,
+            Irqs,
+            r.tx_dma_ch,
+            r.rx_dma_ch,
+            config,
+        )
     }
 }
 
