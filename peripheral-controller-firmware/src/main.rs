@@ -176,11 +176,23 @@ fn main() -> ! {
 // WIP
 #[embassy_executor::task]
 async fn telem_uart_test(mut uart: TelemetryUart) {
-    // TODO
+    loop {
+        let mut b = [0u8];
+        if uart.read(&mut b).await.is_ok() {
+            info!("telem uart got byte: {}", b);
+            uart.write(&b).await.unwrap();
+        }
+    }
 }
 
 // WIP
 #[embassy_executor::task]
 async fn cooler_uart_test(mut uart: CoolerUart) {
-    // TODO
+    loop {
+        let mut b = [0u8];
+        if uart.read(&mut b).await.is_ok() {
+            info!("cooler uart got byte: {}", b);
+            uart.write(&b).await.unwrap();
+        }
+    }
 }
