@@ -2,6 +2,7 @@
 #![no_main]
 
 mod changed;
+mod cooler;
 mod devices;
 mod logic;
 mod maybe_timer;
@@ -121,11 +122,19 @@ assign_resources! {
     machine_enable: MachineEnableResources {
         relay: PIN_17, // Relay 3
     },
+    cooler_communication: CoolerCommunicationResources {
+        uart: UART1,
+        tx_pin: PIN_4,
+        rx_pin: PIN_5,
+        tx_dma_ch: DMA_CH2,
+        rx_dma_ch: DMA_CH3,
+    },
     telemetry: TelemetryResources {
+        uart: UART0,
         tx_pin: PIN_0,
         rx_pin: PIN_1,
-        uart: UART0,
-        dma_ch: DMA_CH0,
+        tx_dma_ch: DMA_CH0,
+        rx_dma_ch: DMA_CH1,
     },
 }
 
