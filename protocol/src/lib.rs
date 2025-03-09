@@ -2,6 +2,7 @@
 
 pub mod common;
 pub mod peripheral_controller;
+pub mod transport;
 
 use serde::{Deserialize, Serialize};
 
