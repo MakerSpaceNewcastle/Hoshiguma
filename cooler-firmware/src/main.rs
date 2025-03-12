@@ -123,7 +123,6 @@ fn main() -> ! {
     let _in0 = Input::new(p.PIN_15, Pull::Down);
     let _relay5 = Output::new(p.PIN_19, Level::Low);
 
-
     // Safety critical things go on core 1
     spawn_core1(
         p.CORE1,
@@ -158,6 +157,8 @@ fn main() -> ! {
 
     // TODO
 
+    // CPU usage reporting
+    unwrap!(spawner.spawn(report_cpu_usage()));
 
     #[cfg(feature = "test-panic-on-core-0")]
     unwrap!(spawner.spawn(dummy_panic()));
@@ -232,7 +233,13 @@ async fn dummy_panic() {
 #[embassy_executor::task]
 async fn measure_dat_pwm(r: FlowSensorResources) {
     let cfg: embassy_rp::pwm::Config = Default::default();
-    let pwm = embassy_rp::pwm::Pwm::new_input(r.pwm, r.pin, Pull::Down, embassy_rp::pwm::InputMode::RisingEdge, cfg);
+    let pwm = embassy_rp::pwm::Pwm::new_input(
+        r.pwm,
+        r.pin,
+        Pull::Down,
+        embassy_rp::pwm::InputMode::RisingEdge,
+        cfg,
+    );
 
     let mut ticker = Ticker::every(Duration::from_millis(500));
 
