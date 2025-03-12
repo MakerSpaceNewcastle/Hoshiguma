@@ -54,7 +54,8 @@ assign_resources! {
         pin: PIN_22,
     },
     flow_sensor: FlowSensorResources {
-        pin: PIN_8, // Input 7
+        pwm: PWM_SLICE4,
+        pin: PIN_9, // Input 6
     },
     // status_lamp: StatusLampResources {
     //     red: PIN_7, // Relay 0
@@ -65,7 +66,7 @@ assign_resources! {
     //     detect: PIN_8, // Input 7
     // },
     // chassis_intrusion_detect: ChassisIntrusionDetectResources {
-    //     detect: PIN_9, // Input 4
+    //     detect: PIN_9, // Input 6
     // },
     // air_assist_demand_detect: AirAssistDemandDetectResources {
     //     detect: PIN_11, // Input 4
@@ -134,6 +135,7 @@ fn main() -> ! {
             unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
             // TODO
+            unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
             #[cfg(feature = "test-panic-on-core-1")]
             unwrap!(spawner.spawn(dummy_panic()));
@@ -225,4 +227,18 @@ async fn report_cpu_usage() {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
+}
+
+#[embassy_executor::task]
+async fn measure_dat_pwm(r: FlowSensorResources) {
+    let cfg: embassy_rp::pwm::Config = Default::default();
+    let pwm = embassy_rp::pwm::Pwm::new_input(r.pwm, r.pin, Pull::Down, embassy_rp::pwm::InputMode::RisingEdge, cfg);
+
+    let mut ticker = Ticker::every(Duration::from_millis(500));
+
+    loop {
+        info!("Input frequency: {} Hz", pwm.counter());
+        pwm.set_counter(0);
+        ticker.next().await;
+    }
 }
