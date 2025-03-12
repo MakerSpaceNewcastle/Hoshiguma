@@ -67,10 +67,12 @@ assign_resources! {
         empty: PIN_12, // Input 3
         low : PIN_11, // Input 4
     },
-    //     red: PIN_7, // Relay 0
-    //     amber: PIN_6, // Relay 1
-    //     green: PIN_16, // Relay 2
-    //     relay: PIN_17, // Relay 3
+    relays: RelayOutputResources {
+        fan: PIN_7, // Relay 0
+        compressor: PIN_6, // Relay 1
+        stirrer: PIN_16, // Relay 2
+        pump: PIN_17, // Relay 3
+    },
     telemetry: ControlCommunicationResources {
         tx_pin: PIN_0,
         rx_pin: PIN_1,
@@ -116,6 +118,7 @@ fn main() -> ! {
             unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
             // TODO
+            // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
             unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
             #[cfg(feature = "test-panic-on-core-1")]
@@ -229,5 +232,33 @@ async fn measure_dat_pwm(r: FlowSensorResources) {
         info!("Input frequency: {} Hz", pwm.counter());
         pwm.set_counter(0);
         ticker.next().await;
+    }
+}
+
+#[embassy_executor::task]
+async fn fuck_about_with_relays(r: RelayOutputResources) {
+    let mut fan = Output::new(r.fan, Level::Low);
+    let mut compressor = Output::new(r.compressor, Level::Low);
+    let mut stirrer = Output::new(r.stirrer, Level::Low);
+    let mut pump = Output::new(r.pump, Level::Low);
+
+    let mut ticker = Ticker::every(Duration::from_secs(1));
+
+    loop {
+        fan.toggle();
+        ticker.next().await;
+        fan.toggle();
+
+        compressor.toggle();
+        ticker.next().await;
+        compressor.toggle();
+
+        stirrer.toggle();
+        ticker.next().await;
+        stirrer.toggle();
+
+        pump.toggle();
+        ticker.next().await;
+        pump.toggle();
     }
 }
