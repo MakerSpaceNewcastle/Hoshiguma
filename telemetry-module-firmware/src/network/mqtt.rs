@@ -9,13 +9,16 @@ use embassy_futures::select::{select, Either};
 use embassy_net::{tcp::TcpSocket, IpAddress, Ipv4Address, Stack};
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_protocol::peripheral_controller::{
-    event::{ControlEvent, Event, EventKind, ObservationEvent},
-    types::{
-        AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionFan,
-        FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout, MachinePower,
-        MachineRun, TemperatureReading,
+use hoshiguma_protocol::{
+    peripheral_controller::{
+        event::{ControlEvent, Event, EventKind, ObservationEvent},
+        types::{
+            AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevel,
+            FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable,
+            MachineOperationLockout, MachinePower, MachineRun,
+        },
     },
+    types::TemperatureReading,
 };
 use rust_mqtt::{
     client::{
