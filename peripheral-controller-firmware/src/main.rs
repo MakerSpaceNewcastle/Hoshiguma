@@ -94,7 +94,7 @@ assign_resources! {
         detect: PIN_8, // Input 7
     },
     chassis_intrusion_detect: ChassisIntrusionDetectResources {
-        detect: PIN_9, // Input 4
+        detect: PIN_9, // Input 6
     },
     air_assist_demand_detect: AirAssistDemandDetectResources {
         detect: PIN_11, // Input 4
