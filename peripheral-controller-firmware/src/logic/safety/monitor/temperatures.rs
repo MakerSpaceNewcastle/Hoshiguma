@@ -5,8 +5,8 @@ use crate::{
 };
 use defmt::{debug, unwrap, warn};
 use hoshiguma_protocol::{
-    peripheral_controller::types::{MonitorKind, TemperatureReading},
-    types::Severity,
+    peripheral_controller::types::MonitorKind,
+    types::{Severity, TemperatureReading},
 };
 
 fn temperature_to_state(

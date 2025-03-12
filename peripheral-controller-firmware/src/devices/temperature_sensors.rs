@@ -4,9 +4,12 @@ use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_protocol::peripheral_controller::{
-    event::{EventKind, ObservationEvent},
-    types::{TemperatureReading, Temperatures},
+use hoshiguma_protocol::{
+    peripheral_controller::{
+        event::{EventKind, ObservationEvent},
+        types::Temperatures,
+    },
+    types::TemperatureReading,
 };
 use one_wire_bus::{Address, OneWire};
 

@@ -26,16 +26,18 @@ bind_interrupts!(struct Irqs {
 pub(super) async fn task(r: TelemetryResources) {
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
-    let tx_buf = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
+    let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
 
     const RX_BUFFER_SIZE: usize = 32;
     static RX_BUFFER: StaticCell<[u8; RX_BUFFER_SIZE]> = StaticCell::new();
-    let rx_buf = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
+    let rx_buffer = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
 
     let mut config = UartConfig::default();
     config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
 
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
+    let uart = BufferedUart::new(
+        r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config,
+    );
 
     // Setup RPC server
     let transport = EioTransport::new(uart);
