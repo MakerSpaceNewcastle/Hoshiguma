@@ -740,6 +740,7 @@ dependencies = [
  "hoshiguma-protocol",
  "one-wire-bus",
  "panic-probe",
+ "pico-plc-bsp",
  "portable-atomic",
  "postcard",
  "static_cell",
@@ -980,6 +981,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
  "siphasher",
+]
+
+[[package]]
+name = "pico-plc-bsp"
+version = "0.1.0"
+source = "git+https://github.com/DanNixon/pico-plc#2cde43c46c8852010f8b76e0c468bcb8f5cd4d55"
+dependencies = [
+ "embassy-rp",
+ "one-wire-bus",
 ]
 
 [[package]]
