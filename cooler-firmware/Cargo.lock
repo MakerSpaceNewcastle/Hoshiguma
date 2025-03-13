@@ -680,6 +680,7 @@ dependencies = [
  "embassy-time",
  "git-version",
  "panic-probe",
+ "pico-plc-bsp",
  "portable-atomic",
  "static_cell",
 ]
@@ -846,6 +847,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "one-wire-bus"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9761e13074f8f916702c1a1dbe0eda3fb8478704db00493f5a5c27ed5847710"
+dependencies = [
+ "embedded-hal 0.2.7",
+]
+
+[[package]]
 name = "panic-probe"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -901,6 +911,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
  "siphasher",
+]
+
+[[package]]
+name = "pico-plc-bsp"
+version = "0.1.0"
+source = "git+https://github.com/DanNixon/pico-plc#2cde43c46c8852010f8b76e0c468bcb8f5cd4d55"
+dependencies = [
+ "embassy-rp",
+ "one-wire-bus",
 ]
 
 [[package]]

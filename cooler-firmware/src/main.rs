@@ -9,15 +9,51 @@ use embassy_executor::raw::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
     multicore::{spawn_core1, Stack},
-    peripherals,
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use git_version::git_version;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
+use pico_plc_bsp::peripherals::{self, PicoPlc};
 use portable_atomic::{AtomicBool, AtomicU64};
 use static_cell::StaticCell;
+
+assign_resources! {
+    status: StatusResources {
+        watchdog: WATCHDOG,
+        led: PIN_25,
+    },
+    onewire: OnewireResources {
+        pin: ONEWIRE,
+    },
+    mains_detect: MainsDetectResources {
+        detect: IN_7,
+    },
+    flow_sensor: FlowSensorResources {
+        pwm: PWM_SLICE4,
+        pin: IN_6,
+    },
+    resevoir_level: ResevoirLevelSensorResources {
+        low: IN_5,
+    },
+    header_tank_level: HeaderTankLevelSensorResources {
+        empty: IN_3,
+        low : IN_4,
+    },
+    relays: RelayOutputResources {
+        fan: RELAY_0,
+        compressor: RELAY_1,
+        stirrer: RELAY_2,
+        pump: RELAY_3,
+    },
+    telemetry: ControlCommunicationResources {
+        tx_pin: IO_0,
+        rx_pin: IO_1,
+        uart: UART0,
+        dma_ch: DMA_CH0,
+    },
+}
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
@@ -25,7 +61,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     // Flag the panic, indicating that executors should stop scheduling work
     PANIC_HALT.store(true, Ordering::Relaxed);
 
-    let p = unsafe { embassy_rp::Peripherals::steal() };
+    let p = unsafe { PicoPlc::steal() };
     let r = split_resources!(p);
 
     // TODO
@@ -45,42 +81,6 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-assign_resources! {
-    status: StatusResources {
-        watchdog: WATCHDOG,
-        led: PIN_25,
-    },
-    onewire: OnewireResources {
-        pin: PIN_22,
-    },
-    mains_detect: MainsDetectResources {
-        detect: PIN_8, // Input 7
-    },
-    flow_sensor: FlowSensorResources {
-        pwm: PWM_SLICE4,
-        pin: PIN_9, // Input 6
-    },
-    resevoir_level: ResevoirLevelSensorResources {
-        low: PIN_10, // Input 5
-    },
-    header_tank_level: HeaderTankLevelSensorResources {
-        empty: PIN_12, // Input 3
-        low : PIN_11, // Input 4
-    },
-    relays: RelayOutputResources {
-        fan: PIN_7, // Relay 0
-        compressor: PIN_6, // Relay 1
-        stirrer: PIN_16, // Relay 2
-        pump: PIN_17, // Relay 3
-    },
-    telemetry: ControlCommunicationResources {
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
-        uart: UART0,
-        dma_ch: DMA_CH0,
-    },
-}
-
 static mut CORE_1_STACK: Stack<4096> = Stack::new();
 
 static EXECUTOR_0: StaticCell<Executor> = StaticCell::new();
@@ -93,19 +93,19 @@ static PANIC_HALT: AtomicBool = AtomicBool::new(false);
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
-    let p = embassy_rp::init(Default::default());
+    let p = PicoPlc::default();
     let r = split_resources!(p);
 
     info!("Version: {}", git_version!());
 
     // Unused IO
-    let _in0 = Input::new(p.PIN_15, Pull::Down);
-    let _in1 = Input::new(p.PIN_14, Pull::Down);
-    let _in2 = Input::new(p.PIN_13, Pull::Down);
-    let _relay4 = Output::new(p.PIN_18, Level::Low);
-    let _relay5 = Output::new(p.PIN_19, Level::Low);
-    let _relay6 = Output::new(p.PIN_20, Level::Low);
-    let _relay7 = Output::new(p.PIN_21, Level::Low);
+    let _in0 = Input::new(p.IN_0, Pull::Down);
+    let _in1 = Input::new(p.IN_1, Pull::Down);
+    let _in2 = Input::new(p.IN_2, Pull::Down);
+    let _relay4 = Output::new(p.RELAY_4, Level::Low);
+    let _relay5 = Output::new(p.RELAY_5, Level::Low);
+    let _relay6 = Output::new(p.RELAY_6, Level::Low);
+    let _relay7 = Output::new(p.RELAY_7, Level::Low);
 
     // Safety critical things go on core 1
     spawn_core1(
