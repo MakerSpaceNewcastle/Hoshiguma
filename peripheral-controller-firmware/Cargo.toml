@@ -15,6 +15,7 @@ test-panic-on-core-1 = []
 cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
 embassy-rp = { version = "0.3.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+pico-plc-bsp = { git = "https://github.com/DanNixon/pico-plc" }
 assign-resources = "0.4.1"
 
 embassy-executor = { version = "0.7.0", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }

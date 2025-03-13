@@ -16,16 +16,68 @@ use embassy_executor::raw::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
     multicore::{spawn_core1, Stack},
-    peripherals,
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use git_version::git_version;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
+use pico_plc_bsp::peripherals::{self, PicoPlc};
 use portable_atomic::{AtomicBool, AtomicU64};
 use static_cell::StaticCell;
 use telemetry::TelemetryUart;
+
+assign_resources! {
+    status: StatusResources {
+        watchdog: WATCHDOG,
+        led: PIN_25,
+    },
+    onewire: OnewireResources {
+        pin: ONEWIRE,
+    },
+    status_lamp: StatusLampResources {
+        red: RELAY_0,
+        amber: RELAY_1,
+        green: RELAY_2,
+    },
+    machine_power_detect: MachinePowerDetectResources {
+        detect: IN_7,
+    },
+    chassis_intrusion_detect: ChassisIntrusionDetectResources {
+        detect: IN_6,
+    },
+    air_assist_demand_detect: AirAssistDemandDetectResources {
+        detect: IN_4,
+    },
+    machine_run_detect: MachineRunDetectResources {
+        detect: IN_3,
+    },
+    fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
+        switch: IN_5,
+    },
+    coolant_resevoir_level_sensor: CoolantResevoirLevelSensorResources {
+        empty: IN_1,
+        low: IN_2,
+    },
+    air_assist_pump: AirAssistPumpResources {
+        relay: RELAY_6,
+    },
+    fume_extraction_fan: FumeExtractionFanResources {
+        relay: RELAY_7,
+    },
+    laser_enable: LaserEnableResources {
+        relay: RELAY_4,
+    },
+    machine_enable: MachineEnableResources {
+        relay: RELAY_3,
+    },
+    telemetry: TelemetryResources {
+        tx_pin: IO_0,
+        rx_pin: IO_1,
+        uart: UART0,
+        dma_ch: DMA_CH0,
+    },
+}
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
@@ -38,7 +90,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     // Flag the panic, indicating that executors should stop scheduling work
     PANIC_HALT.store(true, Ordering::Relaxed);
 
-    let p = unsafe { embassy_rp::Peripherals::steal() };
+    let p = unsafe { PicoPlc::steal() };
     let r = split_resources!(p);
 
     // Disable the machine and laser
@@ -77,58 +129,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-assign_resources! {
-    status: StatusResources {
-        watchdog: WATCHDOG,
-        led: PIN_25,
-    },
-    onewire: OnewireResources {
-        pin: PIN_22,
-    },
-    status_lamp: StatusLampResources {
-        red: PIN_7, // Relay 0
-        amber: PIN_6, // Relay 1
-        green: PIN_16, // Relay 2
-    },
-    machine_power_detect: MachinePowerDetectResources {
-        detect: PIN_8, // Input 7
-    },
-    chassis_intrusion_detect: ChassisIntrusionDetectResources {
-        detect: PIN_9, // Input 6
-    },
-    air_assist_demand_detect: AirAssistDemandDetectResources {
-        detect: PIN_11, // Input 4
-    },
-    machine_run_detect: MachineRunDetectResources {
-        detect: PIN_12, // Input 3
-    },
-    fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
-        switch: PIN_10, // Input 5
-    },
-    coolant_resevoir_level_sensor: CoolantResevoirLevelSensorResources {
-        empty: PIN_14, // Input 1
-        low: PIN_13, // Input 2
-    },
-    air_assist_pump: AirAssistPumpResources {
-        relay: PIN_20, // Relay 6
-    },
-    fume_extraction_fan: FumeExtractionFanResources {
-        relay: PIN_21, // Relay 7
-    },
-    laser_enable: LaserEnableResources {
-        relay: PIN_18, // Relay 4
-    },
-    machine_enable: MachineEnableResources {
-        relay: PIN_17, // Relay 3
-    },
-    telemetry: TelemetryResources {
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
-        uart: UART0,
-        dma_ch: DMA_CH0,
-    },
-}
-
 static mut CORE_1_STACK: Stack<4096> = Stack::new();
 
 static EXECUTOR_0: StaticCell<Executor> = StaticCell::new();
@@ -141,14 +141,14 @@ static PANIC_HALT: AtomicBool = AtomicBool::new(false);
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
-    let p = embassy_rp::init(Default::default());
+    let p = PicoPlc::default();
     let r = split_resources!(p);
 
     info!("Version: {}", git_version!());
 
     // Unused IO
-    let _in0 = Input::new(p.PIN_15, Pull::Down);
-    let _relay5 = Output::new(p.PIN_19, Level::Low);
+    let _in0 = Input::new(p.IN_0, Pull::Down);
+    let _relay5 = Output::new(p.RELAY_5, Level::Low);
 
     let mut telemetry_uart: TelemetryUart = r.telemetry.into();
     crate::telemetry::report_boot(&mut telemetry_uart);
