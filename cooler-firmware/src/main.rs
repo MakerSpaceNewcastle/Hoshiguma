@@ -28,14 +28,14 @@ assign_resources! {
         pin: ONEWIRE,
     },
     mains_detect: MainsDetectResources {
-        detect: IN_7,
+        detect: IN_1,
     },
     flow_sensor: FlowSensorResources {
-        pwm: PWM_SLICE4,
-        pin: IN_6,
+        pwm: PWM_SLICE7,
+        pin: IN_0,
     },
     resevoir_level: ResevoirLevelSensorResources {
-        low: IN_5,
+        low: IN_2,
     },
     header_tank_level: HeaderTankLevelSensorResources {
         empty: IN_3,
@@ -99,9 +99,9 @@ fn main() -> ! {
     info!("Version: {}", git_version!());
 
     // Unused IO
-    let _in0 = Input::new(p.IN_0, Pull::Down);
-    let _in1 = Input::new(p.IN_1, Pull::Down);
-    let _in2 = Input::new(p.IN_2, Pull::Down);
+    let _in5 = Input::new(p.IN_5, Pull::Down);
+    let _in6 = Input::new(p.IN_6, Pull::Down);
+    let _in7 = Input::new(p.IN_7, Pull::Down);
     let _relay4 = Output::new(p.RELAY_4, Level::Low);
     let _relay5 = Output::new(p.RELAY_5, Level::Low);
     let _relay6 = Output::new(p.RELAY_6, Level::Low);
@@ -118,7 +118,7 @@ fn main() -> ! {
             unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
             // TODO
-            unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
+            // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
             unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
             #[cfg(feature = "test-panic-on-core-1")]
