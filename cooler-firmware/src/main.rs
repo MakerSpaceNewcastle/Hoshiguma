@@ -118,7 +118,7 @@ fn main() -> ! {
             unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
             // TODO
-            // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
+            unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
             unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
             #[cfg(feature = "test-panic-on-core-1")]
@@ -242,7 +242,7 @@ async fn fuck_about_with_relays(r: RelayOutputResources) {
     let mut stirrer = Output::new(r.stirrer, Level::Low);
     let mut pump = Output::new(r.pump, Level::Low);
 
-    let mut ticker = Ticker::every(Duration::from_secs(1));
+    let mut ticker = Ticker::every(Duration::from_secs(5));
 
     loop {
         fan.toggle();
