@@ -8,7 +8,6 @@ use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
-    multicore::{spawn_core1, Stack},
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
@@ -16,7 +15,7 @@ use git_version::git_version;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
-use portable_atomic::{AtomicBool, AtomicU64};
+use portable_atomic::AtomicU64;
 use static_cell::StaticCell;
 
 assign_resources! {
@@ -58,9 +57,6 @@ assign_resources! {
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    // Flag the panic, indicating that executors should stop scheduling work
-    PANIC_HALT.store(true, Ordering::Relaxed);
-
     let p = unsafe { PicoPlc::steal() };
     let r = split_resources!(p);
 
@@ -81,15 +77,9 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-static mut CORE_1_STACK: Stack<4096> = Stack::new();
-
 static EXECUTOR_0: StaticCell<Executor> = StaticCell::new();
-static EXECUTOR_1: StaticCell<Executor> = StaticCell::new();
 
 static SLEEP_TICKS_CORE_0: AtomicU64 = AtomicU64::new(0);
-static SLEEP_TICKS_CORE_1: AtomicU64 = AtomicU64::new(0);
-
-static PANIC_HALT: AtomicBool = AtomicBool::new(false);
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
@@ -107,40 +97,14 @@ fn main() -> ! {
     let _relay6 = Output::new(p.RELAY_6, Level::Low);
     let _relay7 = Output::new(p.RELAY_7, Level::Low);
 
-    // Safety critical things go on core 1
-    spawn_core1(
-        p.CORE1,
-        unsafe { &mut *core::ptr::addr_of_mut!(CORE_1_STACK) },
-        move || {
-            let executor_1 = EXECUTOR_1.init(Executor::new(usize::MAX as *mut ()));
-            let spawner = executor_1.spawner();
-
-            unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
-
-            // TODO
-            // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
-            unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
-
-            #[cfg(feature = "test-panic-on-core-1")]
-            unwrap!(spawner.spawn(dummy_panic()));
-
-            loop {
-                let before = Instant::now().as_ticks();
-                cortex_m::asm::wfe();
-                let after = Instant::now().as_ticks();
-                SLEEP_TICKS_CORE_1.fetch_add(after - before, Ordering::Relaxed);
-                if !PANIC_HALT.load(Ordering::Relaxed) {
-                    unsafe { executor_1.poll() };
-                }
-            }
-        },
-    );
-
-    // Everything else goes on core 0
     let executor_0 = EXECUTOR_0.init(Executor::new(usize::MAX as *mut ()));
     let spawner = executor_0.spawner();
 
+    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
+
     // TODO
+    // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
+    unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
     // CPU usage reporting
     unwrap!(spawner.spawn(report_cpu_usage()));
@@ -153,9 +117,7 @@ fn main() -> ! {
         cortex_m::asm::wfe();
         let after = Instant::now().as_ticks();
         SLEEP_TICKS_CORE_0.fetch_add(after - before, Ordering::Relaxed);
-        if !PANIC_HALT.load(Ordering::Relaxed) {
-            unsafe { executor_0.poll() };
-        }
+        unsafe { executor_0.poll() };
     }
 }
 
@@ -177,7 +139,6 @@ async fn watchdog_feed_task(r: StatusResources) {
 async fn report_cpu_usage() {
     let mut previous_tick = 0u64;
     let mut previous_sleep_tick_core_0 = 0u64;
-    let mut previous_sleep_tick_core_1 = 0u64;
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
 
@@ -188,7 +149,6 @@ async fn report_cpu_usage() {
         let tick_difference = (current_tick - previous_tick) as f32;
 
         let current_sleep_tick_core_0 = SLEEP_TICKS_CORE_0.load(Ordering::Relaxed);
-        let current_sleep_tick_core_1 = SLEEP_TICKS_CORE_1.load(Ordering::Relaxed);
 
         let calc_cpu_usage = |current_sleep_tick: u64, previous_sleep_tick: u64| -> f32 {
             let sleep_tick_difference = (current_sleep_tick - previous_sleep_tick) as f32;
@@ -196,16 +156,11 @@ async fn report_cpu_usage() {
         };
 
         let usage_core_0 = calc_cpu_usage(current_sleep_tick_core_0, previous_sleep_tick_core_0);
-        let usage_core_1 = calc_cpu_usage(current_sleep_tick_core_1, previous_sleep_tick_core_1);
 
         previous_tick = current_tick;
         previous_sleep_tick_core_0 = current_sleep_tick_core_0;
-        previous_sleep_tick_core_1 = current_sleep_tick_core_1;
 
-        info!(
-            "Usage: core 0 = {}, core 1 = {}",
-            usage_core_0, usage_core_1
-        );
+        info!("Usage: core 0 = {}", usage_core_0);
     }
 }
 
