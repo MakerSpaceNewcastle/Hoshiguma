@@ -104,7 +104,7 @@ fn main() -> ! {
 
     // TODO
     unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
-    unwrap!(spawner.spawn(get_fucking_cold(r.relays)));
+    // unwrap!(spawner.spawn(get_fucking_cold(r.relays)));
     // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
