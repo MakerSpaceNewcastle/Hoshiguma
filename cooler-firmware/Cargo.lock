@@ -307,6 +307,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ds18b20"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9cd37ace0416c30c2874cd67135508de493e34135c67878b01e13aba91b53ce"
+dependencies = [
+ "embedded-hal 0.2.7",
+ "one-wire-bus",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -687,6 +697,7 @@ dependencies = [
  "cortex-m-rt",
  "defmt",
  "defmt-rtt",
+ "ds18b20",
  "embassy-executor",
  "embassy-rp",
  "embassy-time",

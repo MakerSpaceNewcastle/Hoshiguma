@@ -3,14 +3,14 @@
 
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
-use defmt::{info, unwrap};
+use defmt::{debug, info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
     watchdog::Watchdog,
 };
-use embassy_time::{Duration, Instant, Ticker, Timer};
+use embassy_time::{Delay, Duration, Instant, Ticker, Timer};
 use git_version::git_version;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -41,9 +41,9 @@ assign_resources! {
         low : IN_4,
     },
     relays: RelayOutputResources {
-        fan: RELAY_0,
-        compressor: RELAY_1,
-        stirrer: RELAY_2,
+        compressor: RELAY_0,
+        stirrer: RELAY_1,
+        fan: RELAY_2,
         pump: RELAY_3,
     },
     telemetry: ControlCommunicationResources {
@@ -103,6 +103,8 @@ fn main() -> ! {
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
     // TODO
+    unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
+    unwrap!(spawner.spawn(get_fucking_cold(r.relays)));
     // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
@@ -191,6 +193,24 @@ async fn measure_dat_pwm(r: FlowSensorResources) {
 }
 
 #[embassy_executor::task]
+async fn get_fucking_cold(r: RelayOutputResources) {
+    let mut fan = Output::new(r.fan, Level::Low);
+    let mut compressor = Output::new(r.compressor, Level::Low);
+    let mut stirrer = Output::new(r.stirrer, Level::Low);
+    let _pump = Output::new(r.pump, Level::Low);
+
+    fan.set_high();
+    Timer::after_secs(2).await;
+    stirrer.set_high();
+    Timer::after_secs(2).await;
+    compressor.set_high();
+
+    loop {
+        Timer::after_secs(60).await;
+    }
+}
+
+#[embassy_executor::task]
 async fn fuck_about_with_relays(r: RelayOutputResources) {
     let mut fan = Output::new(r.fan, Level::Low);
     let mut compressor = Output::new(r.compressor, Level::Low);
@@ -215,5 +235,49 @@ async fn fuck_about_with_relays(r: RelayOutputResources) {
         pump.toggle();
         ticker.next().await;
         pump.toggle();
+    }
+}
+
+#[embassy_executor::task]
+async fn read_temperature_sensors(r: OnewireResources) {
+    let mut bus = pico_plc_bsp::onewire::new(r.pin).unwrap();
+
+    for device_address in bus.devices(false, &mut Delay) {
+        let device_address = device_address.unwrap();
+        info!("Found one wire device at address: {}", device_address.0);
+    }
+
+    let mut ticker = Ticker::every(Duration::from_secs(5));
+
+    loop {
+        ds18b20::start_simultaneous_temp_measurement(&mut bus, &mut Delay).unwrap();
+
+        Timer::after_millis(ds18b20::Resolution::Bits12.max_measurement_time_millis() as u64).await;
+
+        let mut search_state = None;
+        while let Some((device_address, state)) = bus
+            .device_search(search_state.as_ref(), false, &mut Delay)
+            .unwrap()
+        {
+            search_state = Some(state);
+
+            if device_address.family_code() == ds18b20::FAMILY_CODE {
+                debug!("Found DS18B20 at address: {}", device_address.0);
+
+                let sensor = ds18b20::Ds18b20::new::<()>(device_address).unwrap();
+                let sensor_data = sensor.read_data(&mut bus, &mut Delay).unwrap();
+                info!(
+                    "DS18B20 {} is {}°C",
+                    device_address.0, sensor_data.temperature
+                );
+            } else {
+                info!(
+                    "Found unknown one wire device at address: {}",
+                    device_address.0
+                );
+            }
+        }
+
+        ticker.next().await;
     }
 }
