@@ -1,4 +1,4 @@
 #![cfg_attr(feature = "no-std", no_std)]
 
-// pub mod peripheral_controller;
+pub mod peripheral_controller;
 pub mod types;

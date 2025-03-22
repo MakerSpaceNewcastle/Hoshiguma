@@ -1,6 +1,5 @@
 mod boot;
 mod info;
-mod panic;
 
 pub use self::{
     boot::{Boot, BootReason},
@@ -14,5 +13,4 @@ use serde::{Deserialize, Serialize};
 pub enum SystemMessagePayload {
     Boot(Boot),
     Heartbeat(Info),
-    Panic(Panic),
 }
