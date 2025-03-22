@@ -98,6 +98,7 @@ fn main() -> ! {
     // TODO
     unwrap!(spawner.spawn(rpc_server_task(r.communication)));
     unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
+    unwrap!(spawner.spawn(internal_pump_on(r.relays)));
     // unwrap!(spawner.spawn(get_fucking_cold(r.relays)));
     // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
@@ -183,6 +184,20 @@ async fn measure_dat_pwm(r: FlowSensorResources) {
         info!("Input frequency: {} Hz", pwm.counter());
         pwm.set_counter(0);
         ticker.next().await;
+    }
+}
+
+#[embassy_executor::task]
+async fn internal_pump_on(r: RelayOutputResources) {
+    let _fan = Output::new(r.fan, Level::Low);
+    let _compressor = Output::new(r.compressor, Level::Low);
+    let mut stirrer = Output::new(r.stirrer, Level::Low);
+    let _pump = Output::new(r.pump, Level::Low);
+
+    stirrer.set_high();
+
+    loop {
+        Timer::after_secs(60).await;
     }
 }
 
