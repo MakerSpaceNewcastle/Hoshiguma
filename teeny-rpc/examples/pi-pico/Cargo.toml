@@ -1,0 +1,36 @@
+[package]
+name = "teeny-rpc-demo-pi-pico"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+cortex-m-rt = "0.7.3"
+embassy-rp = { version = "0.4.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+
+embassy-executor = { version = "0.7.0", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+
+defmt = "0.3.8"
+defmt-rtt = "0.4.1"
+panic-probe = { version = "0.3.2", features = ["print-defmt"] }
+
+portable-atomic = { version = "1.9.0", features = ["critical-section"] }
+
+static_cell = "2.1.0"
+serde = { version = "1.0.219", default-features = false }
+
+teeny-rpc = { path = "../../", default-features = false, features = ["no-std"] }
+
+[profile.release]
+debug = 2
+lto = true
+opt-level = 'z'
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = "z"
+
+[lints.rust]
+unused_crate_dependencies = "deny"
