@@ -26,19 +26,16 @@ assign_resources! {
     onewire: OnewireResources {
         pin: ONEWIRE,
     },
-    mains_detect: MainsDetectResources {
-        detect: IN_1,
-    },
     flow_sensor: FlowSensorResources {
         pwm: PWM_SLICE7,
         pin: IN_0,
     },
     resevoir_level: ResevoirLevelSensorResources {
-        low: IN_2,
+        low: IN_1,
     },
     header_tank_level: HeaderTankLevelSensorResources {
-        empty: IN_3,
-        low : IN_4,
+        empty: IN_2,
+        low : IN_3,
     },
     relays: RelayOutputResources {
         compressor: RELAY_0,
