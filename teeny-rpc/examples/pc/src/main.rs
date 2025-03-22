@@ -59,7 +59,7 @@ async fn main() {
 
                 i = i.wrapping_add(1);
 
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                tokio::time::sleep(Duration::from_millis(50)).await;
             }
         }
         Commands::Server => {
