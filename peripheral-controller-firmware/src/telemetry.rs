@@ -12,7 +12,7 @@ use hoshiguma_protocol::{
     event_queue::EventQueue,
     peripheral_controller::{
         event::{Event, EventKind},
-        rpc::{Request, Response, EVENTS_PER_MESSAGE},
+        rpc::{Request, Response},
     },
 };
 use static_cell::StaticCell;
@@ -42,7 +42,7 @@ pub(super) async fn task(r: TelemetryResources) {
     let mut server = Server::<_, Request, Response>::new(transport);
 
     // Queue to hold events before they are requested
-    let mut event_queue = EventQueue::<_, 32, EVENTS_PER_MESSAGE>::default();
+    let mut event_queue = EventQueue::<_, 32>::default();
 
     // Report boot
     queue_telemetry_event(EventKind::Boot(crate::system_information())).await;
@@ -84,14 +84,11 @@ pub(super) async fn task(r: TelemetryResources) {
                         warn!("Server failed sending response: {}", e);
                     }
                 }
-                Request::GetOldestEvents(n) => {
-                    let transaction = event_queue.ret_request(n);
-                    let events = event_queue.ret_get(&transaction);
+                Request::GetOldestEvent => {
+                    let transaction = event_queue.ret_request();
+                    let event = event_queue.ret_get(&transaction);
 
-                    match server
-                        .send_response(Response::GetOldestEvents(events))
-                        .await
-                    {
+                    match server.send_response(Response::GetOldestEvent(event)).await {
                         Ok(_) => {
                             event_queue.ret_commit(transaction);
                         }

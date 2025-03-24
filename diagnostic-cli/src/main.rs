@@ -52,23 +52,28 @@ async fn main() {
         panic!("Incorrect response from request");
     }
 
-    let mut ticker = tokio::time::interval(Duration::from_millis(250));
+    let mut ticker = tokio::time::interval(Duration::from_millis(200));
 
-    loop {
-        ticker.tick().await;
-
-        match client.call(Request::GetOldestEvents(8), TIMEOUT).await {
-            Ok(Response::GetOldestEvents(events)) => {
-                for event in events {
-                    match cli.format {
-                        PrintFormat::Debug => println!("{:?}", event),
-                        PrintFormat::DebugPretty => info!("Received:\n{:#?}", event),
-                    }
+    'telem_rx: loop {
+        match client.call(Request::GetOldestEvent, TIMEOUT).await {
+            Ok(Response::GetOldestEvent(Some(event))) => {
+                match cli.format {
+                    PrintFormat::Debug => println!("{:?}", event),
+                    PrintFormat::DebugPretty => info!("Received:\n{:#?}", event),
                 }
+
+                // Immediately request further events
+                ticker.reset();
+                continue 'telem_rx;
+            }
+            Ok(Response::GetOldestEvent(None)) => {
+                // Do nothing
             }
             Ok(_) => warn!("Incorrect response from request"),
             Err(e) => warn!("Call error: {e}"),
         }
+
+        ticker.tick().await;
     }
 }
 

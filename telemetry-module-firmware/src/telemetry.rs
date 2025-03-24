@@ -41,23 +41,27 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
 
     let tx = TELEMETRY_MESSAGES.publisher().unwrap();
 
+    // Request events every 200ms
     let mut ticker = Ticker::every(Duration::from_millis(200));
 
-    loop {
-        ticker.next().await;
-
+    'telem_rx: loop {
         match client
             .call(
-                Request::GetOldestEvents(8),
+                Request::GetOldestEvent,
                 core::time::Duration::from_millis(50),
             )
             .await
         {
-            Ok(Response::GetOldestEvents(events)) => {
-                info!("Got {} events from controller", events.len());
-                for event in events {
-                    tx.publish(event).await;
-                }
+            Ok(Response::GetOldestEvent(Some(event))) => {
+                info!("Got event from controller: {:?}", event);
+                tx.publish(event).await;
+
+                // Immediately request further events
+                ticker.reset();
+                continue 'telem_rx;
+            }
+            Ok(Response::GetOldestEvent(None)) => {
+                // Do nothing
             }
             Ok(_) => {
                 warn!("Unexpected RPC response");
@@ -66,5 +70,7 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
                 warn!("RPC error: {}", e);
             }
         }
+
+        ticker.next().await;
     }
 }
