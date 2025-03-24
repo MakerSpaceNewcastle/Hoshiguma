@@ -2,13 +2,15 @@
 #![no_main]
 
 use assign_resources::assign_resources;
-use serde::{Deserialize, Serialize};
 use core::sync::atomic::Ordering;
 use defmt::{debug, info, unwrap, warn};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_rp::{
-    bind_interrupts, gpio::{Input, Level, Output, Pull}, uart::BufferedUart, watchdog::Watchdog
+    bind_interrupts,
+    gpio::{Input, Level, Output, Pull},
+    uart::BufferedUart,
+    watchdog::Watchdog,
 };
 use embassy_time::{Delay, Duration, Instant, Ticker, Timer};
 use git_version::git_version;
@@ -16,6 +18,7 @@ use git_version::git_version;
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
 use portable_atomic::AtomicU64;
+use serde::{Deserialize, Serialize};
 use static_cell::StaticCell;
 
 assign_resources! {
@@ -315,18 +318,10 @@ async fn rpc_server_task(r: ControlCommunicationResources) {
     let mut config = embassy_rp::uart::Config::default();
     config.baudrate = 115_200;
 
-    let uart = BufferedUart::new(
-        r.uart,
-        Irqs,
-        r.tx_pin,
-        r.rx_pin,
-        tx_buf,
-        rx_buf,
-        config,
-    );
+    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
 
     let transport = teeny_rpc::transport::embedded::EioTransport::new(uart);
-    let mut server = teeny_rpc::server::Server::<_,Request,Response>::new(transport);
+    let mut server = teeny_rpc::server::Server::<_, Request, Response>::new(transport);
 
     loop {
         match server
