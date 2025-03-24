@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 /// # Type Parameters
 /// - `E`: The type of events stored in the queue.
 /// - `N`: The maximum number of events the queue can hold.
-pub struct EventQueue<E, const N: usize, const R: usize> {
+pub struct EventQueue<E, const N: usize> {
     events: heapless::Deque<E, N>,
     stats: EventStatistics,
 }
 
-impl<E, const N: usize, const R: usize> Default for EventQueue<E, N, R> {
+impl<E, const N: usize> Default for EventQueue<E, N> {
     fn default() -> Self {
         Self {
             events: heapless::Deque::new(),
@@ -19,7 +19,7 @@ impl<E, const N: usize, const R: usize> Default for EventQueue<E, N, R> {
     }
 }
 
-impl<E: Clone, const N: usize, const R: usize> EventQueue<E, N, R> {
+impl<E: Clone, const N: usize> EventQueue<E, N> {
     /// Checks if the event queue is empty.
     pub fn is_empty(&self) -> bool {
         self.events.is_empty()
@@ -46,16 +46,12 @@ impl<E: Clone, const N: usize, const R: usize> EventQueue<E, N, R> {
         self.stats.total = self.stats.total.wrapping_add(1);
     }
 
-    /// Creates a retrieval transaction for a specified number of events.
-    ///
-    /// # Parameters
-    /// - `count`: The number of events to retrieve.
+    /// Creates a retrieval transaction for the removal of a single event.
     ///
     /// # Returns
     /// - A `RetrievalTransaction` containing the number of events to be retrieved.
-    pub fn ret_request(&mut self, count: usize) -> RetrievalTransaction {
-        let count = core::cmp::min(count, R);
-        let count = core::cmp::min(count, self.events.len());
+    pub fn ret_request(&mut self) -> RetrievalTransaction {
+        let count = core::cmp::min(1, self.events.len());
         RetrievalTransaction { event_count: count }
     }
 
@@ -66,12 +62,12 @@ impl<E: Clone, const N: usize, const R: usize> EventQueue<E, N, R> {
     ///
     /// # Returns
     /// - A vector containing the retrieved events.
-    pub fn ret_get(&mut self, t: &RetrievalTransaction) -> heapless::Vec<E, R> {
-        let mut result = heapless::Vec::new();
-        for event in self.events.iter().take(t.event_count) {
-            result.push(event.clone()).map_err(|_| ()).unwrap();
+    pub fn ret_get(&mut self, t: &RetrievalTransaction) -> Option<E> {
+        match t.event_count {
+            0 => None,
+            1 => self.events.front().cloned(),
+            _ => panic!("Unexpected event count requested: {}", t.event_count),
         }
-        result
     }
 
     /// Commits the retrieval transaction by removing the specified number of events from the queue.
@@ -113,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_event_queue_new() {
-        let queue: EventQueue<TestEvent, 5, 8> = EventQueue::default();
+        let queue: EventQueue<TestEvent, 5> = EventQueue::default();
         assert!(queue.events.is_empty());
         assert_eq!(queue.events.len(), 0);
         assert_eq!(queue.stats.total, 0);
@@ -122,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_event_queue_push() {
-        let mut queue: EventQueue<TestEvent, 2, 8> = EventQueue::default();
+        let mut queue: EventQueue<TestEvent, 2> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
         assert!(!queue.events.is_empty());
@@ -139,51 +135,33 @@ mod tests {
 
     #[test]
     fn test_event_queue_ret_request() {
-        let mut queue: EventQueue<TestEvent, 5, 8> = EventQueue::default();
+        let mut queue: EventQueue<TestEvent, 5> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
 
-        let transaction = queue.ret_request(1);
+        let transaction = queue.ret_request();
         assert_eq!(transaction.event_count, 1);
-
-        let transaction = queue.ret_request(3);
-        assert_eq!(transaction.event_count, 2);
-    }
-
-    #[test]
-    fn test_event_queue_ret_request_above_limit() {
-        let mut queue: EventQueue<TestEvent, 5, 3> = EventQueue::default();
-        queue.push(TestEvent { id: 1 });
-        queue.push(TestEvent { id: 2 });
-        queue.push(TestEvent { id: 3 });
-        queue.push(TestEvent { id: 4 });
-        queue.push(TestEvent { id: 5 });
-
-        let transaction = queue.ret_request(5);
-        assert_eq!(transaction.event_count, 3);
     }
 
     #[test]
     fn test_event_queue_ret_get() {
-        let mut queue: EventQueue<TestEvent, 5, 8> = EventQueue::default();
+        let mut queue: EventQueue<TestEvent, 5> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
 
-        let transaction = queue.ret_request(2);
-        let events = queue.ret_get(&transaction);
-        assert_eq!(events.len(), 2);
-        assert_eq!(events[0], TestEvent { id: 1 });
-        assert_eq!(events[1], TestEvent { id: 2 });
+        let transaction = queue.ret_request();
+        let event = queue.ret_get(&transaction);
+        assert_eq!(event, Some(TestEvent { id: 1 }));
     }
 
     #[test]
     fn test_event_queue_ret_commit() {
-        let mut queue: EventQueue<TestEvent, 5, 8> = EventQueue::default();
+        let mut queue: EventQueue<TestEvent, 5> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
 
-        let transaction = queue.ret_request(2);
+        let transaction = queue.ret_request();
         queue.ret_commit(transaction);
-        assert_eq!(queue.events.len(), 0);
+        assert_eq!(queue.events.len(), 1);
     }
 }

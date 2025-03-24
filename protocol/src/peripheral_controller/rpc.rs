@@ -1,6 +1,5 @@
 use super::event::Event;
 use crate::{event_queue::EventStatistics, types::SystemInformation};
-use heapless::Vec;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -10,7 +9,7 @@ pub enum Request {
     GetSystemInformation,
     GetEventCount,
     GetEventStatistics,
-    GetOldestEvents(usize),
+    GetOldestEvent,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -21,7 +20,5 @@ pub enum Response {
     GetSystemInformation(SystemInformation),
     GetEventCount(usize),
     GetEventStatistics(EventStatistics),
-    GetOldestEvents(Vec<Event, EVENTS_PER_MESSAGE>),
+    GetOldestEvent(Option<Event>),
 }
-
-pub const EVENTS_PER_MESSAGE: usize = 8;

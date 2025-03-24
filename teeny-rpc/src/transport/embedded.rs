@@ -1,5 +1,5 @@
 use core::time::Duration;
-use defmt::{debug, warn};
+use defmt::{trace, warn};
 use embedded_io_async::{Read, Write};
 use heapless::Vec;
 use serde::{de::DeserializeOwned, Serialize};
@@ -35,7 +35,7 @@ impl<T: Read + Write, M: Serialize + DeserializeOwned> super::Transport<M> for E
                     if buffer.last() == Some(&0u8) {
                         match postcard::from_bytes_cobs::<M>(buffer.as_mut_slice()) {
                             Ok(msg) => {
-                                debug!("Received message");
+                                trace!("Received message");
                                 buffer.clear();
                                 return Ok(msg);
                             }
