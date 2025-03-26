@@ -1,14 +1,21 @@
 use serde::{Deserialize, Serialize};
+use crate::types::TemperatureReading;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub struct State {
-    // Sensors
-    // TODO
+pub struct Temperatures {
+    pub onboard: TemperatureReading,
+    pub electronics_bay_top: TemperatureReading,
 
-    // Outputs
-    pub radiator_fan_running: bool,
-    pub compressor_running: bool,
-    pub stirrer_running: bool,
-    pub coolant_pump_running: bool,
+    pub laser_chamber: TemperatureReading,
+
+    pub ambient: TemperatureReading,
+
+    pub coolant_flow: TemperatureReading,
+    pub coolant_return: TemperatureReading,
+
+    pub coolant_resevoir_bottom: TemperatureReading,
+    pub coolant_resevoir_top: TemperatureReading,
+
+    pub coolant_pump: TemperatureReading,
 }

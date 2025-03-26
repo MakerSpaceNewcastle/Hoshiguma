@@ -1,4 +1,4 @@
-use super::types::State;
+use super::event::Event;
 use crate::{event_queue::EventStatistics, types::SystemInformation};
 use serde::{Deserialize, Serialize};
 
@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 pub enum Request {
     Ping(u32),
     GetSystemInformation,
-    GetState,
+    GetEventCount,
+    GetEventStatistics,
+    GetOldestEvent,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -16,5 +18,7 @@ pub enum Request {
 pub enum Response {
     Ping(u32),
     GetSystemInformation(SystemInformation),
-    GetState(State),
+    GetEventCount(usize),
+    GetEventStatistics(EventStatistics),
+    GetOldestEvent(Option<Event>),
 }

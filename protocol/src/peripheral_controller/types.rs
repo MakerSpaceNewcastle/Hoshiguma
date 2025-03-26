@@ -1,4 +1,4 @@
-use crate::types::Severity;
+use crate::types::{Severity, TemperatureReading};
 use heapless::LinearMap;
 use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
@@ -160,8 +160,6 @@ pub enum MachineRun {
     Idle,
     Running,
 }
-
-pub type TemperatureReading = Result<f32, ()>;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]

@@ -25,3 +25,5 @@ pub enum Severity {
     Warn,
     Critical,
 }
+
+pub type TemperatureReading = Result<f32, ()>;
