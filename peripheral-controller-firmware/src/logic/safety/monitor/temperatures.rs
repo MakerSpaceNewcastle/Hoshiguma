@@ -1,34 +1,35 @@
-use super::{MonitorStateExt, MonitorStatusExt, NEW_MONITOR_STATUS};
+use super::NEW_MONITOR_STATUS;
 use crate::{
-    changed::Changed,
+    changed::{checked_set, Changed},
     devices::temperature_sensors::{TemperaturesExt, TEMPERATURES_READ},
 };
 use defmt::{debug, unwrap, warn};
-use hoshiguma_protocol::peripheral_controller::types::{
-    Monitor, MonitorState, MonitorStatus, TemperatureReading,
+use hoshiguma_protocol::{
+    peripheral_controller::types::{MonitorKind, TemperatureReading},
+    types::Severity,
 };
 
 fn temperature_to_state(
     warn: f32,
     critical: f32,
     temperature: TemperatureReading,
-) -> Result<MonitorState, ()> {
+) -> Result<Severity, ()> {
     if let Ok(temperature) = temperature {
         Ok(if temperature >= critical {
             warn!(
                 "Temperature {} is above critical threshold of {}",
                 temperature, critical
             );
-            MonitorState::Critical
+            Severity::Critical
         } else if temperature >= warn {
             warn!(
                 "Temperature {} is above warning threshold of {}",
                 temperature, warn
             );
-            MonitorState::Warn
+            Severity::Warn
         } else {
             debug!("Temperature {} is normal", temperature);
-            MonitorState::Normal
+            Severity::Normal
         })
     } else {
         warn!("Asked to check temperature of a sensor that failed to be read");
@@ -38,22 +39,23 @@ fn temperature_to_state(
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
-    let mut rx = unwrap!(TEMPERATURES_READ.receiver());
+    let mut temperatures_rx = unwrap!(TEMPERATURES_READ.receiver());
+    let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-    let mut sensor_status = MonitorStatus::new(Monitor::TemperatureSensorFault);
-    let mut coolant_flow_status = MonitorStatus::new(Monitor::CoolantFlowTemperature);
-    let mut coolant_resevoir_status = MonitorStatus::new(Monitor::CoolantResevoirTemperature);
+    let mut sensor_severity = Severity::Critical;
+    let mut coolant_flow_severity = Severity::Critical;
+    let mut coolant_resevoir_severity = Severity::Critical;
 
     let mut sensor_failure_counter = 0;
 
     loop {
-        let state = rx.changed().await;
+        let state = temperatures_rx.changed().await;
 
         // Check for faulty sensors
-        let sensor_state = match state.overall_result() {
+        let new_sensor_severity = match state.overall_result() {
             Ok(_) => {
                 sensor_failure_counter = 0;
-                MonitorState::Normal
+                Severity::Normal
             }
             Err(_) => {
                 sensor_failure_counter += 1;
@@ -63,43 +65,53 @@ pub(crate) async fn task() {
                 );
 
                 if sensor_failure_counter < 3 {
-                    MonitorState::Normal
+                    Severity::Normal
                 } else {
-                    MonitorState::Warn
+                    Severity::Warn
                 }
             }
         };
 
-        if sensor_status.refresh(sensor_state) == Changed::Yes {
-            NEW_MONITOR_STATUS.send(sensor_status.clone()).await;
+        if checked_set(&mut sensor_severity, new_sensor_severity) == Changed::Yes {
+            status_tx
+                .publish((MonitorKind::TemperatureSensorFault, sensor_severity.clone()))
+                .await;
         }
 
         // Check coolant flow temperature
-        if let Ok(coolant_flow) = temperature_to_state(25.0, 40.0, state.coolant_flow) {
-            if coolant_flow_status.refresh(coolant_flow) == Changed::Yes {
-                NEW_MONITOR_STATUS.send(coolant_flow_status.clone()).await;
+        if let Ok(new_severity) = temperature_to_state(25.0, 40.0, state.coolant_flow) {
+            if checked_set(&mut coolant_flow_severity, new_severity) == Changed::Yes {
+                status_tx
+                    .publish((
+                        MonitorKind::CoolantFlowTemperature,
+                        coolant_flow_severity.clone(),
+                    ))
+                    .await;
             }
         }
 
         // Check coolant resevoir temperatures
         {
-            let mut resevoir_state = MonitorState::Normal;
+            let mut new_severity = Severity::Normal;
 
             if let Ok(coolant_resevoir_top) =
                 temperature_to_state(28.0, 40.0, state.coolant_resevoir_top)
             {
-                resevoir_state.upgrade(coolant_resevoir_top);
+                new_severity = core::cmp::max(new_severity, coolant_resevoir_top);
             }
 
             if let Ok(coolant_resevoir_bottom) =
                 temperature_to_state(28.0, 40.0, state.coolant_resevoir_bottom)
             {
-                resevoir_state.upgrade(coolant_resevoir_bottom);
+                new_severity = core::cmp::max(new_severity, coolant_resevoir_bottom);
             }
 
-            if coolant_resevoir_status.refresh(resevoir_state) == Changed::Yes {
-                NEW_MONITOR_STATUS
-                    .send(coolant_resevoir_status.clone())
+            if checked_set(&mut coolant_resevoir_severity, new_severity) == Changed::Yes {
+                status_tx
+                    .publish((
+                        MonitorKind::CoolantResevoirTemperature,
+                        coolant_resevoir_severity.clone(),
+                    ))
                     .await;
             }
         }

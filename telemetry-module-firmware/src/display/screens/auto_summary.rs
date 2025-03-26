@@ -6,6 +6,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Drawable},
 };
+use hoshiguma_protocol::types::Severity;
 
 /// A screen that shows the alarm list if there are any alarms or the summary screen otherwise.
 /// Intended to be a sane default screen to leave the module set to.
@@ -27,11 +28,11 @@ impl DrawTypeDrawable for AutoSummary<'_> {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let screen_to_draw = if let Some(alarms) = &self.state.alarms {
-            if alarms.alarms.is_empty() {
-                Screen::Summary
+        let screen_to_draw = if let Some(monitors) = &self.state.monitors {
+            if monitors.severity() > Severity::Normal {
+                Screen::Monitors
             } else {
-                Screen::AlarmList
+                Screen::Summary
             }
         } else {
             Screen::Summary
@@ -44,8 +45,8 @@ impl DrawTypeDrawable for AutoSummary<'_> {
 
                 super::summary::Summary::new(self.state).draw(target, &DrawType::Full)
             }
-            Screen::AlarmList => {
-                super::alarm_list::AlarmList::new(self.state).draw(target, &DrawType::Full)
+            Screen::Monitors => {
+                super::monitors::Monitors::new(self.state).draw(target, &DrawType::Full)
             }
             _ => unreachable!("nothing should select a screen other than summary or alarm list"),
         }

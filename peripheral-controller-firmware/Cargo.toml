@@ -25,7 +25,7 @@ defmt = "0.3.8"
 defmt-rtt = "0.4.1"
 panic-probe = { version = "0.3.2", features = ["print-defmt"], optional = true }
 
-embassy-sync = { git = "https://github.com/embassy-rs/embassy/" }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy/", features = ["defmt"] }
 embassy-futures = "0.1.1"
 embassy-time-driver = "0.2.0"
 portable-atomic = { version = "1.9.0", features = ["critical-section"] }

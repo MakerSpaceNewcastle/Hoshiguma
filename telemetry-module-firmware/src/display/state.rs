@@ -10,11 +10,11 @@ use embassy_sync::{
 };
 use heapless::String;
 use hoshiguma_protocol::peripheral_controller::{
-    event::{ControlEvent, EventKind, ObservationEvent, ProcessEvent},
+    event::{ControlEvent, EventKind, ObservationEvent},
     types::{
-        ActiveAlarms, AirAssistDemand, AirAssistPump, ChassisIntrusion,
-        CoolantResevoirLevelReading, FumeExtractionFan, FumeExtractionMode, LaserEnable,
-        MachineEnable, MachineOperationLockout, MachinePower, MachineRun, StatusLamp, Temperatures,
+        AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading,
+        FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
+        MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
     },
 };
 
@@ -28,6 +28,9 @@ pub(crate) struct DisplayDataState {
     pub(crate) controller_git_rev: Option<String<20>>,
     pub(crate) controller_uptime: Option<u64>,
 
+    pub(crate) monitors: Option<Monitors>,
+    pub(crate) lockout: Option<MachineOperationLockout>,
+
     // Controller observation
     pub(crate) air_assist_demand: Option<AirAssistDemand>,
     pub(crate) chassis_intrusion: Option<ChassisIntrusion>,
@@ -36,11 +39,6 @@ pub(crate) struct DisplayDataState {
     pub(crate) machine_power: Option<MachinePower>,
     pub(crate) machine_run_status: Option<MachineRun>,
     pub(crate) temperatures: Option<Temperatures>,
-
-    // Controller processes
-    // TODO: monitors
-    pub(crate) alarms: Option<ActiveAlarms>,
-    pub(crate) lockout: Option<MachineOperationLockout>,
 
     // Controller outputs
     pub(crate) air_assist_pump: Option<AirAssistPump>,
@@ -72,70 +70,65 @@ pub(crate) async fn task() {
                     state.mqtt_broker_connected = false;
                 }
             },
-            Either::Second(event) => {
-                match event {
-                    WaitResult::Lagged(msg_count) => {
-                        warn!(
-                            "Telemetry message receiver lagged, missed {} messages",
-                            msg_count
-                        );
-                    }
-                    WaitResult::Message(event) => {
-                        state.controller_uptime = Some(event.timestamp_milliseconds);
+            Either::Second(event) => match event {
+                WaitResult::Lagged(msg_count) => {
+                    warn!(
+                        "Telemetry message receiver lagged, missed {} messages",
+                        msg_count
+                    );
+                }
+                WaitResult::Message(event) => {
+                    state.controller_uptime = Some(event.timestamp_milliseconds);
 
-                        match event.kind {
-                            EventKind::Boot(info) => {
-                                state.controller_git_rev = Some(info.git_revision);
-                            }
-                            EventKind::Observation(ObservationEvent::AirAssistDemand(v)) => {
-                                state.air_assist_demand = Some(v);
-                            }
-                            EventKind::Observation(ObservationEvent::ChassisIntrusion(v)) => {
-                                state.chassis_intrusion = Some(v);
-                            }
-                            EventKind::Observation(ObservationEvent::CoolantResevoirLevel(v)) => {
-                                state.coolant_resevoir_level = Some(v);
-                            }
-                            EventKind::Observation(ObservationEvent::FumeExtractionMode(v)) => {
-                                state.fume_extraction_mode = Some(v);
-                            }
-                            EventKind::Observation(ObservationEvent::MachinePower(v)) => {
-                                state.machine_power = Some(v);
-                            }
-                            EventKind::Observation(ObservationEvent::MachineRun(v)) => {
-                                state.machine_run_status = Some(v);
-                            }
-                            EventKind::Observation(ObservationEvent::Temperatures(v)) => {
-                                state.temperatures = Some(v);
-                            }
-                            EventKind::Process(ProcessEvent::Monitor(_)) => {
-                                // TODO: monitors
-                            }
-                            EventKind::Process(ProcessEvent::Alarms(v)) => {
-                                state.alarms = Some(v);
-                            }
-                            EventKind::Process(ProcessEvent::Lockout(v)) => {
-                                state.lockout = Some(v);
-                            }
-                            EventKind::Control(ControlEvent::AirAssistPump(v)) => {
-                                state.air_assist_pump = Some(v);
-                            }
-                            EventKind::Control(ControlEvent::FumeExtractionFan(v)) => {
-                                state.fume_extraction_fan = Some(v);
-                            }
-                            EventKind::Control(ControlEvent::LaserEnable(v)) => {
-                                state.laser_enable = Some(v);
-                            }
-                            EventKind::Control(ControlEvent::MachineEnable(v)) => {
-                                state.machine_enable = Some(v);
-                            }
-                            EventKind::Control(ControlEvent::StatusLamp(v)) => {
-                                state.status_lamp = Some(v);
-                            }
+                    match event.kind {
+                        EventKind::Boot(info) => {
+                            state.controller_git_rev = Some(info.git_revision);
+                        }
+                        EventKind::MonitorsChanged(v) => {
+                            state.monitors = Some(v);
+                        }
+                        EventKind::LockoutChanged(v) => {
+                            state.lockout = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::AirAssistDemand(v)) => {
+                            state.air_assist_demand = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::ChassisIntrusion(v)) => {
+                            state.chassis_intrusion = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::CoolantResevoirLevel(v)) => {
+                            state.coolant_resevoir_level = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::FumeExtractionMode(v)) => {
+                            state.fume_extraction_mode = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::MachinePower(v)) => {
+                            state.machine_power = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::MachineRun(v)) => {
+                            state.machine_run_status = Some(v);
+                        }
+                        EventKind::Observation(ObservationEvent::Temperatures(v)) => {
+                            state.temperatures = Some(v);
+                        }
+                        EventKind::Control(ControlEvent::AirAssistPump(v)) => {
+                            state.air_assist_pump = Some(v);
+                        }
+                        EventKind::Control(ControlEvent::FumeExtractionFan(v)) => {
+                            state.fume_extraction_fan = Some(v);
+                        }
+                        EventKind::Control(ControlEvent::LaserEnable(v)) => {
+                            state.laser_enable = Some(v);
+                        }
+                        EventKind::Control(ControlEvent::MachineEnable(v)) => {
+                            state.machine_enable = Some(v);
+                        }
+                        EventKind::Control(ControlEvent::StatusLamp(v)) => {
+                            state.status_lamp = Some(v);
                         }
                     }
                 }
-            }
+            },
         };
 
         STATE_CHANGED.signal(state.clone());

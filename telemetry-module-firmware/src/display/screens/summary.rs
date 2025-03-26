@@ -55,24 +55,6 @@ impl DrawTypeDrawable for Summary<'_> {
         )
         .draw(target, draw_type)?;
 
-        // Number of active alarms
-        let num_alarms = self.state.alarms.as_ref().map(|alarms| alarms.alarms.len());
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "Alarms",
-            num_alarms
-                .as_ref()
-                .map(|num_alarms| {
-                    let mut s = heapless::String::<8>::new();
-                    s.write_fmt(format_args!("{}", num_alarms)).unwrap();
-                    s
-                })
-                .as_deref(),
-            num_alarms.as_ref().map(|_| Severity::Warning),
-        )
-        .draw(target, draw_type)?;
-
         let cursor = cursor + Point::new(0, 5);
 
         // Machine running state
