@@ -1,3 +1,4 @@
+use super::types::{Compressor, CoolantPump, RadiatorFan, Stirrer, Temperatures};
 use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
 
@@ -12,4 +13,23 @@ pub struct Event {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum EventKind {
     Boot(SystemInformation),
+    Observation(ObservationEvent),
+    Control(ControlEvent),
+    // TODO
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum ObservationEvent {
+    Temperatures(Temperatures),
+    // TODO
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum ControlEvent {
+    Compressor(Compressor),
+    RadiatorFan(RadiatorFan),
+    Stirrer(Stirrer),
+    CoolantPump(CoolantPump),
 }

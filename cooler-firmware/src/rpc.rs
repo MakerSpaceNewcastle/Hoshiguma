@@ -14,15 +14,18 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: ControlCommunicationResources) {
-    static TX_BUF: StaticCell<[u8; 16]> = StaticCell::new();
-    let tx_buf = &mut TX_BUF.init([0; 16])[..];
-    static RX_BUF: StaticCell<[u8; 16]> = StaticCell::new();
-    let rx_buf = &mut RX_BUF.init([0; 16])[..];
+    const TX_BUFFER_SIZE: usize = 256;
+    static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
+    let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
+
+    const RX_BUFFER_SIZE: usize = 256;
+    static RX_BUFFER: StaticCell<[u8; RX_BUFFER_SIZE]> = StaticCell::new();
+    let rx_buffer = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
 
     let mut config = embassy_rp::uart::Config::default();
     config.baudrate = 115_200;
 
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
+    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config);
 
     let transport = teeny_rpc::transport::embedded::EioTransport::new(uart);
     let mut server = teeny_rpc::server::Server::<_, Request, Response>::new(transport);

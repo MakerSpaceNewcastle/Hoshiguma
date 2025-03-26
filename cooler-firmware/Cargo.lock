@@ -749,7 +749,6 @@ dependencies = [
  "panic-probe",
  "pico-plc-bsp",
  "portable-atomic",
- "serde",
  "static_cell",
  "teeny-rpc",
 ]
