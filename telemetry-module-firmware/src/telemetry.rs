@@ -5,7 +5,7 @@ use embassy_rp::{
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
-use embassy_time::{Duration, Ticker};
+use embassy_time::{Duration, Ticker, Timer};
 use hoshiguma_protocol::peripheral_controller::{
     event::Event,
     rpc::{Request, Response},
@@ -43,6 +43,10 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
 
     // Request events every 200ms
     let mut ticker = Ticker::every(Duration::from_millis(200));
+
+    // Wait a little while for the wifi driver to start
+    // TODO: there should really be a better alternative to this
+    Timer::after_secs(3).await;
 
     'telem_rx: loop {
         match client
