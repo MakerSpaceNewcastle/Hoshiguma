@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+mod devices;
+
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
 use defmt::{debug, info, unwrap, warn};
@@ -40,16 +42,22 @@ assign_resources! {
         empty: IN_2,
         low : IN_3,
     },
-    relays: RelayOutputResources {
-        compressor: RELAY_0,
+    compressor: CompressorResources {
+        relay: RELAY_0,
+    },
+    stirrer: StirrerResources {
         stirrer: RELAY_1,
-        fan: RELAY_2,
-        pump: RELAY_3,
+    },
+    radiator_fan: RadiatorFanResources {
+        relay: RELAY_2,
+    },
+    coolant_pump: CoolantPumpResources {
+        relay: RELAY_3,
     },
     communication: ControlCommunicationResources {
+        uart: UART0,
         tx_pin: IO_0,
         rx_pin: IO_1,
-        uart: UART0,
     },
 }
 
@@ -101,9 +109,6 @@ fn main() -> ! {
     // TODO
     unwrap!(spawner.spawn(rpc_server_task(r.communication)));
     unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
-    // unwrap!(spawner.spawn(internal_pump_on(r.relays)));
-    // unwrap!(spawner.spawn(get_fucking_cold(r.relays)));
-    // unwrap!(spawner.spawn(fuck_about_with_relays(r.relays)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
     // CPU usage reporting
@@ -187,66 +192,6 @@ async fn measure_dat_pwm(r: FlowSensorResources) {
         info!("Input frequency: {} Hz", pwm.counter());
         pwm.set_counter(0);
         ticker.next().await;
-    }
-}
-
-#[embassy_executor::task]
-async fn internal_pump_on(r: RelayOutputResources) {
-    let _fan = Output::new(r.fan, Level::Low);
-    let _compressor = Output::new(r.compressor, Level::Low);
-    let mut stirrer = Output::new(r.stirrer, Level::Low);
-    let _pump = Output::new(r.pump, Level::Low);
-
-    stirrer.set_high();
-
-    loop {
-        Timer::after_secs(60).await;
-    }
-}
-
-#[embassy_executor::task]
-async fn get_fucking_cold(r: RelayOutputResources) {
-    let mut fan = Output::new(r.fan, Level::Low);
-    let mut compressor = Output::new(r.compressor, Level::Low);
-    let mut stirrer = Output::new(r.stirrer, Level::Low);
-    let _pump = Output::new(r.pump, Level::Low);
-
-    fan.set_high();
-    Timer::after_secs(2).await;
-    stirrer.set_high();
-    Timer::after_secs(2).await;
-    compressor.set_high();
-
-    loop {
-        Timer::after_secs(60).await;
-    }
-}
-
-#[embassy_executor::task]
-async fn fuck_about_with_relays(r: RelayOutputResources) {
-    let mut fan = Output::new(r.fan, Level::Low);
-    let mut compressor = Output::new(r.compressor, Level::Low);
-    let mut stirrer = Output::new(r.stirrer, Level::Low);
-    let mut pump = Output::new(r.pump, Level::Low);
-
-    let mut ticker = Ticker::every(Duration::from_secs(5));
-
-    loop {
-        fan.toggle();
-        ticker.next().await;
-        fan.toggle();
-
-        compressor.toggle();
-        ticker.next().await;
-        compressor.toggle();
-
-        stirrer.toggle();
-        ticker.next().await;
-        stirrer.toggle();
-
-        pump.toggle();
-        ticker.next().await;
-        pump.toggle();
     }
 }
 

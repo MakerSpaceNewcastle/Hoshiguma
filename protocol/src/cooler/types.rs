@@ -1,21 +1,43 @@
-use serde::{Deserialize, Serialize};
 use crate::types::TemperatureReading;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct Temperatures {
     pub onboard: TemperatureReading,
-    pub electronics_bay_top: TemperatureReading,
-
-    pub laser_chamber: TemperatureReading,
-
-    pub ambient: TemperatureReading,
 
     pub coolant_flow: TemperatureReading,
+    pub coolant_mid: TemperatureReading,
     pub coolant_return: TemperatureReading,
 
-    pub coolant_resevoir_bottom: TemperatureReading,
-    pub coolant_resevoir_top: TemperatureReading,
+    pub heat_exchange_fluid: TemperatureReading,
+    pub heat_exchanger_loop: TemperatureReading,
+}
 
-    pub coolant_pump: TemperatureReading,
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum Compressor {
+    Idle,
+    Run,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum RadiatorFan {
+    Idle,
+    Run,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum Stirrer {
+    Idle,
+    Run,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum CoolantPump {
+    Idle,
+    Run,
 }
