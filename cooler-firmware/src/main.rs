@@ -104,12 +104,14 @@ fn main() -> ! {
 
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
+    // Devices
     unwrap!(spawner.spawn(devices::compressor::task(r.compressor)));
 
     // TODO
     unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
+    // RPC/telemetry/control
     unwrap!(spawner.spawn(rpc::task(r.communication)));
 
     // CPU usage reporting
@@ -176,6 +178,7 @@ async fn dummy_panic() {
     panic!("oh dear, how sad. nevermind...");
 }
 
+// TODO
 #[embassy_executor::task]
 async fn measure_dat_pwm(r: FlowSensorResources) {
     let cfg: embassy_rp::pwm::Config = Default::default();
@@ -196,6 +199,7 @@ async fn measure_dat_pwm(r: FlowSensorResources) {
     }
 }
 
+// TODO
 #[embassy_executor::task]
 async fn read_temperature_sensors(r: OnewireResources) {
     let mut bus = pico_plc_bsp::onewire::new(r.pin).unwrap();
