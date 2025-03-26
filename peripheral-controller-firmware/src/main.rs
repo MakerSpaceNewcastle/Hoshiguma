@@ -72,9 +72,14 @@ assign_resources! {
         relay: RELAY_3,
     },
     telemetry: TelemetryResources {
+        uart: UART0,
         tx_pin: IO_0,
         rx_pin: IO_1,
-        uart: UART0,
+    },
+    cooler: CoolerCommunicationResources {
+        uart: UART1,
+        tx_pin: IO_4,
+        rx_pin: IO_5,
     },
 }
 
@@ -201,6 +206,7 @@ fn main() -> ! {
         r.coolant_resevoir_level_sensor
     )));
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
+    unwrap!(spawner.spawn(devices::cooler::task(r.cooler)));
 
     // State monitor tasks
     unwrap!(spawner.spawn(logic::safety::monitor::power::task()));
