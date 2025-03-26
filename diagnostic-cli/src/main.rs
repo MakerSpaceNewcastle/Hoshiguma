@@ -39,7 +39,7 @@ async fn main() {
     let transport = SerialTransport::new(&cli.port, cli.baud).unwrap();
     let mut client = Client::<_, Request, Response>::new(transport);
 
-    const TIMEOUT: Duration = Duration::from_millis(100);
+    const TIMEOUT: Duration = Duration::from_millis(50);
 
     let info = client
         .call(Request::GetSystemInformation, TIMEOUT)
