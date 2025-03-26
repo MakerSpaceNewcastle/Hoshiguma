@@ -2,16 +2,15 @@
 #![no_main]
 
 mod devices;
+mod rpc;
 
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
-use defmt::{debug, info, unwrap, warn};
+use defmt::{debug, info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_rp::{
-    bind_interrupts,
     gpio::{Input, Level, Output, Pull},
-    uart::BufferedUart,
     watchdog::Watchdog,
 };
 use embassy_time::{Delay, Duration, Instant, Ticker, Timer};
@@ -20,7 +19,6 @@ use git_version::git_version;
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
 use portable_atomic::AtomicU64;
-use serde::{Deserialize, Serialize};
 use static_cell::StaticCell;
 
 assign_resources! {
@@ -106,10 +104,13 @@ fn main() -> ! {
 
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
+    unwrap!(spawner.spawn(devices::compressor::task(r.compressor)));
+
     // TODO
-    unwrap!(spawner.spawn(rpc_server_task(r.communication)));
     unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
+
+    unwrap!(spawner.spawn(rpc::task(r.communication)));
 
     // CPU usage reporting
     unwrap!(spawner.spawn(report_cpu_usage()));
@@ -236,54 +237,5 @@ async fn read_temperature_sensors(r: OnewireResources) {
         }
 
         ticker.next().await;
-    }
-}
-
-bind_interrupts!(struct Irqs {
-    UART0_IRQ  => embassy_rp::uart::BufferedInterruptHandler<peripherals::UART0>;
-});
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-enum Request {
-    Ping(u32),
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-enum Response {
-    Ping(u32),
-}
-
-#[embassy_executor::task]
-async fn rpc_server_task(r: ControlCommunicationResources) {
-    static TX_BUF: StaticCell<[u8; 16]> = StaticCell::new();
-    let tx_buf = &mut TX_BUF.init([0; 16])[..];
-    static RX_BUF: StaticCell<[u8; 16]> = StaticCell::new();
-    let rx_buf = &mut RX_BUF.init([0; 16])[..];
-
-    let mut config = embassy_rp::uart::Config::default();
-    config.baudrate = 115_200;
-
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
-
-    let transport = teeny_rpc::transport::embedded::EioTransport::new(uart);
-    let mut server = teeny_rpc::server::Server::<_, Request, Response>::new(transport);
-
-    loop {
-        match server
-            .wait_for_request(core::time::Duration::from_secs(5))
-            .await
-        {
-            Ok(request) => {
-                let response = match request {
-                    Request::Ping(i) => Response::Ping(i),
-                };
-                if let Err(e) = server.send_response(response).await {
-                    warn!("Server failed sending response: {}", e);
-                }
-            }
-            Err(e) => {
-                warn!("Server failed waiting for request: {}", e);
-            }
-        }
     }
 }
