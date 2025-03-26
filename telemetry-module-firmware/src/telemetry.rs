@@ -22,11 +22,11 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::TelemetryUartResources) {
-    const TX_BUFFER_SIZE: usize = 256;
+    const TX_BUFFER_SIZE: usize = 32;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buf = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
 
-    const RX_BUFFER_SIZE: usize = 32;
+    const RX_BUFFER_SIZE: usize = 256;
     static RX_BUFFER: StaticCell<[u8; RX_BUFFER_SIZE]> = StaticCell::new();
     let rx_buf = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
 
