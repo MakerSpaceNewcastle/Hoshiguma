@@ -106,7 +106,7 @@ dependencies = [
  "embedded-io",
  "embedded-io-async",
  "futures-intrusive",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -233,7 +233,7 @@ dependencies = [
  "embedded-hal 1.0.0",
  "embedded-io-async",
  "futures",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_enum",
 ]
 
@@ -450,7 +450,7 @@ dependencies = [
  "embassy-time",
  "embedded-io-async",
  "embedded-nal-async",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "managed",
  "smoltcp",
 ]
@@ -526,7 +526,7 @@ dependencies = [
  "embedded-io-async",
  "futures-sink",
  "futures-util",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -562,7 +562,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc55c748d16908a65b166d09ce976575fb8852cf60ccd06174092b41064d8f83"
 dependencies = [
  "embassy-executor",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -885,6 +885,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "heapless"
+version = "0.8.0"
+source = "git+https://github.com/rust-embedded/heapless?rev=4e31d3e604a15739d064ae729eb8fb8b5bda3b46#4e31d3e604a15739d064ae729eb8fb8b5bda3b46"
+dependencies = [
+ "defmt",
+ "hash32",
+ "serde",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
 name = "hermit-abi"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -895,8 +912,9 @@ name = "hoshiguma-protocol"
 version = "0.1.0"
 dependencies = [
  "defmt",
- "heapless",
+ "heapless 0.8.0 (git+https://github.com/rust-embedded/heapless?rev=4e31d3e604a15739d064ae729eb8fb8b5bda3b46)",
  "serde",
+ "strum",
 ]
 
 [[package]]
@@ -920,7 +938,7 @@ dependencies = [
  "embedded-graphics",
  "embedded-io-async",
  "git-version",
- "heapless",
+ "heapless 0.8.0 (git+https://github.com/rust-embedded/heapless?rev=4e31d3e604a15739d064ae729eb8fb8b5bda3b46)",
  "hoshiguma-protocol",
  "mipidsi",
  "panic-probe",
@@ -1063,7 +1081,7 @@ checksum = "9ba34dcbf61182ffa6992b5a4d9b566d5a99df127fd93f6d314213347329e92f"
 dependencies = [
  "embedded-graphics-core",
  "embedded-hal 1.0.0",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "nb 1.1.0",
 ]
 
@@ -1422,7 +1440,7 @@ dependencies = [
  "defmt",
  "embedded-io",
  "embedded-io-async",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core",
 ]
 
@@ -1484,7 +1502,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b81787e655bd59cecadc91f7b6b8651330b2be6c33246039a65e5cd6f4e0828"
 dependencies = [
  "defmt",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ryu",
  "serde",
 ]
@@ -1546,7 +1564,7 @@ dependencies = [
  "byteorder",
  "cfg-if",
  "defmt",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "managed",
 ]
 
@@ -1584,6 +1602,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
+name = "strum"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f64def088c51c9510a8579e3c5d67c65349dcf755e5479ad3d010aa6454e2c32"
+dependencies = [
+ "strum_macros",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c77a8c5abcaf0f9ce05d62342b7d298c346515365c36b673df4ebe3ced01fde8"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "rustversion",
+ "syn 2.0.99",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1612,7 +1652,7 @@ dependencies = [
  "defmt",
  "embassy-time",
  "embedded-io-async",
- "heapless",
+ "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "postcard",
  "serde",
  "thiserror 2.0.12",

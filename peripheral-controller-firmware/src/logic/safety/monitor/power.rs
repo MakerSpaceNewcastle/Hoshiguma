@@ -1,26 +1,33 @@
-use super::{MonitorStatusExt, NEW_MONITOR_STATUS};
-use crate::{changed::Changed, devices::machine_power_detector::MACHINE_POWER_CHANGED};
+use super::NEW_MONITOR_STATUS;
+use crate::{
+    changed::{checked_set, Changed},
+    devices::machine_power_detector::MACHINE_POWER_CHANGED,
+};
 use defmt::unwrap;
-use hoshiguma_protocol::peripheral_controller::types::{
-    MachinePower, Monitor, MonitorState, MonitorStatus,
+use hoshiguma_protocol::{
+    peripheral_controller::types::{MachinePower, MonitorKind},
+    types::Severity,
 };
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
-    let mut rx = unwrap!(MACHINE_POWER_CHANGED.receiver());
+    let mut power_changed_rx = unwrap!(MACHINE_POWER_CHANGED.receiver());
+    let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-    let mut status = MonitorStatus::new(Monitor::LogicPowerSupplyNotPresent);
+    let mut severity = Severity::Critical;
 
     loop {
-        let state = rx.changed().await;
+        let state = power_changed_rx.changed().await;
 
-        let state = match state {
-            MachinePower::Off => MonitorState::Critical,
-            MachinePower::On => MonitorState::Normal,
+        let new_severity = match state {
+            MachinePower::Off => Severity::Critical,
+            MachinePower::On => Severity::Normal,
         };
 
-        if status.refresh(state) == Changed::Yes {
-            NEW_MONITOR_STATUS.send(status.clone()).await;
+        if checked_set(&mut severity, new_severity) == Changed::Yes {
+            status_tx
+                .publish((MonitorKind::LogicPowerSupplyNotPresent, severity.clone()))
+                .await;
         }
     }
 }

@@ -10,7 +10,7 @@ use embassy_net::{tcp::TcpSocket, IpAddress, Ipv4Address, Stack};
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::peripheral_controller::{
-    event::{ControlEvent, Event, EventKind, ObservationEvent, ProcessEvent},
+    event::{ControlEvent, Event, EventKind, ObservationEvent},
     types::{
         AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionFan,
         FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout, MachinePower,
@@ -228,6 +228,31 @@ async fn publish_telemetry_event<
     }
 
     match event.kind {
+        EventKind::MonitorsChanged(event) => {
+            match serde_json_core::to_vec::<_, BUFFER_SIZE>(&event) {
+                Ok(data) => {
+                    client
+                        .publish(formatcp!("{ROOT}/monitors"), &data, true)
+                        .await
+                }
+                Err(e) => {
+                    warn!("Cannot JSON serialise message: {}", e);
+                    Err(())
+                }
+            }
+        }
+        EventKind::LockoutChanged(event) => {
+            client
+                .publish_telem_value_str(
+                    formatcp!("{ROOT}/lockout"),
+                    match event {
+                        MachineOperationLockout::Permitted => "permitted",
+                        MachineOperationLockout::PermittedUntilIdle => "permitted_until_idle",
+                        MachineOperationLockout::Denied => "denied",
+                    },
+                )
+                .await
+        }
         EventKind::Observation(event) => match event {
             ObservationEvent::AirAssistDemand(event) => {
                 client
@@ -350,45 +375,6 @@ async fn publish_telemetry_event<
                     .publish_telem_value_temperature(
                         formatcp!("{ROOT}/temperature/coolant_resevoir_bottom"),
                         event.coolant_resevoir_bottom,
-                    )
-                    .await
-            }
-        },
-        EventKind::Process(event) => match event {
-            ProcessEvent::Monitor(event) => match serde_json_core::to_vec::<_, BUFFER_SIZE>(&event)
-            {
-                Ok(data) => {
-                    client
-                        .publish(formatcp!("{ROOT}/monitor_change"), &data, true)
-                        .await
-                }
-                Err(e) => {
-                    warn!("Cannot JSON serialise message: {}", e);
-                    Err(())
-                }
-            },
-            ProcessEvent::Alarms(event) => {
-                match serde_json_core::to_vec::<_, BUFFER_SIZE>(&event.alarms) {
-                    Ok(data) => {
-                        client
-                            .publish(formatcp!("{ROOT}/alarms"), &data, true)
-                            .await
-                    }
-                    Err(e) => {
-                        warn!("Cannot JSON serialise message: {}", e);
-                        Err(())
-                    }
-                }
-            }
-            ProcessEvent::Lockout(event) => {
-                client
-                    .publish_telem_value_str(
-                        formatcp!("{ROOT}/lockout"),
-                        match event {
-                            MachineOperationLockout::Permitted => "permitted",
-                            MachineOperationLockout::PermittedUntilIdle => "permitted_until_idle",
-                            MachineOperationLockout::Denied => "denied",
-                        },
                     )
                     .await
             }

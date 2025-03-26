@@ -17,3 +17,11 @@ pub struct SystemInformation {
     pub last_boot_reason: BootReason,
     pub uptime_milliseconds: u64,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum Severity {
+    Normal,
+    Warn,
+    Critical,
+}

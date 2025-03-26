@@ -1,7 +1,7 @@
 use super::types::{
-    ActiveAlarms, AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading,
+    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading,
     FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
-    MachinePower, MachineRun, MonitorStatus, StatusLamp, Temperatures,
+    MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
 use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
@@ -17,8 +17,9 @@ pub struct Event {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum EventKind {
     Boot(SystemInformation),
+    MonitorsChanged(Monitors),
+    LockoutChanged(MachineOperationLockout),
     Observation(ObservationEvent),
-    Process(ProcessEvent),
     Control(ControlEvent),
 }
 
@@ -32,15 +33,6 @@ pub enum ObservationEvent {
     MachinePower(MachinePower),
     MachineRun(MachineRun),
     Temperatures(Temperatures),
-}
-
-#[allow(clippy::large_enum_variant)]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum ProcessEvent {
-    Monitor(MonitorStatus),
-    Alarms(ActiveAlarms),
-    Lockout(MachineOperationLockout),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

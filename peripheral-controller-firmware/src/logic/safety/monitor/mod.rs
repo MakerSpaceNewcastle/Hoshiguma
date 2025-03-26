@@ -3,47 +3,51 @@ pub(crate) mod coolant_level;
 pub(crate) mod power;
 pub(crate) mod temperatures;
 
-use crate::changed::Changed;
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
-use embassy_time::Instant;
-use hoshiguma_protocol::peripheral_controller::types::{Monitor, MonitorState, MonitorStatus};
+use crate::{
+    changed::{checked_set, Changed},
+    telemetry::queue_telemetry_event,
+};
+use defmt::{debug, info, unwrap};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex,
+    pubsub::{PubSubChannel, WaitResult},
+    watch::Watch,
+};
+use hoshiguma_protocol::peripheral_controller::{event::EventKind, types::Monitors};
+use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
 
-trait MonitorStateExt {
-    fn upgrade(&mut self, other: Self);
-}
+static NEW_MONITOR_STATUS: PubSubChannel<
+    CriticalSectionRawMutex,
+    (MonitorKind, Severity),
+    8,
+    1,
+    4,
+> = PubSubChannel::new();
 
-impl MonitorStateExt for MonitorState {
-    fn upgrade(&mut self, other: Self) {
-        if other > *self {
-            *self = other;
+pub(crate) static MONITORS_CHANGED: Watch<CriticalSectionRawMutex, Monitors, 2> = Watch::new();
+
+#[embassy_executor::task]
+pub(crate) async fn observation_task() {
+    let mut rx = unwrap!(NEW_MONITOR_STATUS.subscriber());
+    let tx = MONITORS_CHANGED.sender();
+
+    let mut monitors = Monitors::default();
+
+    loop {
+        match rx.next_message().await {
+            WaitResult::Lagged(n) => {
+                panic!("Monitor observer channel lagged, losing {} messages", n)
+            }
+            WaitResult::Message(new_status) => {
+                debug!("Monitor changed: {} -> {}", new_status.0, new_status.1);
+
+                let severity = monitors.get_mut(new_status.0);
+                if checked_set(severity, new_status.1) == Changed::Yes {
+                    info!("Monitors changed: {}", monitors);
+                    tx.send(monitors.clone());
+                    queue_telemetry_event(EventKind::MonitorsChanged(monitors.clone())).await;
+                }
+            }
         }
     }
 }
-
-trait MonitorStatusExt {
-    fn new(monitor: Monitor) -> Self;
-    fn refresh(&mut self, state: MonitorState) -> Changed;
-}
-
-impl MonitorStatusExt for MonitorStatus {
-    fn new(monitor: Monitor) -> Self {
-        Self {
-            since_millis: Instant::now().as_millis(),
-            monitor,
-            state: MonitorState::Normal,
-        }
-    }
-
-    fn refresh(&mut self, state: MonitorState) -> Changed {
-        if self.state == state {
-            Changed::No
-        } else {
-            self.since_millis = Instant::now().as_millis();
-            self.state = state;
-            Changed::Yes
-        }
-    }
-}
-
-pub(crate) static NEW_MONITOR_STATUS: Channel<CriticalSectionRawMutex, MonitorStatus, 16> =
-    Channel::new();

@@ -167,7 +167,7 @@ fn main() -> ! {
             unwrap!(spawner.spawn(logic::safety::monitor::chassis_intrusion::task()));
 
             // State monitor observation and alarm tasks
-            unwrap!(spawner.spawn(logic::safety::alarms::monitor_observation_task()));
+            unwrap!(spawner.spawn(logic::safety::monitor::observation_task()));
             unwrap!(spawner.spawn(logic::safety::lockout::alarm_evaluation_task()));
 
             // Machine operation permission control tasks

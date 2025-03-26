@@ -1,7 +1,7 @@
-mod alarm_list;
 mod auto_summary;
 mod device;
 mod inputs;
+mod monitors;
 mod network;
 mod outputs;
 mod summary;
@@ -30,7 +30,7 @@ pub(super) trait DrawableScreen {
 pub(super) enum Screen {
     AutoSummary,
     Summary,
-    AlarmList,
+    Monitors,
     Temperatures,
     Inputs,
     Outputs,
@@ -43,7 +43,7 @@ impl Screen {
         match self {
             Screen::AutoSummary => "Home",
             Screen::Summary => "Summary",
-            Screen::AlarmList => "Alarms",
+            Screen::Monitors => "Monitors",
             Screen::Temperatures => "Temperatures",
             Screen::Inputs => "Inputs",
             Screen::Outputs => "Outputs",
@@ -56,7 +56,7 @@ impl Screen {
 pub(super) const SCREENS: [Screen; 8] = [
     Screen::AutoSummary,
     Screen::Summary,
-    Screen::AlarmList,
+    Screen::Monitors,
     Screen::Temperatures,
     Screen::Inputs,
     Screen::Outputs,
@@ -114,7 +114,7 @@ impl DrawableScreen for ScreenSelector {
                 self::auto_summary::AutoSummary::new(state).draw(target, draw_type)
             }
             Screen::Summary => self::summary::Summary::new(state).draw(target, draw_type),
-            Screen::AlarmList => self::alarm_list::AlarmList::new(state).draw(target, draw_type),
+            Screen::Monitors => self::monitors::Monitors::new(state).draw(target, draw_type),
             Screen::Temperatures => {
                 self::temperatures::Temperatures::new(state).draw(target, draw_type)
             }

@@ -1,17 +1,19 @@
-use super::alarms::ACTIVE_ALARMS_CHANGED;
+use super::monitor::MONITORS_CHANGED;
 use crate::{
     devices::{
         laser_enable::LASER_ENABLE, machine_enable::MACHINE_ENABLE,
         machine_run_detector::MACHINE_RUNNING_CHANGED,
     },
-    logic::safety::alarms::ActiveAlarmsExt,
     telemetry::queue_telemetry_event,
 };
 use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::peripheral_controller::{
-    event::{EventKind, ProcessEvent},
-    types::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun, MonitorState},
+use hoshiguma_protocol::{
+    peripheral_controller::{
+        event::EventKind,
+        types::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun},
+    },
+    types::Severity,
 };
 
 pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
@@ -23,38 +25,37 @@ pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
 #[embassy_executor::task]
 pub(crate) async fn alarm_evaluation_task() {
     let mut running_rx = MACHINE_RUNNING_CHANGED.receiver().unwrap();
-    let mut active_alarms_rx = ACTIVE_ALARMS_CHANGED.receiver().unwrap();
+    let mut monitors_rx = MONITORS_CHANGED.receiver().unwrap();
 
     let machine_lockout_tx = MACHINE_LOCKOUT_CHANGED.sender();
 
     let mut is_running = MachineRun::Idle;
-    let mut alarm_state = MonitorState::Normal;
+    let mut severity = Severity::Critical;
 
     loop {
         use embassy_futures::select::{select, Either};
 
-        match select(running_rx.changed(), active_alarms_rx.changed()).await {
+        match select(running_rx.changed(), monitors_rx.changed()).await {
             Either::First(running) => {
                 is_running = running;
             }
-            Either::Second(alarms) => {
-                alarm_state = alarms.overall_state();
+            Either::Second(monitors) => {
+                severity = monitors.severity();
             }
         }
 
-        let lockout = match alarm_state {
-            MonitorState::Normal => MachineOperationLockout::Permitted,
-            MonitorState::Warn => match is_running {
+        let lockout = match severity {
+            Severity::Normal => MachineOperationLockout::Permitted,
+            Severity::Warn => match is_running {
                 MachineRun::Idle => MachineOperationLockout::Denied,
                 MachineRun::Running => MachineOperationLockout::PermittedUntilIdle,
             },
-            MonitorState::Critical => MachineOperationLockout::Denied,
+            Severity::Critical => MachineOperationLockout::Denied,
         };
         info!("Machine operation lockout: {}", lockout);
 
-        queue_telemetry_event(EventKind::Process(ProcessEvent::Lockout(lockout.clone()))).await;
-
-        machine_lockout_tx.send(lockout);
+        machine_lockout_tx.send(lockout.clone());
+        queue_telemetry_event(EventKind::LockoutChanged(lockout)).await;
     }
 }
 
