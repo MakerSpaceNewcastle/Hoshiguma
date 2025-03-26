@@ -15,6 +15,7 @@ use embassy_rp::{
 };
 use embassy_time::{Delay, Duration, Instant, Ticker, Timer};
 use git_version::git_version;
+use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
@@ -176,6 +177,26 @@ async fn report_cpu_usage() {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
+}
+
+fn system_information() -> SystemInformation {
+    SystemInformation {
+        git_revision: git_version::git_version!().try_into().unwrap(),
+        last_boot_reason: boot_reason(),
+        uptime_milliseconds: Instant::now().as_millis(),
+    }
+}
+
+fn boot_reason() -> BootReason {
+    let reason = embassy_rp::pac::WATCHDOG.reason().read();
+
+    if reason.force() {
+        BootReason::WatchdogForced
+    } else if reason.timer() {
+        BootReason::WatchdogTimeout
+    } else {
+        BootReason::Normal
+    }
 }
 
 // TODO

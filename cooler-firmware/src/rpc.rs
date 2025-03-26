@@ -5,7 +5,16 @@ use embassy_rp::{
     peripherals::UART0,
     uart::{BufferedInterruptHandler, BufferedUart},
 };
-use hoshiguma_protocol::cooler::rpc::{Request, Response};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_time::Instant;
+use hoshiguma_protocol::{
+    cooler::{
+        event::{Event, EventKind},
+        rpc::{Request, Response},
+        SERIAL_BAUD,
+    },
+    event_queue::EventQueue,
+};
 use static_cell::StaticCell;
 
 bind_interrupts!(struct Irqs {
@@ -23,12 +32,20 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
     let rx_buffer = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
 
     let mut config = embassy_rp::uart::Config::default();
-    config.baudrate = 115_200;
+    config.baudrate = SERIAL_BAUD;
 
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config);
+    let uart = BufferedUart::new(
+        r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config,
+    );
 
     let transport = teeny_rpc::transport::embedded::EioTransport::new(uart);
     let mut server = teeny_rpc::server::Server::<_, Request, Response>::new(transport);
+
+    // Queue to hold events before they are requested
+    let mut event_queue = EventQueue::<_, 32>::default();
+
+    // Report boot
+    report_event(EventKind::Boot(crate::system_information())).await;
 
     loop {
         match server
@@ -48,4 +65,19 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
             }
         }
     }
+}
+
+static NEW_EVENT: Channel<CriticalSectionRawMutex, Event, 8> = Channel::new();
+
+/// Queues a telemetry event to be retrieved via RPC.
+///
+/// # Arguments
+///
+/// * `event` - The kind of event to be queued.
+pub(crate) async fn report_event(event: EventKind) {
+    let event = Event {
+        timestamp_milliseconds: Instant::now().as_millis(),
+        kind: event,
+    };
+    NEW_EVENT.send(event).await;
 }

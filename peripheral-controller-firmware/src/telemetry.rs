@@ -35,7 +35,9 @@ pub(super) async fn task(r: TelemetryResources) {
     let mut config = UartConfig::default();
     config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
 
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config);
+    let uart = BufferedUart::new(
+        r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config,
+    );
 
     // Setup RPC server
     let transport = EioTransport::new(uart);
