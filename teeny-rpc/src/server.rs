@@ -101,7 +101,7 @@ where
                         return Ok(());
                     }
                     Err(crate::Error::Timeout) => {
-                        warn!("Timeout waiting for ack for request {}", seq);
+                        warn!("Timeout waiting for ack for response {}", seq);
                         continue 'tx_attempt;
                     }
                     Err(e) => {
