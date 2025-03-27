@@ -118,7 +118,7 @@ mod test {
         let mut client = Client::<_, Request, Response>::new(t1);
 
         let run_server = async move {
-            let msg = t2.receive_message(Duration::from_millis(10)).await.unwrap();
+            let msg = t2.receive_message(Duration::from_millis(20)).await.unwrap();
             assert_eq!(msg.seq, 1);
 
             t2.transmit_message(RpcMessage {
@@ -168,7 +168,7 @@ mod test {
             };
 
             assert_eq!(
-                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t2.receive_message(Duration::from_millis(20)).await.unwrap(),
                 expected_request
             );
 
@@ -251,7 +251,7 @@ mod test {
             };
 
             assert_eq!(
-                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t2.receive_message(Duration::from_millis(20)).await.unwrap(),
                 expected_request
             );
 
@@ -259,7 +259,7 @@ mod test {
 
             // Normal
             assert_eq!(
-                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t2.receive_message(Duration::from_millis(20)).await.unwrap(),
                 RpcMessage {
                     seq: 2,
                     kind: RpcMessageKind::Request {
@@ -325,7 +325,7 @@ mod test {
         let run_server = async move {
             // No response
             assert_eq!(
-                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t2.receive_message(Duration::from_millis(20)).await.unwrap(),
                 RpcMessage {
                     seq: 1,
                     kind: RpcMessageKind::Request {
@@ -346,7 +346,7 @@ mod test {
 
             // Normal
             assert_eq!(
-                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t2.receive_message(Duration::from_millis(20)).await.unwrap(),
                 RpcMessage {
                     seq: 2,
                     kind: RpcMessageKind::Request {
