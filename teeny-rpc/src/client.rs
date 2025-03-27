@@ -37,6 +37,9 @@ where
     }
 
     pub async fn call(&mut self, request: REQ, timeout: Duration) -> Result<RESP, crate::Error> {
+        let flushed_bytes = self.transport.flush(Duration::from_millis(5)).await?;
+        debug!("Flushed {} bytes prior to request", flushed_bytes);
+
         self.seq = self.seq.wrapping_add(1);
 
         let request = RpcMessage {

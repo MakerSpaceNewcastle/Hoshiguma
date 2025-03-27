@@ -2,6 +2,7 @@ use core::time::Duration;
 
 #[allow(async_fn_in_trait)]
 pub trait Transport<M> {
+    async fn flush(&mut self, timeout: Duration) -> Result<usize, crate::Error>;
     async fn receive_message(&mut self, timeout: Duration) -> Result<M, crate::Error>;
     async fn transmit_message(&mut self, msg: M) -> Result<(), crate::Error>;
 }
