@@ -41,3 +41,18 @@ pub enum CoolantPump {
     Idle,
     Run,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum HeatExchangeFluidLevel {
+    Normal,
+    Low,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum HeaderTankCoolantLevel {
+    Empty,
+    Normal,
+    Full,
+}

@@ -34,7 +34,7 @@ assign_resources! {
         pwm: PWM_SLICE7,
         pin: IN_0,
     },
-    resevoir_level: ResevoirLevelSensorResources {
+    resevoir_level: HeatExchangerLevelSensorResources {
         low: IN_1,
     },
     header_tank_level: HeaderTankLevelSensorResources {
