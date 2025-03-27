@@ -6,14 +6,14 @@ mod rpc;
 
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
-use defmt::{debug, info, unwrap};
+use defmt::{info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
     watchdog::Watchdog,
 };
-use embassy_time::{Delay, Duration, Instant, Ticker, Timer};
+use embassy_time::{Duration, Instant, Ticker, Timer};
 use git_version::git_version;
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
