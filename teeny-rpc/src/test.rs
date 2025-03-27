@@ -23,7 +23,7 @@ pub(crate) enum Response {
 
 #[tokio::test]
 async fn basic_rpc_transaction() {
-    let (t1, t2) = TokioChannelTransport::new_pair(8);
+    let (t1, t2) = TokioChannelTransport::new_pair(256);
 
     let mut client = Client::<_, Request, Response>::new(t1);
     let mut server = Server::<_, Request, Response>::new(t2);
