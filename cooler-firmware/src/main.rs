@@ -110,9 +110,9 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::coolant_pump::task(r.coolant_pump)));
     unwrap!(spawner.spawn(devices::radiator_fan::task(r.radiator_fan)));
     unwrap!(spawner.spawn(devices::stirrer::task(r.stirrer)));
+    unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
 
     // TODO
-    unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
 
     // RPC/telemetry/control
@@ -219,51 +219,6 @@ async fn measure_dat_pwm(r: FlowSensorResources) {
     loop {
         info!("Input frequency: {} Hz", pwm.counter());
         pwm.set_counter(0);
-        ticker.next().await;
-    }
-}
-
-// TODO
-#[embassy_executor::task]
-async fn read_temperature_sensors(r: OnewireResources) {
-    let mut bus = pico_plc_bsp::onewire::new(r.pin).unwrap();
-
-    for device_address in bus.devices(false, &mut Delay) {
-        let device_address = device_address.unwrap();
-        info!("Found one wire device at address: {}", device_address.0);
-    }
-
-    let mut ticker = Ticker::every(Duration::from_secs(5));
-
-    loop {
-        ds18b20::start_simultaneous_temp_measurement(&mut bus, &mut Delay).unwrap();
-
-        Timer::after_millis(ds18b20::Resolution::Bits12.max_measurement_time_millis() as u64).await;
-
-        let mut search_state = None;
-        while let Some((device_address, state)) = bus
-            .device_search(search_state.as_ref(), false, &mut Delay)
-            .unwrap()
-        {
-            search_state = Some(state);
-
-            if device_address.family_code() == ds18b20::FAMILY_CODE {
-                debug!("Found DS18B20 at address: {}", device_address.0);
-
-                let sensor = ds18b20::Ds18b20::new::<()>(device_address).unwrap();
-                let sensor_data = sensor.read_data(&mut bus, &mut Delay).unwrap();
-                info!(
-                    "DS18B20 {} is {}°C",
-                    device_address.0, sensor_data.temperature
-                );
-            } else {
-                info!(
-                    "Found unknown one wire device at address: {}",
-                    device_address.0
-                );
-            }
-        }
-
         ticker.next().await;
     }
 }

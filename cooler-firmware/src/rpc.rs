@@ -1,5 +1,6 @@
 use crate::ControlCommunicationResources;
 use defmt::warn;
+use embassy_futures::select::{select, Either};
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART0,
@@ -48,20 +49,61 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
     report_event(EventKind::Boot(crate::system_information())).await;
 
     loop {
-        match server
-            .wait_for_request(core::time::Duration::from_secs(5))
-            .await
+        match select(
+            server.wait_for_request(core::time::Duration::from_secs(5)),
+            NEW_EVENT.receive(),
+        )
+        .await
         {
-            Ok(request) => {
-                // let response = match request {
-                //     Request::Ping(i) => Response::Ping(i),
-                // };
-                // if let Err(e) = server.send_response(response).await {
-                //     warn!("Server failed sending response: {}", e);
-                // }
-            }
-            Err(e) => {
+            Either::First(Ok(request)) => match request {
+                Request::Ping(i) => {
+                    if let Err(e) = server.send_response(Response::Ping(i)).await {
+                        warn!("Server failed sending response: {}", e);
+                    }
+                }
+                Request::GetSystemInformation => {
+                    if let Err(e) = server
+                        .send_response(Response::GetSystemInformation(crate::system_information()))
+                        .await
+                    {
+                        warn!("Server failed sending response: {}", e);
+                    }
+                }
+                Request::GetEventCount => {
+                    if let Err(e) = server
+                        .send_response(Response::GetEventCount(event_queue.len()))
+                        .await
+                    {
+                        warn!("Server failed sending response: {}", e);
+                    }
+                }
+                Request::GetEventStatistics => {
+                    if let Err(e) = server
+                        .send_response(Response::GetEventStatistics(event_queue.statistics()))
+                        .await
+                    {
+                        warn!("Server failed sending response: {}", e);
+                    }
+                }
+                Request::GetOldestEvent => {
+                    let transaction = event_queue.ret_request();
+                    let event = event_queue.ret_get(&transaction);
+
+                    match server.send_response(Response::GetOldestEvent(event)).await {
+                        Ok(_) => {
+                            event_queue.ret_commit(transaction);
+                        }
+                        Err(e) => {
+                            warn!("Server failed sending response: {}", e);
+                        }
+                    }
+                }
+            },
+            Either::First(Err(e)) => {
                 warn!("Server failed waiting for request: {}", e);
+            }
+            Either::Second(event) => {
+                event_queue.push(event);
             }
         }
     }
