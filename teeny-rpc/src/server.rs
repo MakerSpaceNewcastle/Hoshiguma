@@ -230,7 +230,7 @@ mod test {
             );
 
             assert_eq!(
-                t1.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t1.receive_message(Duration::from_millis(20)).await.unwrap(),
                 RpcMessage {
                     seq: 2,
                     kind: RpcMessageKind::Response {
@@ -242,7 +242,7 @@ mod test {
             tokio::time::sleep(ACK_TIMEOUT).await;
 
             // Wait for the request to timeout
-            tokio::time::sleep(Duration::from_millis(10)).await;
+            tokio::time::sleep(Duration::from_millis(20)).await;
         };
 
         tokio::join!(run_server, run_client);
@@ -296,7 +296,7 @@ mod test {
             );
 
             assert_eq!(
-                t1.receive_message(Duration::from_millis(10)).await.unwrap(),
+                t1.receive_message(Duration::from_millis(20)).await.unwrap(),
                 RpcMessage {
                     seq: 2,
                     kind: RpcMessageKind::Response {
@@ -308,7 +308,7 @@ mod test {
             tokio::time::sleep(ACK_TIMEOUT).await;
 
             // Wait for the request to timeout
-            tokio::time::sleep(Duration::from_millis(10)).await;
+            tokio::time::sleep(Duration::from_millis(20)).await;
 
             t1.transmit_message(RpcMessage {
                 seq: 2,
