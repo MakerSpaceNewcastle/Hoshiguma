@@ -45,7 +45,7 @@ assign_resources! {
         relay: RELAY_0,
     },
     stirrer: StirrerResources {
-        stirrer: RELAY_1,
+        relay: RELAY_1,
     },
     radiator_fan: RadiatorFanResources {
         relay: RELAY_2,
@@ -107,6 +107,9 @@ fn main() -> ! {
 
     // Devices
     unwrap!(spawner.spawn(devices::compressor::task(r.compressor)));
+    unwrap!(spawner.spawn(devices::coolant_pump::task(r.coolant_pump)));
+    unwrap!(spawner.spawn(devices::radiator_fan::task(r.radiator_fan)));
+    unwrap!(spawner.spawn(devices::stirrer::task(r.stirrer)));
 
     // TODO
     unwrap!(spawner.spawn(read_temperature_sensors(r.onewire)));
