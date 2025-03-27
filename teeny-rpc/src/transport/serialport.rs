@@ -1,7 +1,7 @@
 use crate::error;
 use core::time::Duration;
 use serde::{de::DeserializeOwned, Serialize};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, ReadHalf, WriteHalf};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader, ReadHalf, WriteHalf};
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 pub struct SerialTransport {
@@ -26,6 +26,26 @@ impl SerialTransport {
 }
 
 impl<M: Serialize + DeserializeOwned> super::Transport<M> for SerialTransport {
+    async fn flush(&mut self, timeout: Duration) -> Result<usize, crate::Error> {
+        let mut count: usize = 0;
+
+        loop {
+            match tokio::time::timeout(timeout, self.reader.read_u8()).await {
+                Ok(Ok(_)) => {
+                    count = count.saturating_add(1);
+                }
+                Ok(Err(_)) => {
+                    return Err(crate::Error::TransportError);
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+
+        Ok(count)
+    }
+
     async fn receive_message(&mut self, timeout: Duration) -> Result<M, crate::Error> {
         let mut buffer = Vec::new();
 

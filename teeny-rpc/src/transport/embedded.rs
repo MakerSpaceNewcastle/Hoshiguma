@@ -15,6 +15,34 @@ impl<T: Read + Write> EioTransport<T> {
 }
 
 impl<T: Read + Write, M: Serialize + DeserializeOwned> super::Transport<M> for EioTransport<T> {
+    async fn flush(&mut self, timeout: Duration) -> Result<usize, crate::Error> {
+        let mut count: usize = 0;
+
+        loop {
+            let mut b = [0u8];
+
+            match embassy_time::with_timeout(
+                embassy_time::Duration::from_micros(timeout.as_micros() as u64),
+                self.port.read(&mut b),
+            )
+            .await
+            {
+                Ok(Ok(_)) => {
+                    count = count.saturating_add(1);
+                }
+                Ok(Err(_)) => {
+                    warn!("UART read fail");
+                    return Err(crate::Error::TransportError);
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+
+        Ok(count)
+    }
+
     async fn receive_message(&mut self, timeout: Duration) -> Result<M, crate::Error> {
         let mut buffer: Vec<u8, 512> = Vec::new();
 

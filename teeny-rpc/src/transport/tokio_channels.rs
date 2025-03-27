@@ -25,9 +25,41 @@ impl<M> TokioChannelTransport<M> {
         };
         (transport_1, transport_2)
     }
+
+    pub(crate) async fn transmit_raw(&mut self, data: &[u8]) -> Result<(), crate::Error> {
+        for b in data {
+            self.tx
+                .send(*b)
+                .await
+                .map_err(|_| crate::Error::TransportError)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl<M: Serialize + DeserializeOwned> super::Transport<M> for TokioChannelTransport<M> {
+    async fn flush(&mut self, timeout: Duration) -> Result<usize, crate::Error> {
+        let mut count: usize = 0;
+
+        loop {
+            match tokio::time::timeout(timeout, self.rx.recv()).await {
+                Ok(Some(_)) => {
+                    count = count.saturating_add(1);
+                }
+                Ok(None) => {
+                    warn!("Channel closed");
+                    return Err(crate::Error::TransportError);
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+
+        Ok(count)
+    }
+
     async fn receive_message(&mut self, timeout: Duration) -> Result<M, crate::Error> {
         let mut buffer = Vec::new();
 
@@ -57,7 +89,7 @@ impl<M: Serialize + DeserializeOwned> super::Transport<M> for TokioChannelTransp
                     }
                 }
                 Ok(None) => {
-                    error!("Channel closed");
+                    warn!("Channel closed");
                     return Err(crate::Error::TransportError);
                 }
                 Err(_) => {
@@ -76,13 +108,6 @@ impl<M: Serialize + DeserializeOwned> super::Transport<M> for TokioChannelTransp
             crate::Error::SerializeError
         })?;
 
-        for b in buffer {
-            self.tx
-                .send(b)
-                .await
-                .map_err(|_| crate::Error::TransportError)?;
-        }
-
-        Ok(())
+        self.transmit_raw(&buffer).await
     }
 }
