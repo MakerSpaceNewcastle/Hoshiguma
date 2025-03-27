@@ -1,35 +1,88 @@
-use core::time::Duration;
+use crate::{error, trace, warn};
+use core::{marker::PhantomData, time::Duration};
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 pub struct TokioChannelTransport<M> {
-    tx: Sender<M>,
-    rx: Receiver<M>,
+    tx: Sender<u8>,
+    rx: Receiver<u8>,
+    _msg_type: PhantomData<M>,
 }
 
 impl<M> TokioChannelTransport<M> {
     pub fn new_pair(capacity: usize) -> (Self, Self) {
-        let (tx1, rx1) = channel::<M>(capacity);
-        let (tx2, rx2) = channel::<M>(capacity);
-        let transport_1 = Self { tx: tx1, rx: rx2 };
-        let transport_2 = Self { tx: tx2, rx: rx1 };
+        let (tx1, rx1) = channel::<u8>(capacity);
+        let (tx2, rx2) = channel::<u8>(capacity);
+        let transport_1 = Self {
+            tx: tx1,
+            rx: rx2,
+            _msg_type: PhantomData,
+        };
+        let transport_2 = Self {
+            tx: tx2,
+            rx: rx1,
+            _msg_type: PhantomData,
+        };
         (transport_1, transport_2)
     }
 }
 
 impl<M: Serialize + DeserializeOwned> super::Transport<M> for TokioChannelTransport<M> {
     async fn receive_message(&mut self, timeout: Duration) -> Result<M, crate::Error> {
-        match tokio::time::timeout(timeout, self.rx.recv()).await {
-            Ok(Some(msg)) => Ok(msg),
-            Ok(None) => Err(crate::Error::TransportError),
-            Err(_) => Err(crate::Error::Timeout),
+        let mut buffer = Vec::new();
+
+        let start = tokio::time::Instant::now();
+
+        loop {
+            match tokio::time::timeout(Duration::from_millis(10), self.rx.recv()).await {
+                Ok(Some(b)) => {
+                    buffer.push(b);
+
+                    if buffer.last() == Some(&0u8) {
+                        match postcard::from_bytes_cobs::<M>(buffer.as_mut_slice()) {
+                            Ok(msg) => {
+                                trace!("Received message");
+                                buffer.clear();
+                                return Ok(msg);
+                            }
+                            Err(_) => {
+                                warn!(
+                                    "Failed to decode message with {} bytes in buffer",
+                                    buffer.len(),
+                                );
+                                buffer.clear();
+                                return Err(crate::Error::TransportError);
+                            }
+                        }
+                    }
+                }
+                Ok(None) => {
+                    error!("Channel closed");
+                    return Err(crate::Error::TransportError);
+                }
+                Err(_) => {
+                    let elapsed = tokio::time::Instant::now() - start;
+                    if elapsed.as_micros() >= timeout.as_micros() {
+                        return Err(crate::Error::Timeout);
+                    }
+                }
+            }
         }
     }
 
     async fn transmit_message(&mut self, msg: M) -> Result<(), crate::Error> {
-        self.tx
-            .send(msg)
-            .await
-            .map_err(|_| crate::Error::TransportError)
+        let buffer = postcard::to_stdvec_cobs(&msg).map_err(|e| {
+            error!("Serialize error: {e}");
+            crate::Error::SerializeError
+        })?;
+
+        for b in buffer {
+            self.tx
+                .send(b)
+                .await
+                .map_err(|_| crate::Error::TransportError)?;
+        }
+
+        Ok(())
     }
 }

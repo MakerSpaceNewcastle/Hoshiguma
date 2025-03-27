@@ -113,7 +113,7 @@ mod test {
 
     #[tokio::test]
     async fn basic() {
-        let (t1, mut t2) = TokioChannelTransport::new_pair(8);
+        let (t1, mut t2) = TokioChannelTransport::new_pair(256);
 
         let mut client = Client::<_, Request, Response>::new(t1);
 
@@ -155,7 +155,7 @@ mod test {
 
     #[tokio::test]
     async fn no_ack() {
-        let (t1, mut t2) = TokioChannelTransport::new_pair(8);
+        let (t1, mut t2) = TokioChannelTransport::new_pair(256);
 
         let mut client = Client::<_, Request, Response>::new(t1);
 
@@ -193,7 +193,7 @@ mod test {
 
     #[tokio::test]
     async fn no_response() {
-        let (t1, mut t2) = TokioChannelTransport::new_pair(8);
+        let (t1, mut t2) = TokioChannelTransport::new_pair(256);
 
         let mut client = Client::<_, Request, Response>::new(t1);
 
@@ -237,7 +237,7 @@ mod test {
 
     #[tokio::test]
     async fn recover_after_no_ack() {
-        let (t1, mut t2) = TokioChannelTransport::new_pair(8);
+        let (t1, mut t2) = TokioChannelTransport::new_pair(256);
 
         let mut client = Client::<_, Request, Response>::new(t1);
 
@@ -318,7 +318,7 @@ mod test {
 
     #[tokio::test]
     async fn recover_after_no_response() {
-        let (t1, mut t2) = TokioChannelTransport::new_pair(8);
+        let (t1, mut t2) = TokioChannelTransport::new_pair(256);
 
         let mut client = Client::<_, Request, Response>::new(t1);
 
