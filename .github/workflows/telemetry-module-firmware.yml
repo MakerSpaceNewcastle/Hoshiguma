@@ -9,12 +9,14 @@ on:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'devenv.*'
       - 'protocol/**'
+      - 'teeny-rpc/**'
       - 'telemetry-module-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'devenv.*'
       - 'protocol/**'
+      - 'teeny-rpc/**'
       - 'telemetry-module-firmware/**'
 
 jobs:
