@@ -9,12 +9,14 @@ on:
       - '.github/workflows/diagnostic-cli.yml'
       - 'devenv.*'
       - 'protocol/**'
+      - 'teeny-rpc/**'
       - 'diagnostic-cli/**'
   pull_request:
     paths:
       - '.github/workflows/diagnostic-cli.yml'
       - 'devenv.*'
       - 'protocol/**'
+      - 'teeny-rpc/**'
       - 'diagnostic-cli/**'
 
 jobs:
