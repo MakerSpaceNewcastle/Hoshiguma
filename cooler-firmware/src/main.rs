@@ -2,6 +2,7 @@
 #![no_main]
 
 mod devices;
+mod polled_input;
 mod rpc;
 
 use assign_resources::assign_resources;

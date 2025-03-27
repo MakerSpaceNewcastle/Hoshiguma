@@ -2,7 +2,6 @@ use crate::{rpc::report_event, OnewireResources};
 use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
 use hoshiguma_protocol::{
     cooler::{
@@ -12,33 +11,6 @@ use hoshiguma_protocol::{
     types::TemperatureReading,
 };
 use one_wire_bus::{Address, OneWire};
-
-pub(crate) trait TemperaturesExt {
-    fn overall_result(&self) -> Result<(), ()>;
-}
-
-impl TemperaturesExt for Temperatures {
-    fn overall_result(&self) -> Result<(), ()> {
-        let sensors = [
-            &self.onboard,
-            &self.coolant_flow,
-            &self.coolant_mid,
-            &self.coolant_return,
-            &self.heat_exchange_fluid,
-            &self.heat_exchanger_loop,
-        ];
-
-        let any_error = sensors.iter().any(|i| i.is_err());
-
-        if any_error {
-            Err(())
-        } else {
-            Ok(())
-        }
-    }
-}
-
-pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 5> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: OnewireResources) {
@@ -54,8 +26,6 @@ pub(crate) async fn task(r: OnewireResources) {
     }
 
     let mut ticker = Ticker::every(Duration::from_secs(10));
-
-    let tx = TEMPERATURES_READ.sender();
 
     let onboard_sensor = Ds18b20::new::<()>(Address(17628307574231425320)).unwrap();
     let coolant_flow_sensor = Ds18b20::new::<()>(Address(8087587398082553896)).unwrap();
@@ -87,11 +57,9 @@ pub(crate) async fn task(r: OnewireResources) {
 
         // Telemetry reporting
         report_event(EventKind::Observation(ObservationEvent::Temperatures(
-            readings.clone(),
+            readings,
         )))
         .await;
-
-        tx.send(readings);
 
         ticker.next().await;
     }
