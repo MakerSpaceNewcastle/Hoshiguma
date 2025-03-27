@@ -35,7 +35,7 @@ assign_resources! {
         pwm: PWM_SLICE7,
         pin: IN_0,
     },
-    resevoir_level: HeatExchangerLevelSensorResources {
+    heat_exchanger_level: HeatExchangerLevelSensorResources {
         low: IN_1,
     },
     header_tank_level: HeaderTankLevelSensorResources {
@@ -112,6 +112,9 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::radiator_fan::task(r.radiator_fan)));
     unwrap!(spawner.spawn(devices::stirrer::task(r.stirrer)));
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
+    unwrap!(spawner.spawn(devices::heat_exchanger_level_sensor::task(
+        r.heat_exchanger_level
+    )));
 
     // TODO
     unwrap!(spawner.spawn(measure_dat_pwm(r.flow_sensor)));
