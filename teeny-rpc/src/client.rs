@@ -1,6 +1,4 @@
-use crate::{
-    debug, trace, transport::Transport, warn, RpcMessage, RpcMessageKind, TRANSMIT_ATTEMPTS,
-};
+use crate::{debug, trace, transport::Transport, warn, RpcMessage, RpcMessageKind};
 use core::{marker::PhantomData, time::Duration};
 use serde::{Deserialize, Serialize};
 
@@ -47,46 +45,33 @@ where
         };
         debug!("New request {}", request.seq);
 
-        let mut got_ack = false;
-        'tx_attempt: for attempt in 0..TRANSMIT_ATTEMPTS {
-            // Send the request
-            trace!(
-                "Sending request {}, attempt {} of {}",
-                request.seq,
-                attempt + 1,
-                TRANSMIT_ATTEMPTS
-            );
-            self.transport.transmit_message(request.clone()).await?;
+        // Send the request
+        trace!("Sending request {}", request.seq,);
+        self.transport.transmit_message(request.clone()).await?;
 
-            // Receive the request acknowledgement
-            match self.transport.receive_message(crate::ACK_TIMEOUT).await {
-                Ok(ack) => {
-                    if ack.kind != RpcMessageKind::RequestAck {
-                        return Err(crate::Error::IncorrectMessageType);
-                    }
-                    if ack.seq != self.seq {
-                        return Err(crate::Error::IncorrectSequenceNumber {
-                            expected: self.seq,
-                            actual: ack.seq,
-                        });
-                    }
+        // Receive the request acknowledgement
+        match self.transport.receive_message(crate::ACK_TIMEOUT).await {
+            Ok(ack) => {
+                if ack.kind != RpcMessageKind::RequestAck {
+                    return Err(crate::Error::IncorrectMessageType);
+                }
+                if ack.seq != self.seq {
+                    return Err(crate::Error::IncorrectSequenceNumber {
+                        expected: self.seq,
+                        actual: ack.seq,
+                    });
+                }
 
-                    trace!("Received ack for request {}", request.seq);
-                    got_ack = true;
-                    break 'tx_attempt;
-                }
-                Err(crate::Error::Timeout) => {
-                    warn!("Timeout waiting for ack for request {}", request.seq);
-                    continue 'tx_attempt;
-                }
-                Err(e) => {
-                    return Err(e);
-                }
+                trace!("Received ack for request {}", request.seq);
             }
-        }
-
-        if !got_ack {
-            return Err(crate::Error::NoAck);
+            Err(crate::Error::Timeout) => {
+                warn!("Timeout waiting for ack for request {}", request.seq);
+                return Err(crate::Error::NoAck);
+            }
+            Err(e) => {
+                warn!("Error waiting for ack for request {}: {}", request.seq, e);
+                return Err(crate::Error::NoAck);
+            }
         }
 
         // Receive the response
@@ -122,7 +107,7 @@ mod test {
         client::Client,
         test::{Request, Response},
         transport::{tokio_channels::TokioChannelTransport, Transport},
-        RpcMessage, RpcMessageKind, ACK_TIMEOUT, TRANSMIT_ATTEMPTS,
+        RpcMessage, RpcMessageKind, ACK_TIMEOUT,
     };
     use core::time::Duration;
 
@@ -134,53 +119,6 @@ mod test {
 
         let run_server = async move {
             let msg = t2.receive_message(Duration::from_millis(10)).await.unwrap();
-            assert_eq!(msg.seq, 1);
-
-            t2.transmit_message(RpcMessage {
-                seq: 1,
-                kind: RpcMessageKind::RequestAck,
-            })
-            .await
-            .unwrap();
-
-            t2.transmit_message(RpcMessage {
-                seq: 1,
-                kind: RpcMessageKind::Response {
-                    payload: Response::Ping(42),
-                },
-            })
-            .await
-            .unwrap();
-
-            let msg = t2.receive_message(Duration::ZERO).await.unwrap();
-            assert_eq!(msg.seq, 1);
-            assert_eq!(msg.kind, RpcMessageKind::ResponseAck);
-        };
-
-        let run_client = async move {
-            let response = client
-                .call(Request::Ping(42), Duration::from_millis(500))
-                .await
-                .unwrap();
-            assert_eq!(response, Response::Ping(42));
-        };
-
-        tokio::join!(run_server, run_client);
-    }
-
-    #[tokio::test]
-    async fn timeout_retry() {
-        let (t1, mut t2) = TokioChannelTransport::new_pair(8);
-
-        let mut client = Client::<_, Request, Response>::new(t1);
-
-        let run_server = async move {
-            let msg = t2.receive_message(Duration::from_millis(10)).await.unwrap();
-            assert_eq!(msg.seq, 1);
-
-            tokio::time::sleep(ACK_TIMEOUT + Duration::from_millis(10)).await;
-
-            let msg = t2.receive_message(Duration::ZERO).await.unwrap();
             assert_eq!(msg.seq, 1);
 
             t2.transmit_message(RpcMessage {
@@ -229,14 +167,12 @@ mod test {
                 },
             };
 
-            for _ in 0..TRANSMIT_ATTEMPTS {
-                assert_eq!(
-                    t2.receive_message(Duration::from_millis(10)).await.unwrap(),
-                    expected_request
-                );
+            assert_eq!(
+                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                expected_request
+            );
 
-                tokio::time::sleep(ACK_TIMEOUT).await;
-            }
+            tokio::time::sleep(ACK_TIMEOUT).await;
 
             // Exit when client goes away
             assert_eq!(
@@ -314,14 +250,12 @@ mod test {
                 },
             };
 
-            for _ in 0..TRANSMIT_ATTEMPTS {
-                assert_eq!(
-                    t2.receive_message(Duration::from_millis(10)).await.unwrap(),
-                    expected_request
-                );
+            assert_eq!(
+                t2.receive_message(Duration::from_millis(10)).await.unwrap(),
+                expected_request
+            );
 
-                tokio::time::sleep(ACK_TIMEOUT).await;
-            }
+            tokio::time::sleep(ACK_TIMEOUT).await;
 
             // Normal
             assert_eq!(

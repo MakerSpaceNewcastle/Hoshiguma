@@ -46,7 +46,7 @@ pub enum Error {
     #[error("Incorrect sequence number (expected {expected}, got {actual})")]
     IncorrectSequenceNumber { expected: u32, actual: u32 },
 
-    #[error("No acknowledgement was received after multiple attempts")]
+    #[error("No acknowledgement was received")]
     NoAck,
 
     #[error("Timeout")]
@@ -63,4 +63,3 @@ pub enum Error {
 }
 
 const ACK_TIMEOUT: Duration = Duration::from_millis(100);
-const TRANSMIT_ATTEMPTS: usize = 6;
