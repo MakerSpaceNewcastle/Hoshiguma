@@ -1,12 +1,9 @@
-use std::time::Duration;
+use clap::{Parser, Subcommand};
+use log::error;
+use teeny_rpc::transport::serialport::SerialTransport;
 
-use clap::Parser;
-use hoshiguma_protocol::{
-    peripheral_controller::rpc::{Request, Response},
-    types::SystemInformation,
-};
-use teeny_rpc::{client::Client, transport::serialport::SerialTransport};
-use tracing::{debug, info, warn};
+mod cooler;
+mod peripheral_controller;
 
 /// Tool to receive data from coprocessors via the postcard protocol.
 #[derive(Parser)]
@@ -18,60 +15,39 @@ struct Cli {
     /// Serial baud rate
     #[arg(short, long, default_value_t = 115_200)]
     baud: u32,
+
+    #[command(subcommand)]
+    device: Device,
+}
+
+trait Runner {
+    async fn run(&self, transport: SerialTransport) -> Result<(), ()>;
+}
+
+#[derive(Subcommand)]
+enum Device {
+    PeripheralController(peripheral_controller::Cli),
+    Cooler(cooler::Cli),
+}
+
+impl Runner for Device {
+    async fn run(&self, transport: SerialTransport) -> Result<(), ()> {
+        match self {
+            Device::PeripheralController(cli) => cli.run(transport).await,
+            Device::Cooler(cli) => cli.run(transport).await,
+        }
+    }
 }
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    env_logger::init();
 
     let cli = Cli::parse();
 
     let transport = SerialTransport::new(&cli.port, cli.baud).unwrap();
-    let mut client = Client::<_, Request, Response>::new(transport);
 
-    const TIMEOUT: Duration = Duration::from_millis(50);
-
-    let info = client
-        .call(Request::GetSystemInformation, TIMEOUT)
-        .await
-        .unwrap();
-    if let Response::GetSystemInformation(info) = info {
-        info!("Device: {:?}", info);
-        check_firmware_version(&info);
-    } else {
-        panic!("Incorrect response from request");
-    }
-
-    let mut ticker = tokio::time::interval(Duration::from_millis(200));
-
-    'telem_rx: loop {
-        match client.call(Request::GetOldestEvent, TIMEOUT).await {
-            Ok(Response::GetOldestEvent(Some(event))) => {
-                info!("Received:\n{:#?}", event);
-
-                // Immediately request further events
-                ticker.reset();
-                continue 'telem_rx;
-            }
-            Ok(Response::GetOldestEvent(None)) => {
-                // Do nothing
-            }
-            Ok(_) => warn!("Incorrect response from request"),
-            Err(e) => warn!("Call error: {e}"),
-        }
-
-        ticker.tick().await;
-    }
-}
-
-fn check_firmware_version(info: &SystemInformation) {
-    let our_version = git_version::git_version!();
-    let their_version = &info.git_revision;
-
-    debug!("Host Git revision: {}", our_version);
-    debug!("Device Git revision: {}", their_version);
-
-    if our_version != their_version {
-        warn!("Git revisions do not match between host and device, this program may not read data correctly from the device!");
+    if cli.device.run(transport).await.is_err() {
+        error!("Command failed");
     }
 }
