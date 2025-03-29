@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use hoshiguma_protocol::{
     peripheral_controller::rpc::{Request, Response},
     types::SystemInformation,
@@ -18,16 +18,6 @@ struct Cli {
     /// Serial baud rate
     #[arg(short, long, default_value_t = 115_200)]
     baud: u32,
-
-    /// Format to print received messages in
-    #[arg(short, long, default_value = "debug-pretty")]
-    format: PrintFormat,
-}
-
-#[derive(Clone, ValueEnum)]
-enum PrintFormat {
-    Debug,
-    DebugPretty,
 }
 
 #[tokio::main]
@@ -57,10 +47,7 @@ async fn main() {
     'telem_rx: loop {
         match client.call(Request::GetOldestEvent, TIMEOUT).await {
             Ok(Response::GetOldestEvent(Some(event))) => {
-                match cli.format {
-                    PrintFormat::Debug => println!("{:?}", event),
-                    PrintFormat::DebugPretty => info!("Received:\n{:#?}", event),
-                }
+                info!("Received:\n{:#?}", event);
 
                 // Immediately request further events
                 ticker.reset();
