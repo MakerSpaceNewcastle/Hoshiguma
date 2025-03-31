@@ -5,19 +5,21 @@ use crate::{
     },
     ControlCommunicationResources,
 };
+use core::time::Duration as CoreDuration;
 use defmt::warn;
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{select3, Either3};
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART0,
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
-use embassy_time::Instant;
+use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::{
     cooler::{
         event::{Event, EventKind},
         rpc::{Request, Response},
+        types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
         SERIAL_BAUD,
     },
     event_queue::EventQueue,
@@ -60,14 +62,20 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
     let stirrer_tx = STIRRER.sender();
     let coolant_pump_tx = COOLANT_PUMP.sender();
 
+    let mut watchdog = CommunicationWatchdog::new(Duration::from_secs(5));
+    let mut watchdog_check_tick = Ticker::every(Duration::from_secs(1));
+
     loop {
-        match select(
-            server.wait_for_request(core::time::Duration::from_secs(5)),
+        match select3(
+            server.wait_for_request(CoreDuration::from_secs(5)),
             NEW_EVENT.receive(),
+            watchdog_check_tick.next(),
         )
         .await
         {
-            Either::First(Ok(request)) => {
+            Either3::First(Ok(request)) => {
+                watchdog.feed();
+
                 let response = match request {
                     Request::Ping(i) => Some(Response::Ping(i)),
                     Request::GetSystemInformation => {
@@ -116,11 +124,21 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
                     }
                 }
             }
-            Either::First(Err(e)) => {
+            Either3::First(Err(e)) => {
                 warn!("Server failed waiting for request: {}", e);
             }
-            Either::Second(event) => {
+            Either3::Second(event) => {
                 event_queue.push(event);
+            }
+            Either3::Third(_) => {
+                if watchdog.check() == CommunicationWatchdogState::Triggered {
+                    warn!("Turning off cooling due to communication watchdog");
+
+                    radiator_fan_tx.send(RadiatorFan::Idle);
+                    compressor_tx.send(Compressor::Idle);
+                    stirrer_tx.send(Stirrer::Idle);
+                    coolant_pump_tx.send(CoolantPump::Idle);
+                }
             }
         }
     }
@@ -139,4 +157,53 @@ pub(crate) async fn report_event(event: EventKind) {
         kind: event,
     };
     NEW_EVENT.send(event).await;
+}
+
+/// The `CommunicationWatchdog` is used to monitor communication and trigger an action if a timeout
+/// occurs.
+struct CommunicationWatchdog {
+    /// The duration after which the watchdog will trigger if no communication is detected.
+    timeout: Duration,
+
+    /// The last instant when communication was detected.
+    last: Instant,
+
+    /// A boolean indicating whether the watchdog has been triggered.
+    triggered: bool,
+}
+
+impl CommunicationWatchdog {
+    fn new(timeout: Duration) -> Self {
+        Self {
+            timeout,
+            last: Instant::now(),
+            triggered: false,
+        }
+    }
+
+    fn check(&mut self) -> CommunicationWatchdogState {
+        let elapsed = Instant::now() - self.last;
+        if elapsed >= self.timeout {
+            if self.triggered {
+                CommunicationWatchdogState::PreviouslyTriggered
+            } else {
+                self.triggered = true;
+                CommunicationWatchdogState::Triggered
+            }
+        } else {
+            CommunicationWatchdogState::Ok
+        }
+    }
+
+    fn feed(&mut self) {
+        self.last = Instant::now();
+        self.triggered = false;
+    }
+}
+
+#[derive(PartialEq, Eq)]
+enum CommunicationWatchdogState {
+    Ok,
+    Triggered,
+    PreviouslyTriggered,
 }
