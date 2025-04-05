@@ -1,7 +1,7 @@
 use super::types::{
-    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading, CoolingDemand,
-    CoolingEnabled, FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable,
-    MachineOperationLockout, MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
+    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolingDemand, CoolingEnabled,
+    FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
+    MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
 use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,6 @@ pub enum EventKind {
 pub enum ObservationEvent {
     AirAssistDemand(AirAssistDemand),
     ChassisIntrusion(ChassisIntrusion),
-    CoolantResevoirLevel(CoolantResevoirLevelReading),
     FumeExtractionMode(FumeExtractionMode),
     MachinePower(MachinePower),
     MachineRun(MachineRun),
