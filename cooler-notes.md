@@ -20,7 +20,7 @@
 (P) Compressor
 - on when cooling may be required and excess heat
 
-# Alarms
+# Monitors
 
 Cooler communication fault
 
@@ -33,3 +33,12 @@ Heat exchange fluid tank level incorrect
 Heat exchange fluid temperature too high
 
 Coolant flow temperature too high
+
+# To Do
+
+- [ ] Monitor types
+- [ ] Monitor logic
+- [ ] Meta control types
+- [ ] Meta control logic
+- [ ] Physical control logic
+- [ ] Cooler event handling
