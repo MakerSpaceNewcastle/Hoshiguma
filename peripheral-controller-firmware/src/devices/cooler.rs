@@ -96,6 +96,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     let mut event_poll_interval = LONG_EVENT_POLL;
 
+    // TODO
     let tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
     let tx2 = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
 
