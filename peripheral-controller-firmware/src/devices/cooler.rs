@@ -15,7 +15,10 @@ use embassy_time::{Duration, Timer};
 use hoshiguma_protocol::cooler::{
     event::{EventKind, ObservationEvent},
     rpc::{Request, Response},
-    types::{Compressor, CoolantPump, HeaderTankCoolantLevelReading, RadiatorFan, Stirrer},
+    types::{
+        Compressor, CoolantPump, HeaderTankCoolantLevelReading, HeatExchangeFluidLevel,
+        RadiatorFan, Stirrer,
+    },
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
@@ -57,6 +60,12 @@ pub(crate) static HEADER_TANK_COOLANT_LEVEL_CHANGED: Watch<
     1,
 > = Watch::new();
 
+pub(crate) static HEAT_EXCHANGER_FLUID_LEVEL_CHANGED: Watch<
+    CriticalSectionRawMutex,
+    HeatExchangeFluidLevel,
+    1,
+> = Watch::new();
+
 bind_interrupts!(struct Irqs {
     UART1_IRQ  => BufferedInterruptHandler<UART1>;
 });
@@ -87,7 +96,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     let mut event_poll_interval = LONG_EVENT_POLL;
 
-    let mut tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
+    let tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
+    let tx2 = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
 
     loop {
         match select(Timer::after(event_poll_interval), control_rx.next_message()).await {
@@ -102,13 +112,16 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     Ok(Response::GetOldestEvent(Some(event))) => {
                         info!("Got event from cooler: {:?}", event);
 
+                        // TODO
                         match event.kind {
                             EventKind::Boot(_) => {}
                             EventKind::Observation(event) => {
                                 match event {
                                     ObservationEvent::Temperatures(v) => {}
                                     ObservationEvent::CoolantFlow(v) => {}
-                                    ObservationEvent::HeatExchangeFluidLevel(v) => {}
+                                    ObservationEvent::HeatExchangeFluidLevel(v) => {
+                                        tx2.send(v);
+                                    }
                                     ObservationEvent::HeaderTankCoolantLevel(v) => {
                                         tx.send(v);
                                     }
@@ -117,7 +130,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                             }
                             EventKind::Control(_) => {}
                         }
-                        // TODO
+
                         event_poll_interval = SHORT_EVENT_POLL;
                     }
                     Ok(Response::GetOldestEvent(None)) => {

@@ -1,5 +1,8 @@
 use super::NEW_MONITOR_STATUS;
-use crate::changed::{checked_set, Changed};
+use crate::{
+    changed::{checked_set, Changed},
+    devices::cooler::HEADER_TANK_COOLANT_LEVEL_CHANGED,
+};
 use defmt::unwrap;
 use hoshiguma_protocol::{
     peripheral_controller::types::{CoolantResevoirLevel, MonitorKind},
@@ -9,6 +12,8 @@ use hoshiguma_protocol::{
 #[embassy_executor::task]
 pub(crate) async fn task() {
     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
+
+    let header_tank_level_rx = HEADER_TANK_COOLANT_LEVEL_CHANGED.receiver().unwrap();
 
     let mut sensor_severity = Severity::Critical;
     let mut level_severity = Severity::Critical;
