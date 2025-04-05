@@ -59,6 +59,7 @@ pub enum HeaderTankCoolantLevel {
     Full,
 }
 
+/// The flow of coolant in litres per second.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct CoolantFlow(f64);
