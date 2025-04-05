@@ -20,23 +20,9 @@
 (P) Compressor
 - on when cooling may be required and excess heat
 
-# Monitors
-
-Cooler communication fault
-
-Coolant flow insufficient
-
-Header tank level incorrect
-
-Heat exchange fluid tank level incorrect
-
-Heat exchange fluid temperature too high
-
-Coolant flow temperature too high
-
 # To Do
 
-- [ ] Monitor types
+- [x] Monitor types
 - [ ] Monitor logic
 - [ ] Meta control types
 - [ ] Meta control logic
