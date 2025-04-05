@@ -1,3 +1,5 @@
+use core::ops::Deref;
+
 use crate::types::TemperatureReading;
 use serde::{Deserialize, Serialize};
 
@@ -63,6 +65,14 @@ pub enum HeaderTankCoolantLevel {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct CoolantFlow(f64);
+
+impl Deref for CoolantFlow {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl CoolantFlow {
     pub fn new(litres: f64, seconds: f64) -> Self {
