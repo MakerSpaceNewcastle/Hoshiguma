@@ -9,7 +9,7 @@ use hoshiguma_protocol::peripheral_controller::{
     types::MachinePower,
 };
 
-pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 4> =
+pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 5> =
     Watch::new();
 
 #[embassy_executor::task]
