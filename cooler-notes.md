@@ -24,7 +24,8 @@
 
 - [x] Monitor types
 - [ ] Monitor logic
-- [ ] Meta control types
+- [x] Meta control types
 - [ ] Meta control logic
-- [ ] Physical control logic
+- [ ] Meta control telemetry
+- [x] Physical control logic
 - [ ] Cooler event handling
