@@ -1,12 +1,18 @@
-use crate::devices::{
-    cooler::{CoolerControlCommand, COOLER_CONTROL},
-    machine_power_detector::MACHINE_POWER_CHANGED,
+use crate::{
+    devices::{
+        cooler::{CoolerControlCommand, COOLER_CONTROL},
+        machine_power_detector::MACHINE_POWER_CHANGED,
+    },
+    telemetry::queue_telemetry_event,
 };
 use defmt::unwrap;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_protocol::{
     cooler::types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
-    peripheral_controller::types::{CoolingDemand, MachinePower},
+    peripheral_controller::{
+        event::EventKind,
+        types::{CoolingDemand, CoolingEnabled, MachinePower},
+    },
 };
 
 #[embassy_executor::task]
@@ -16,10 +22,12 @@ pub(crate) async fn power_control() {
     let cooler_command_tx = unwrap!(COOLER_CONTROL.publisher());
 
     loop {
-        let machine_power = machine_power_rx.changed().await;
+        let power = machine_power_rx.changed().await;
 
-        match machine_power {
+        match power {
             MachinePower::On => {
+                queue_telemetry_event(EventKind::CoolingEnableChanged(CoolingEnabled::Enable))
+                    .await;
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Run))
                     .await;
@@ -28,6 +36,7 @@ pub(crate) async fn power_control() {
                     .await;
             }
             MachinePower::Off => {
+                queue_telemetry_event(EventKind::CoolingEnableChanged(CoolingEnabled::Idle)).await;
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Idle))
                     .await;
@@ -48,9 +57,10 @@ pub(crate) async fn cooling_control() {
     let cooler_command_tx = unwrap!(COOLER_CONTROL.publisher());
 
     loop {
-        let cooling_demand = cooling_demand_rx.changed().await;
+        let demand = cooling_demand_rx.changed().await;
+        queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
 
-        match cooling_demand {
+        match demand {
             CoolingDemand::Demand => {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Run))
