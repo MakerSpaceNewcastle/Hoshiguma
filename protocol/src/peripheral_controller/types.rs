@@ -95,6 +95,20 @@ pub enum MachineOperationLockout {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum CoolingEnabled {
+    Inhibit,
+    Enable,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum CoolingDemand {
+    Idle,
+    Demand,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum AirAssistDemand {
     Idle,
     Demand,

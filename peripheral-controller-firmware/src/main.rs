@@ -55,10 +55,6 @@ assign_resources! {
     fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
         switch: IN_5,
     },
-    coolant_resevoir_level_sensor: CoolantResevoirLevelSensorResources {
-        empty: IN_1,
-        low: IN_2,
-    },
     air_assist_pump: AirAssistPumpResources {
         relay: RELAY_6,
     },
@@ -148,6 +144,8 @@ fn main() -> ! {
 
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
+    let _in1 = Input::new(p.IN_1, Pull::Down);
+    let _in2 = Input::new(p.IN_2, Pull::Down);
     let _relay5 = Output::new(p.RELAY_5, Level::Low);
 
     // Safety critical things go on core 1
@@ -202,9 +200,6 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::status_lamp::task()));
     unwrap!(spawner.spawn(devices::status_lamp::task(r.status_lamp)));
 
-    unwrap!(spawner.spawn(devices::coolant_resevoir_level_sensor::task(
-        r.coolant_resevoir_level_sensor
-    )));
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
     unwrap!(spawner.spawn(devices::cooler::task(r.cooler)));
 

@@ -1,7 +1,7 @@
 use super::types::{
-    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading,
-    FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
-    MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
+    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading, CoolingDemand,
+    CoolingEnabled, FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable,
+    MachineOperationLockout, MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
 use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
@@ -17,9 +17,15 @@ pub struct Event {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum EventKind {
     Boot(SystemInformation),
+
     MonitorsChanged(Monitors),
     LockoutChanged(MachineOperationLockout),
+
+    CoolingEnableChanged(CoolingEnabled),
+    CoolingDemandChanged(CoolingDemand),
+
     Observation(ObservationEvent),
+
     Control(ControlEvent),
 }
 
