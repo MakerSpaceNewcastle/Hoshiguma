@@ -36,7 +36,8 @@ pub(crate) async fn power_control() {
                     .await;
             }
             MachinePower::Off => {
-                queue_telemetry_event(EventKind::CoolingEnableChanged(CoolingEnabled::Idle)).await;
+                queue_telemetry_event(EventKind::CoolingEnableChanged(CoolingEnabled::Inhibit))
+                    .await;
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Idle))
                     .await;
@@ -79,4 +80,9 @@ pub(crate) async fn cooling_control() {
             }
         }
     }
+}
+
+#[embassy_executor::task]
+pub(crate) async fn thermal_monitor() {
+    todo!();
 }
