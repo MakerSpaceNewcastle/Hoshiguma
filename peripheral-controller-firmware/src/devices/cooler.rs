@@ -16,8 +16,8 @@ use hoshiguma_protocol::cooler::{
     event::{EventKind, ObservationEvent},
     rpc::{Request, Response},
     types::{
-        Compressor, CoolantPump, HeaderTankCoolantLevelReading, HeatExchangeFluidLevel,
-        RadiatorFan, Stirrer,
+        Compressor, CoolantFlow, CoolantPump, HeaderTankCoolantLevelReading,
+        HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
     },
 };
 use static_cell::StaticCell;
@@ -53,6 +53,11 @@ pub(crate) static COOLER_CONTROL: PubSubChannel<
     1,
     1,
 > = PubSubChannel::new();
+
+pub(crate) static COOLANT_FLOW_READ: Watch<CriticalSectionRawMutex, CoolantFlow, 1> = Watch::new();
+
+pub(crate) static COOLER_TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 1> =
+    Watch::new();
 
 pub(crate) static HEADER_TANK_COOLANT_LEVEL_CHANGED: Watch<
     CriticalSectionRawMutex,
@@ -96,9 +101,10 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     let mut event_poll_interval = LONG_EVENT_POLL;
 
-    // TODO
-    let tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
-    let tx2 = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
+    let coolant_flow_tx = COOLANT_FLOW_READ.sender();
+    let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
+    let heat_exchanger_fluid_level_tx = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
+    let header_tank_level_tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
 
     loop {
         match select(Timer::after(event_poll_interval), control_rx.next_message()).await {
@@ -117,17 +123,17 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                             EventKind::Boot(_) => {
                                 // TODO
                             }
-                            EventKind::Observation(ObservationEvent::CoolantFlow(_)) => {
-                                // TODO
+                            EventKind::Observation(ObservationEvent::CoolantFlow(v)) => {
+                                coolant_flow_tx.send(v);
                             }
-                            EventKind::Observation(ObservationEvent::Temperatures(_)) => {
-                                // TODO
+                            EventKind::Observation(ObservationEvent::Temperatures(v)) => {
+                                temperatures_tx.send(v);
                             }
                             EventKind::Observation(ObservationEvent::HeatExchangeFluidLevel(v)) => {
-                                tx2.send(v);
+                                heat_exchanger_fluid_level_tx.send(v);
                             }
                             EventKind::Observation(ObservationEvent::HeaderTankCoolantLevel(v)) => {
-                                tx.send(v);
+                                header_tank_level_tx.send(v);
                             }
                             EventKind::Control(_) => {
                                 // TODO
