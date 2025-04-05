@@ -1,12 +1,14 @@
 use crate::CoolerCommunicationResources;
-use defmt::{info, warn, Format};
+use defmt::{info, unwrap, warn, Format};
 use embassy_futures::select::{select, Either};
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART1,
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, pubsub::{PubSubChannel, WaitResult},
+};
 use embassy_time::{Duration, Timer};
 use hoshiguma_protocol::cooler::{
     rpc::{Request, Response},
@@ -16,7 +18,7 @@ use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
 #[derive(Debug, Clone, Format)]
-enum CoolerControlCommand {
+pub(crate) enum CoolerControlCommand {
     SetRadiatorFan(RadiatorFan),
     SetCompressor(Compressor),
     SetStirrer(Stirrer),
@@ -38,7 +40,13 @@ impl From<CoolerControlCommand> for Request {
     }
 }
 
-static COOLER_CONTROL: Channel<CriticalSectionRawMutex, CoolerControlCommand, 8> = Channel::new();
+pub(crate) static COOLER_CONTROL: PubSubChannel<
+    CriticalSectionRawMutex,
+    CoolerControlCommand,
+    8,
+    1,
+    1,
+> = PubSubChannel::new();
 
 bind_interrupts!(struct Irqs {
     UART1_IRQ  => BufferedInterruptHandler<UART1>;
@@ -63,7 +71,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let transport = EioTransport::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport);
 
-    let control_rx = COOLER_CONTROL.receiver();
+    let mut control_rx = unwrap!(COOLER_CONTROL.subscriber());
 
     const SHORT_EVENT_POLL: Duration = Duration::from_millis(50);
     const LONG_EVENT_POLL: Duration = Duration::from_millis(500);
@@ -71,7 +79,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let mut event_poll_interval = LONG_EVENT_POLL;
 
     loop {
-        match select(Timer::after(event_poll_interval), control_rx.receive()).await {
+        match select(Timer::after(event_poll_interval), control_rx.next_message()).await {
             Either::First(_) => {
                 match client
                     .call(
@@ -96,7 +104,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     }
                 }
             }
-            Either::Second(cmd) => {
+            Either::Second(WaitResult::Message(cmd)) => {
                 let request: Request = cmd.into();
 
                 // TODO: error handling
@@ -113,6 +121,9 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         }
                     }
                 }
+            }
+            Either::Second(WaitResult::Lagged(_)) => {
+                // TODO
             }
         }
     }
