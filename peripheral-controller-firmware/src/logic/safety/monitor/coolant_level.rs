@@ -92,19 +92,5 @@ pub(crate) async fn task() {
                     .await;
             }
         }
-
-        // if let Ok(level_state) = state {
-        //     let new_level_severity = match level_state {
-        //         CoolantResevoirLevel::Full => Severity::Normal,
-        //         CoolantResevoirLevel::Low => Severity::Warn,
-        //         CoolantResevoirLevel::Empty => Severity::Critical,
-        //     };
-
-        //     if checked_set(&mut level_severity, new_level_severity) == Changed::Yes {
-        //         status_tx
-        //             .publish((MonitorKind::CoolantResevoirLevel, level_severity.clone()))
-        //             .await;
-        //     }
-        // }
     }
 }
