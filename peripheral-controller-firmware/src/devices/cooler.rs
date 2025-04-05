@@ -112,20 +112,25 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     Ok(Response::GetOldestEvent(Some(event))) => {
                         info!("Got event from cooler: {:?}", event);
 
-                        // TODO
                         match event.kind {
-                            EventKind::Boot(_) => {}
-                            EventKind::Observation(event) => match event {
-                                ObservationEvent::Temperatures(v) => {}
-                                ObservationEvent::CoolantFlow(v) => {}
-                                ObservationEvent::HeatExchangeFluidLevel(v) => {
-                                    tx2.send(v);
-                                }
-                                ObservationEvent::HeaderTankCoolantLevel(v) => {
-                                    tx.send(v);
-                                }
-                            },
-                            EventKind::Control(_) => {}
+                            EventKind::Boot(_) => {
+                                // TODO
+                            }
+                            EventKind::Observation(ObservationEvent::CoolantFlow(_)) => {
+                                // TODO
+                            }
+                            EventKind::Observation(ObservationEvent::Temperatures(_)) => {
+                                // TODO
+                            }
+                            EventKind::Observation(ObservationEvent::HeatExchangeFluidLevel(v)) => {
+                                tx2.send(v);
+                            }
+                            EventKind::Observation(ObservationEvent::HeaderTankCoolantLevel(v)) => {
+                                tx.send(v);
+                            }
+                            EventKind::Control(_) => {
+                                // TODO
+                            }
                         }
 
                         event_poll_interval = SHORT_EVENT_POLL;
