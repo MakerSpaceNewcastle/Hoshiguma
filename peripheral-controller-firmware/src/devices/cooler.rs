@@ -115,19 +115,16 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         // TODO
                         match event.kind {
                             EventKind::Boot(_) => {}
-                            EventKind::Observation(event) => {
-                                match event {
-                                    ObservationEvent::Temperatures(v) => {}
-                                    ObservationEvent::CoolantFlow(v) => {}
-                                    ObservationEvent::HeatExchangeFluidLevel(v) => {
-                                        tx2.send(v);
-                                    }
-                                    ObservationEvent::HeaderTankCoolantLevel(v) => {
-                                        tx.send(v);
-                                    }
+                            EventKind::Observation(event) => match event {
+                                ObservationEvent::Temperatures(v) => {}
+                                ObservationEvent::CoolantFlow(v) => {}
+                                ObservationEvent::HeatExchangeFluidLevel(v) => {
+                                    tx2.send(v);
                                 }
-                                todo!()
-                            }
+                                ObservationEvent::HeaderTankCoolantLevel(v) => {
+                                    tx.send(v);
+                                }
+                            },
                             EventKind::Control(_) => {}
                         }
 

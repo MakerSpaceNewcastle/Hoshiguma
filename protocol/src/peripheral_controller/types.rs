@@ -164,16 +164,6 @@ pub enum ChassisIntrusion {
     Intruded,
 }
 
-pub type CoolantResevoirLevelReading = Result<CoolantResevoirLevel, ()>;
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum CoolantResevoirLevel {
-    Full,
-    Low,
-    Empty,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MachinePower {
