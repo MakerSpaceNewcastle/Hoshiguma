@@ -9,11 +9,13 @@ use embassy_rp::{
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     pubsub::{PubSubChannel, WaitResult},
+    watch::Watch,
 };
 use embassy_time::{Duration, Timer};
 use hoshiguma_protocol::cooler::{
+    event::{EventKind, ObservationEvent},
     rpc::{Request, Response},
-    types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
+    types::{Compressor, CoolantPump, HeaderTankCoolantLevelReading, RadiatorFan, Stirrer},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
@@ -49,6 +51,12 @@ pub(crate) static COOLER_CONTROL: PubSubChannel<
     1,
 > = PubSubChannel::new();
 
+pub(crate) static HEADER_TANK_COOLANT_LEVEL_CHANGED: Watch<
+    CriticalSectionRawMutex,
+    HeaderTankCoolantLevelReading,
+    1,
+> = Watch::new();
+
 bind_interrupts!(struct Irqs {
     UART1_IRQ  => BufferedInterruptHandler<UART1>;
 });
@@ -79,6 +87,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     let mut event_poll_interval = LONG_EVENT_POLL;
 
+    let mut tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
+
     loop {
         match select(Timer::after(event_poll_interval), control_rx.next_message()).await {
             Either::First(_) => {
@@ -91,6 +101,22 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 {
                     Ok(Response::GetOldestEvent(Some(event))) => {
                         info!("Got event from cooler: {:?}", event);
+
+                        match event.kind {
+                            EventKind::Boot(_) => {}
+                            EventKind::Observation(event) => {
+                                match event {
+                                    ObservationEvent::Temperatures(v) => {}
+                                    ObservationEvent::CoolantFlow(v) => {}
+                                    ObservationEvent::HeatExchangeFluidLevel(v) => {}
+                                    ObservationEvent::HeaderTankCoolantLevel(v) => {
+                                        tx.send(v);
+                                    }
+                                }
+                                todo!()
+                            }
+                            EventKind::Control(_) => {}
+                        }
                         // TODO
                         event_poll_interval = SHORT_EVENT_POLL;
                     }
