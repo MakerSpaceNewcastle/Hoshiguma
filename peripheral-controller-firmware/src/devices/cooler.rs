@@ -21,7 +21,7 @@ use hoshiguma_protocol::{
             HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
         },
     },
-    peripheral_controller::EventKind as SuperEventKind,
+    peripheral_controller::event::EventKind as SuperEventKind,
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
