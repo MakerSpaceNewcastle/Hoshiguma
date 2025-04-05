@@ -1,4 +1,4 @@
-use crate::CoolerCommunicationResources;
+use crate::{telemetry::queue_telemetry_event, CoolerCommunicationResources};
 use defmt::{info, unwrap, warn, Format};
 use embassy_futures::select::{select, Either};
 use embassy_rp::{
@@ -12,13 +12,16 @@ use embassy_sync::{
     watch::Watch,
 };
 use embassy_time::{Duration, Timer};
-use hoshiguma_protocol::cooler::{
-    event::{EventKind, ObservationEvent},
-    rpc::{Request, Response},
-    types::{
-        Compressor, CoolantFlow, CoolantPump, HeaderTankCoolantLevelReading,
-        HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
+use hoshiguma_protocol::{
+    cooler::{
+        event::{EventKind, ObservationEvent},
+        rpc::{Request, Response},
+        types::{
+            Compressor, CoolantFlow, CoolantPump, HeaderTankCoolantLevelReading,
+            HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
+        },
     },
+    peripheral_controller::EventKind as SuperEventKind,
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
@@ -120,8 +123,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         info!("Got event from cooler: {:?}", event);
 
                         match event.kind {
-                            EventKind::Boot(_) => {
-                                // TODO
+                            EventKind::Boot(info) => {
+                                queue_telemetry_event(SuperEventKind::CoolerBoot(info)).await;
                             }
                             EventKind::Observation(ObservationEvent::CoolantFlow(v)) => {
                                 coolant_flow_tx.send(v);
@@ -136,7 +139,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                                 header_tank_level_tx.send(v);
                             }
                             EventKind::Control(_) => {
-                                // TODO
+                                // Do nothing
                             }
                         }
 

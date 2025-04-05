@@ -17,6 +17,7 @@ pub struct Event {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum EventKind {
     Boot(SystemInformation),
+    CoolerBoot(SystemInformation),
 
     MonitorsChanged(Monitors),
     LockoutChanged(MachineOperationLockout),
