@@ -7,7 +7,9 @@ use embassy_rp::{
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use embassy_sync::{
-    blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel, pubsub::{PubSubChannel, WaitResult},
+    blocking_mutex::raw::CriticalSectionRawMutex,
+    channel::Channel,
+    pubsub::{PubSubChannel, WaitResult},
 };
 use embassy_time::{Duration, Timer};
 use hoshiguma_protocol::cooler::{
