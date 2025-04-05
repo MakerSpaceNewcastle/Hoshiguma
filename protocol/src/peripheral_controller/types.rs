@@ -16,6 +16,8 @@ pub enum MonitorKind {
     TemperatureSensorFault,
     CoolantFlowTemperature,
     CoolantResevoirTemperature,
+
+    CoolerCommunicationFault,
 }
 
 /// The number of monitors in the system.
