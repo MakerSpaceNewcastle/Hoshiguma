@@ -4,7 +4,7 @@ pub(crate) mod power;
 pub(crate) mod temperatures;
 
 use crate::{
-    changed::{checked_set, Changed},
+    changed::{checked_set, Changed, ObservedValue},
     telemetry::queue_telemetry_event,
 };
 use defmt::{debug, info, unwrap};
@@ -49,5 +49,13 @@ pub(crate) async fn observation_task() {
                 }
             }
         }
+    }
+}
+
+pub(crate) type ObservedSeverity = ObservedValue<Severity>;
+
+impl Default for ObservedSeverity {
+    fn default() -> Self {
+        Self::new(Severity::Critical)
     }
 }
