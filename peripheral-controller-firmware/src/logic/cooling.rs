@@ -21,6 +21,8 @@ pub(crate) async fn power_control() {
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL.publisher());
 
+    // TODO: validation of cooler state
+
     loop {
         let power = machine_power_rx.changed().await;
 
@@ -31,6 +33,7 @@ pub(crate) async fn power_control() {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Run))
                     .await;
+                // TODO: delay
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetStirrer(Stirrer::Run))
                     .await;
@@ -41,6 +44,7 @@ pub(crate) async fn power_control() {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Idle))
                     .await;
+                // TODO: delay
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetStirrer(Stirrer::Idle))
                     .await;
@@ -57,6 +61,8 @@ pub(crate) async fn cooling_control() {
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL.publisher());
 
+    // TODO: validation of cooler state
+
     loop {
         let demand = cooling_demand_rx.changed().await;
         queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
@@ -66,6 +72,7 @@ pub(crate) async fn cooling_control() {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Run))
                     .await;
+                // TODO: delay
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCompressor(Compressor::Run))
                     .await;
@@ -74,6 +81,7 @@ pub(crate) async fn cooling_control() {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Idle))
                     .await;
+                // TODO: delay
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCompressor(Compressor::Idle))
                     .await;

@@ -12,10 +12,6 @@
 
 # To Do
 
-- [x] Monitor types
-- [ ] Monitor logic
-- [x] Meta control types
-- [ ] Meta control logic
-- [x] Meta control telemetry
-- [x] Physical control logic
-- [ ] Cooler event handling
+- Monitor logic
+- Meta control logic
+- Cooler event handling
