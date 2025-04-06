@@ -170,8 +170,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
             Either::Second(WaitResult::Message(cmd)) => {
                 let request: Request = cmd.into();
 
-                // TODO: error handling
-                'cmd_send: loop {
+                'cmd_send: for attempt in 0..5 {
                     match client
                         .call(request.clone(), core::time::Duration::from_millis(50))
                         .await
@@ -180,7 +179,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                             comm_status.comm_good().await;
                             break 'cmd_send;
                         }
-                        Err(_) => {
+                        Err(e) => {
+                            warn!("RPC error: {} (attempt {})", e, attempt + 1);
                             comm_status.comm_fail().await;
                             Timer::after_millis(50).await;
                         }
@@ -188,7 +188,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 }
             }
             Either::Second(WaitResult::Lagged(_)) => {
-                // TODO
+                // TODO: probably just panic here
             }
         }
     }
