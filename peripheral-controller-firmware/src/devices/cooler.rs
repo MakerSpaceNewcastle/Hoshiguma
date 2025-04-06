@@ -1,4 +1,8 @@
-use crate::{telemetry::queue_telemetry_event, CoolerCommunicationResources};
+use crate::{
+    logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS},
+    telemetry::queue_telemetry_event,
+    CoolerCommunicationResources,
+};
 use defmt::{info, unwrap, warn, Format};
 use embassy_futures::select::{select, Either};
 use embassy_rp::{
@@ -8,10 +12,10 @@ use embassy_rp::{
 };
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
-    pubsub::{PubSubChannel, WaitResult},
+    pubsub::{PubSubChannel, Publisher, WaitResult},
     watch::Watch,
 };
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::{
     cooler::{
         event::{EventKind, ObservationEvent},
@@ -21,7 +25,8 @@ use hoshiguma_protocol::{
             HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
         },
     },
-    peripheral_controller::event::EventKind as SuperEventKind,
+    peripheral_controller::{event::EventKind as SuperEventKind, types::MonitorKind},
+    types::Severity,
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
@@ -97,6 +102,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let transport = EioTransport::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport);
 
+    let mut comm_status = CommunicationStatusReporter::default();
+
     let mut control_rx = unwrap!(COOLER_CONTROL.subscriber());
 
     const SHORT_EVENT_POLL: Duration = Duration::from_millis(50);
@@ -121,6 +128,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 {
                     Ok(Response::GetOldestEvent(Some(event))) => {
                         info!("Got event from cooler: {:?}", event);
+                        comm_status.comm_good().await;
 
                         match event.kind {
                             EventKind::Boot(info) => {
@@ -146,13 +154,16 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         event_poll_interval = SHORT_EVENT_POLL;
                     }
                     Ok(Response::GetOldestEvent(None)) => {
+                        comm_status.comm_good().await;
                         event_poll_interval = LONG_EVENT_POLL;
                     }
                     Ok(_) => {
                         warn!("Unexpected RPC response");
+                        comm_status.comm_fail().await;
                     }
                     Err(e) => {
                         warn!("RPC error: {}", e);
+                        comm_status.comm_fail().await;
                     }
                 }
             }
@@ -166,9 +177,11 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         .await
                     {
                         Ok(_) => {
+                            comm_status.comm_good().await;
                             break 'cmd_send;
                         }
                         Err(_) => {
+                            comm_status.comm_fail().await;
                             Timer::after_millis(50).await;
                         }
                     }
@@ -178,5 +191,80 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 // TODO
             }
         }
+    }
+}
+
+enum CommunicationStatus {
+    Ok { last: Instant },
+    Failed { since: Instant },
+}
+
+struct CommunicationStatusReporter {
+    status: CommunicationStatus,
+    severity: ObservedSeverity,
+    monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 4>,
+}
+
+impl Default for CommunicationStatusReporter {
+    fn default() -> Self {
+        let monitor_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
+        Self {
+            status: CommunicationStatus::Failed {
+                since: Instant::now(),
+            },
+            severity: ObservedSeverity::default(),
+            monitor_tx,
+        }
+    }
+}
+
+impl CommunicationStatusReporter {
+    async fn comm_good(&mut self) {
+        self.status = CommunicationStatus::Ok {
+            last: Instant::now(),
+        };
+
+        self.evaluate().await;
+    }
+
+    async fn comm_fail(&mut self) {
+        self.status = match self.status {
+            CommunicationStatus::Ok { last: _ } => CommunicationStatus::Failed {
+                since: Instant::now(),
+            },
+            CommunicationStatus::Failed { since } => CommunicationStatus::Failed { since },
+        };
+
+        self.evaluate().await;
+    }
+
+    async fn evaluate(&mut self) {
+        let severity = match self.status {
+            CommunicationStatus::Ok { last } => {
+                if Instant::now().saturating_duration_since(last) > Duration::from_secs(10) {
+                    self.status = CommunicationStatus::Failed {
+                        since: Instant::now(),
+                    };
+                    Severity::Warn
+                } else {
+                    Severity::Normal
+                }
+            }
+            CommunicationStatus::Failed { since } => {
+                if Instant::now().saturating_duration_since(since) > Duration::from_secs(10) {
+                    Severity::Critical
+                } else {
+                    Severity::Warn
+                }
+            }
+        };
+
+        self.severity
+            .update_and_async(severity, |severity| async {
+                self.monitor_tx
+                    .publish((MonitorKind::HeatExchangerFluidLow, severity))
+                    .await;
+            })
+            .await;
     }
 }

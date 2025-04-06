@@ -17,7 +17,7 @@ use embassy_sync::{
 use hoshiguma_protocol::peripheral_controller::{event::EventKind, types::Monitors};
 use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
 
-static NEW_MONITOR_STATUS: PubSubChannel<
+pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     CriticalSectionRawMutex,
     (MonitorKind, Severity),
     8,
