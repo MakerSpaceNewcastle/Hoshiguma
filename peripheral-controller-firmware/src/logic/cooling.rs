@@ -10,6 +10,7 @@ use crate::{
 use defmt::{info, unwrap};
 use embassy_futures::select::{select3, Either3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
+use embassy_time::{Duration, Instant};
 use hoshiguma_protocol::{
     cooler::types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
     peripheral_controller::{
@@ -153,16 +154,38 @@ pub(crate) async fn demand_task() {
 
     let cooling_demand_tx = COOLING_DEMAND.sender();
 
+    let mut demand = ObservedValue::new(CoolingDemand::Idle);
+    let mut last_state_change = None;
+
     loop {
         let temperatures = temperatures_rx.changed().await;
 
-        // TODO
         if let Ok(heat_exchange_temperature) = temperatures.heat_exchange_fluid {
-            if heat_exchange_temperature >= 12.0 {
-                cooling_demand_tx.send(CoolingDemand::Demand);
-            } else {
-                cooling_demand_tx.send(CoolingDemand::Idle);
-            }
+            demand.update_and(
+                if heat_exchange_temperature >= 12.0 {
+                    CoolingDemand::Demand
+                } else {
+                    CoolingDemand::Idle
+                },
+                |demand| {
+                    match last_state_change {
+                        Some(time) => {
+                            let now = Instant::now();
+                            // Send a demand change command at most every 60 seconds to save cycling the
+                            // compressor too often.
+                            if now.saturating_duration_since(time) >= Duration::from_secs(60) {
+                                cooling_demand_tx.send(demand);
+                                last_state_change = Some(now);
+                            }
+                        }
+                        None => {
+                            // If no previous command was sent then send the demand command immediately.
+                            cooling_demand_tx.send(demand);
+                            last_state_change = Some(Instant::now());
+                        }
+                    }
+                },
+            );
         }
     }
 }
