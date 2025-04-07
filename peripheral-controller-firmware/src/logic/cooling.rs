@@ -1,6 +1,6 @@
 use crate::{
     devices::{
-        cooler::{CoolerControlCommand, COOLER_CONTROL_ACK, COOLER_CONTROL_COMMAND},
+        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
         machine_power_detector::MACHINE_POWER_CHANGED,
     },
     telemetry::queue_telemetry_event,
@@ -60,7 +60,6 @@ pub(crate) async fn cooling_control() {
     let mut cooling_demand_rx = COOLING_DEMAND.receiver().unwrap();
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
-    let cooler_ack_rx = unwrap!(COOLER_CONTROL_ACK.subscriber());
 
     // TODO: validation of cooler state
 
