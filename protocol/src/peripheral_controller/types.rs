@@ -10,10 +10,6 @@ pub enum MonitorKind {
 
     ChassisIntrusion,
 
-    TemperatureSensorFault,
-    CoolantFlowTemperature,
-    CoolantResevoirTemperature,
-
     CoolerCommunicationFault,
 
     CoolantHeaderTankLevelSensorFault,
@@ -22,10 +18,15 @@ pub enum MonitorKind {
 
     HeatExchangerFluidLow,
 
-    HeatExchangerOvertemperature,
-    CoolantFlowOvertemperature,
-
     CoolantFlowInsufficient,
+
+    TemperatureSensorBusAFault,
+    TemperatureSensorBusBFault,
+
+    CoolantFlowBusAOvertemperature,
+    CoolantFlowBusBOvertemperature,
+
+    HeatExchangerOvertemperature,
 }
 
 /// The number of monitors in the system.
@@ -187,9 +188,6 @@ pub struct Temperatures {
 
     pub coolant_flow: TemperatureReading,
     pub coolant_return: TemperatureReading,
-
-    pub coolant_resevoir_bottom: TemperatureReading,
-    pub coolant_resevoir_top: TemperatureReading,
 
     pub coolant_pump: TemperatureReading,
 }

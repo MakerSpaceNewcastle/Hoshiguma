@@ -41,7 +41,6 @@ pub(crate) async fn task() {
 
     let mut sensor_severity = ObservedSeverity::default();
     let mut coolant_flow_severity = ObservedSeverity::default();
-    let mut coolant_resevoir_severity = ObservedSeverity::default();
 
     let mut sensor_failure_counter = 0;
 
@@ -72,7 +71,7 @@ pub(crate) async fn task() {
         sensor_severity
             .update_and_async(new_sensor_severity, |severity| async {
                 status_tx
-                    .publish((MonitorKind::TemperatureSensorFault, severity))
+                    .publish((MonitorKind::TemperatureSensorBusAFault, severity))
                     .await;
             })
             .await;
@@ -82,32 +81,7 @@ pub(crate) async fn task() {
             coolant_flow_severity
                 .update_and_async(new_severity, |severity| async {
                     status_tx
-                        .publish((MonitorKind::CoolantFlowTemperature, severity))
-                        .await;
-                })
-                .await;
-        }
-
-        // Check coolant resevoir temperatures
-        {
-            let mut new_severity = Severity::Normal;
-
-            if let Ok(coolant_resevoir_top) =
-                temperature_to_state(28.0, 40.0, state.coolant_resevoir_top)
-            {
-                new_severity = core::cmp::max(new_severity, coolant_resevoir_top);
-            }
-
-            if let Ok(coolant_resevoir_bottom) =
-                temperature_to_state(28.0, 40.0, state.coolant_resevoir_bottom)
-            {
-                new_severity = core::cmp::max(new_severity, coolant_resevoir_bottom);
-            }
-
-            coolant_resevoir_severity
-                .update_and_async(new_severity, |severity| async {
-                    status_tx
-                        .publish((MonitorKind::CoolantResevoirTemperature, severity))
+                        .publish((MonitorKind::CoolantFlowBusAOvertemperature, severity))
                         .await;
                 })
                 .await;

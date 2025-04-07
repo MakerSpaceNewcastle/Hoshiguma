@@ -25,8 +25,6 @@ impl TemperaturesExt for Temperatures {
             &self.ambient,
             &self.coolant_flow,
             &self.coolant_return,
-            &self.coolant_resevoir_bottom,
-            &self.coolant_resevoir_top,
             &self.coolant_pump,
         ];
 
@@ -73,8 +71,6 @@ pub(crate) async fn task(r: OnewireResources) {
     let ambient_sensor = Ds18b20::new::<()>(Address(17390119257909780776)).unwrap();
     let coolant_flow_sensor = Ds18b20::new::<()>(Address(8087587398082553896)).unwrap();
     let coolant_return_sensor = Ds18b20::new::<()>(Address(5925859576946210856)).unwrap();
-    let coolant_resevoir_top_sensor = Ds18b20::new::<()>(Address(953885588342016040)).unwrap();
-    let coolant_resevoir_bottom_sensor = Ds18b20::new::<()>(Address(10753505152894955560)).unwrap();
     let coolant_pump_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
 
     loop {
@@ -96,8 +92,6 @@ pub(crate) async fn task(r: OnewireResources) {
             ambient: read_sensor(&ambient_sensor),
             coolant_flow: read_sensor(&coolant_flow_sensor),
             coolant_return: read_sensor(&coolant_return_sensor),
-            coolant_resevoir_top: read_sensor(&coolant_resevoir_top_sensor),
-            coolant_resevoir_bottom: read_sensor(&coolant_resevoir_bottom_sensor),
             coolant_pump: read_sensor(&coolant_pump_sensor),
         };
 
