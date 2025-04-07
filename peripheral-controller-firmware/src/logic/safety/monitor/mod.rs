@@ -8,14 +8,19 @@ use crate::{
     changed::{checked_set, Changed, ObservedValue},
     telemetry::queue_telemetry_event,
 };
-use defmt::{debug, info, unwrap};
+use defmt::{debug, info, unwrap, warn};
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     pubsub::{PubSubChannel, WaitResult},
     watch::Watch,
 };
-use hoshiguma_protocol::peripheral_controller::{event::EventKind, types::Monitors};
-use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
+use hoshiguma_protocol::{
+    peripheral_controller::{
+        event::EventKind,
+        types::{MonitorKind, Monitors},
+    },
+    types::{Severity, TemperatureReading},
+};
 
 pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     CriticalSectionRawMutex,
@@ -58,5 +63,33 @@ pub(crate) type ObservedSeverity = ObservedValue<Severity>;
 impl Default for ObservedSeverity {
     fn default() -> Self {
         Self::new(Severity::Critical)
+    }
+}
+
+fn temperature_to_state(
+    warn: f32,
+    critical: f32,
+    temperature: TemperatureReading,
+) -> Result<Severity, ()> {
+    if let Ok(temperature) = temperature {
+        Ok(if temperature >= critical {
+            warn!(
+                "Temperature {} is above critical threshold of {}",
+                temperature, critical
+            );
+            Severity::Critical
+        } else if temperature >= warn {
+            warn!(
+                "Temperature {} is above warning threshold of {}",
+                temperature, warn
+            );
+            Severity::Warn
+        } else {
+            debug!("Temperature {} is normal", temperature);
+            Severity::Normal
+        })
+    } else {
+        warn!("Asked to check temperature of a sensor that failed to be read");
+        Err(())
     }
 }
