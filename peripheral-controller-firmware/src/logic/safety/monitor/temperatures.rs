@@ -1,8 +1,5 @@
-use super::NEW_MONITOR_STATUS;
-use crate::{
-    changed::{checked_set, Changed},
-    devices::temperature_sensors::{TemperaturesExt, TEMPERATURES_READ},
-};
+use super::{ObservedSeverity, NEW_MONITOR_STATUS};
+use crate::devices::temperature_sensors::{TemperaturesExt, TEMPERATURES_READ};
 use defmt::{debug, unwrap, warn};
 use hoshiguma_protocol::{
     peripheral_controller::types::MonitorKind,
@@ -42,9 +39,9 @@ pub(crate) async fn task() {
     let mut temperatures_rx = unwrap!(TEMPERATURES_READ.receiver());
     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-    let mut sensor_severity = Severity::Critical;
-    let mut coolant_flow_severity = Severity::Critical;
-    let mut coolant_resevoir_severity = Severity::Critical;
+    let mut sensor_severity = ObservedSeverity::default();
+    let mut coolant_flow_severity = ObservedSeverity::default();
+    let mut coolant_resevoir_severity = ObservedSeverity::default();
 
     let mut sensor_failure_counter = 0;
 
@@ -72,22 +69,23 @@ pub(crate) async fn task() {
             }
         };
 
-        if checked_set(&mut sensor_severity, new_sensor_severity) == Changed::Yes {
-            status_tx
-                .publish((MonitorKind::TemperatureSensorFault, sensor_severity.clone()))
-                .await;
-        }
+        sensor_severity
+            .update_and_async(new_sensor_severity, |severity| async {
+                status_tx
+                    .publish((MonitorKind::TemperatureSensorFault, severity))
+                    .await;
+            })
+            .await;
 
         // Check coolant flow temperature
         if let Ok(new_severity) = temperature_to_state(25.0, 40.0, state.coolant_flow) {
-            if checked_set(&mut coolant_flow_severity, new_severity) == Changed::Yes {
-                status_tx
-                    .publish((
-                        MonitorKind::CoolantFlowTemperature,
-                        coolant_flow_severity.clone(),
-                    ))
-                    .await;
-            }
+            coolant_flow_severity
+                .update_and_async(new_severity, |severity| async {
+                    status_tx
+                        .publish((MonitorKind::CoolantFlowTemperature, severity))
+                        .await;
+                })
+                .await;
         }
 
         // Check coolant resevoir temperatures
@@ -106,14 +104,13 @@ pub(crate) async fn task() {
                 new_severity = core::cmp::max(new_severity, coolant_resevoir_bottom);
             }
 
-            if checked_set(&mut coolant_resevoir_severity, new_severity) == Changed::Yes {
-                status_tx
-                    .publish((
-                        MonitorKind::CoolantResevoirTemperature,
-                        coolant_resevoir_severity.clone(),
-                    ))
-                    .await;
-            }
+            coolant_resevoir_severity
+                .update_and_async(new_severity, |severity| async {
+                    status_tx
+                        .publish((MonitorKind::CoolantResevoirTemperature, severity))
+                        .await;
+                })
+                .await;
         }
     }
 }

@@ -13,18 +13,18 @@ pub(crate) async fn task() {
     let mut intrusion_rx = unwrap!(CHASSIS_INTRUSION_CHANGED.receiver());
     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-    let mut instrusion = ObservedSeverity::default();
+    let mut severity = ObservedSeverity::default();
 
     loop {
         let state = intrusion_rx.changed().await;
 
-        let severity = match state {
+        let new_severity = match state {
             ChassisIntrusion::Normal => Severity::Normal,
             ChassisIntrusion::Intruded => Severity::Critical,
         };
 
-        instrusion
-            .update_and_async(severity, |severity| async {
+        severity
+            .update_and_async(new_severity, |severity| async {
                 status_tx
                     .publish((MonitorKind::ChassisIntrusion, severity))
                     .await;
