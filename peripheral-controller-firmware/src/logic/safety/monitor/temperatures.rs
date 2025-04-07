@@ -40,7 +40,7 @@ pub(crate) async fn task() {
         sensor_severity
             .update_and_async(new_sensor_severity, |severity| async {
                 status_tx
-                    .publish((MonitorKind::TemperatureSensorBusAFault, severity))
+                    .publish((MonitorKind::TemperatureSensorFaultA, severity))
                     .await;
             })
             .await;
@@ -50,7 +50,7 @@ pub(crate) async fn task() {
             coolant_flow_severity
                 .update_and_async(new_severity, |severity| async {
                     status_tx
-                        .publish((MonitorKind::CoolantFlowBusAOvertemperature, severity))
+                        .publish((MonitorKind::CoolantFlowOvertemperatureA, severity))
                         .await;
                 })
                 .await;

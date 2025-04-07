@@ -95,7 +95,7 @@ pub(crate) async fn task(r: OnewireResources) {
             coolant_pump: read_sensor(&coolant_pump_sensor),
         };
 
-        queue_telemetry_event(EventKind::Observation(ObservationEvent::Temperatures(
+        queue_telemetry_event(EventKind::Observation(ObservationEvent::TemperaturesA(
             readings.clone(),
         )))
         .await;

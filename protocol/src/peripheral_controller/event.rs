@@ -3,7 +3,7 @@ use super::types::{
     FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
     MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
-use crate::types::SystemInformation;
+use crate::{cooler::types::Temperatures as CoolerTemperatures, types::SystemInformation};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -38,7 +38,8 @@ pub enum ObservationEvent {
     FumeExtractionMode(FumeExtractionMode),
     MachinePower(MachinePower),
     MachineRun(MachineRun),
-    Temperatures(Temperatures),
+    TemperaturesA(Temperatures),
+    TemperaturesB(CoolerTemperatures),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

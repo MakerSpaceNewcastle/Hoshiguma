@@ -20,11 +20,11 @@ pub enum MonitorKind {
 
     CoolantFlowInsufficient,
 
-    TemperatureSensorBusAFault,
-    TemperatureSensorBusBFault,
+    TemperatureSensorFaultA,
+    TemperatureSensorFaultB,
 
-    CoolantFlowBusAOvertemperature,
-    CoolantFlowBusBOvertemperature,
+    CoolantFlowOvertemperatureA,
+    CoolantFlowOvertemperatureB,
 
     HeatExchangerOvertemperature,
 }
