@@ -27,7 +27,10 @@ use hoshiguma_protocol::{
         },
     },
     peripheral_controller::{
-        event::{EventKind as SuperEventKind, ObservationEvent as SuperObservationEvent},
+        event::{
+            ControlEvent as SuperControlEvent, EventKind as SuperEventKind,
+            ObservationEvent as SuperObservationEvent,
+        },
         types::MonitorKind,
     },
     types::Severity,
@@ -167,16 +170,28 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                                 .await;
                             }
                             EventKind::Control(ControlEvent::Stirrer(v)) => {
-                                // TODO
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolerStirrer(v),
+                                ))
+                                .await;
                             }
                             EventKind::Control(ControlEvent::Compressor(v)) => {
-                                // TODO
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolerCompressor(v),
+                                ))
+                                .await;
                             }
                             EventKind::Control(ControlEvent::RadiatorFan(v)) => {
-                                // TODO
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolerRadiatorFan(v),
+                                ))
+                                .await;
                             }
                             EventKind::Control(ControlEvent::CoolantPump(v)) => {
-                                // TODO
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolantPump(v),
+                                ))
+                                .await;
                             }
                         }
 

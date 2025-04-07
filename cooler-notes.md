@@ -14,4 +14,3 @@
 
 - Monitor logic
 - Meta control logic
-- Cooler event handling
