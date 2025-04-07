@@ -93,5 +93,8 @@ pub(crate) async fn cooling_control() {
 
 #[embassy_executor::task]
 pub(crate) async fn thermal_monitor() {
-    todo!();
+    loop {
+        // TODO
+        embassy_time::Timer::after_secs(10).await;
+    }
 }

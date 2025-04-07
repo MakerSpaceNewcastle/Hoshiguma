@@ -66,7 +66,7 @@ pub(crate) static COOLER_CONTROL_COMMAND: PubSubChannel<
     CoolerControlCommand,
     8,
     1,
-    1,
+    2,
 > = PubSubChannel::new();
 
 pub(crate) static COOLER_CONTROL_ACK: PubSubChannel<
@@ -277,7 +277,7 @@ enum CommunicationStatus {
 struct CommunicationStatusReporter {
     status: CommunicationStatus,
     severity: ObservedSeverity,
-    monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 4>,
+    monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 8>,
 }
 
 impl Default for CommunicationStatusReporter {

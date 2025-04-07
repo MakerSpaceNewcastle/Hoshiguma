@@ -28,7 +28,7 @@ pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     (MonitorKind, Severity),
     8,
     1,
-    4,
+    8,
 > = PubSubChannel::new();
 
 pub(crate) static MONITORS_CHANGED: Watch<CriticalSectionRawMutex, Monitors, 2> = Watch::new();
