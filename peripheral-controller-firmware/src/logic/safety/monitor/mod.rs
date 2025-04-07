@@ -2,7 +2,8 @@ pub(crate) mod chassis_intrusion;
 pub(crate) mod coolant_flow;
 pub(crate) mod coolant_level;
 pub(crate) mod power;
-pub(crate) mod temperatures;
+pub(crate) mod temperatures_a;
+pub(crate) mod temperatures_b;
 
 use crate::{
     changed::{checked_set, Changed, ObservedValue},
