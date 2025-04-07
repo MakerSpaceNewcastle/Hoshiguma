@@ -81,15 +81,34 @@ pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 
 #[embassy_executor::task]
 pub(crate) async fn cooling_control() {
     let mut cooling_demand_rx = COOLING_DEMAND.receiver().unwrap();
+    let mut monitor_rx = MONITORS_CHANGED.receiver().unwrap();
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
 
-    // TODO: validation of cooler state (as per above)
+    let mut demand = ObservedValue::new(CoolingDemand::Idle);
+    let mut comms_is_ok = false;
 
     loop {
-        let demand = cooling_demand_rx.changed().await;
-        queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
-        send_cooler_demand_command(demand, &cooler_command_tx).await;
+        match select(cooling_demand_rx.changed(), monitor_rx.changed()).await {
+            Either::First(new_demand) => {
+                demand
+                    .update_and_async(new_demand, |demand| async {
+                        queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone()))
+                            .await;
+                        send_cooler_demand_command(demand, &cooler_command_tx).await;
+                    })
+                    .await;
+            }
+            Either::Second(monitors) => {
+                let comms_is_ok_now =
+                    *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
+                if !comms_is_ok && comms_is_ok_now {
+                    info!("Communications restored, resending cooler demand command");
+                    send_cooler_demand_command(demand.clone(), &cooler_command_tx).await;
+                }
+                comms_is_ok = comms_is_ok_now;
+            }
+        }
     }
 }
 
