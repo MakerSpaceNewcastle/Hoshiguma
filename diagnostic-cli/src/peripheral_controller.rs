@@ -21,6 +21,8 @@ pub(super) struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    EventStream,
+
     Ping,
     GetSystemInformation,
 
@@ -34,29 +36,49 @@ impl Runner for Cli {
         let mut client = Client::<_, Request, Response>::new(transport);
         let timeout = Duration::from_millis(self.timeout);
 
-        let mut ticker = tokio::time::interval(match self.repeat {
-            Some(ms) => Duration::from_millis(ms),
-            None => Duration::MAX,
-        });
+        match &self.command {
+            Command::EventStream => {
+                let mut ticker =
+                    tokio::time::interval(Duration::from_millis(self.repeat.unwrap_or(50)));
 
-        loop {
-            let request = match self.command {
-                Command::Ping => Request::Ping(42),
-                Command::GetSystemInformation => Request::GetSystemInformation,
-                Command::GetEventCount => Request::GetEventCount,
-                Command::GetEventStatistics => Request::GetEventStatistics,
-                Command::GetOldestEvent => Request::GetOldestEvent,
-            };
+                loop {
+                    match client.call(Request::GetOldestEvent, timeout).await {
+                        Ok(Response::GetOldestEvent(Some(event))) => info!("{:#?}", event),
+                        Ok(Response::GetOldestEvent(None)) => {}
+                        Ok(response) => warn!("Unexpected response {:?}", response),
+                        Err(e) => warn!("Command failed: {e}"),
+                    }
 
-            match client.call(request, timeout).await {
-                Ok(response) => info!("Response: {:#?}", response),
-                Err(e) => warn!("Command failed: {e}"),
+                    ticker.tick().await;
+                }
             }
+            command => {
+                let mut ticker = tokio::time::interval(match self.repeat {
+                    Some(ms) => Duration::from_millis(ms),
+                    None => Duration::MAX,
+                });
 
-            if self.repeat.is_none() {
-                break Ok(());
-            } else {
-                ticker.tick().await;
+                loop {
+                    let request = match command {
+                        Command::EventStream => unreachable!(),
+                        Command::Ping => Request::Ping(42),
+                        Command::GetSystemInformation => Request::GetSystemInformation,
+                        Command::GetEventCount => Request::GetEventCount,
+                        Command::GetEventStatistics => Request::GetEventStatistics,
+                        Command::GetOldestEvent => Request::GetOldestEvent,
+                    };
+
+                    match client.call(request, timeout).await {
+                        Ok(response) => info!("Response: {:#?}", response),
+                        Err(e) => warn!("Command failed: {e}"),
+                    }
+
+                    if self.repeat.is_none() {
+                        break Ok(());
+                    } else {
+                        ticker.tick().await;
+                    }
+                }
             }
         }
     }
