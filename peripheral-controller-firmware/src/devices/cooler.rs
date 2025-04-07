@@ -71,7 +71,7 @@ pub(crate) static COOLER_CONTROL_COMMAND: PubSubChannel<
 
 pub(crate) static COOLANT_FLOW_READ: Watch<CriticalSectionRawMutex, CoolantFlow, 1> = Watch::new();
 
-pub(crate) static COOLER_TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 1> =
+pub(crate) static COOLER_TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 2> =
     Watch::new();
 
 pub(crate) static HEADER_TANK_COOLANT_LEVEL_CHANGED: Watch<

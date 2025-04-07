@@ -2,7 +2,7 @@ use super::safety::monitor::MONITORS_CHANGED;
 use crate::{
     changed::ObservedValue,
     devices::{
-        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
+        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND, COOLER_TEMPERATURES_READ},
         machine_power_detector::MACHINE_POWER_CHANGED,
     },
     telemetry::queue_telemetry_event,
@@ -88,6 +88,8 @@ pub(crate) async fn cooling_control() {
     let mut demand = ObservedValue::new(CoolingDemand::Idle);
     let mut comms_is_ok = false;
 
+    // TODO: do not allow cooling when not enabled
+
     loop {
         match select(cooling_demand_rx.changed(), monitor_rx.changed()).await {
             Either::First(new_demand) => {
@@ -131,13 +133,20 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
 
 #[embassy_executor::task]
 pub(crate) async fn thermal_monitor() {
+    let mut temperatures_rx = COOLER_TEMPERATURES_READ.receiver().unwrap();
+
     let cooling_demand_tx = COOLING_DEMAND.sender();
 
     loop {
+        let temperatures = temperatures_rx.changed().await;
+
         // TODO
-        cooling_demand_tx.send(CoolingDemand::Idle);
-        embassy_time::Timer::after_secs(30).await;
-        cooling_demand_tx.send(CoolingDemand::Demand);
-        embassy_time::Timer::after_secs(30).await;
+        if let Ok(heat_exchange_temperature) = temperatures.heat_exchange_fluid{
+            if heat_exchange_temperature >= 12.0 {
+                cooling_demand_tx.send(CoolingDemand::Demand);
+            } else {
+                cooling_demand_tx.send(CoolingDemand::Idle);
+            }
+        }
     }
 }
