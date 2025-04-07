@@ -1,4 +1,6 @@
+use super::safety::monitor::MONITORS_CHANGED;
 use crate::{
+    changed::ObservedValue,
     devices::{
         cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
         machine_power_detector::MACHINE_POWER_CHANGED,
@@ -6,51 +8,73 @@ use crate::{
     telemetry::queue_telemetry_event,
 };
 use defmt::unwrap;
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
+use embassy_futures::select::{select, Either};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use hoshiguma_protocol::{
     cooler::types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
     peripheral_controller::{
         event::EventKind,
-        types::{CoolingDemand, CoolingEnabled, MachinePower},
+        types::{CoolingDemand, CoolingEnabled, MachinePower, MonitorKind},
     },
+    types::Severity,
 };
 
 #[embassy_executor::task]
 pub(crate) async fn power_control() {
     let mut machine_power_rx = MACHINE_POWER_CHANGED.receiver().unwrap();
+    let mut monitor_rx = MONITORS_CHANGED.receiver().unwrap();
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
 
-    // TODO: validation of cooler state
+    let mut enabled = ObservedValue::new(CoolingEnabled::Inhibit);
+    let mut comms_is_ok = false;
 
     loop {
-        let power = machine_power_rx.changed().await;
-
-        match power {
-            MachinePower::On => {
-                queue_telemetry_event(EventKind::CoolingEnableChanged(CoolingEnabled::Enable))
-                    .await;
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Run))
-                    .await;
-                // TODO: delay
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetStirrer(Stirrer::Run))
+        match select(machine_power_rx.changed(), monitor_rx.changed()).await {
+            Either::First(power) => {
+                enabled
+                    .update_and_async(
+                        match power {
+                            MachinePower::On => CoolingEnabled::Enable,
+                            MachinePower::Off => CoolingEnabled::Inhibit,
+                        },
+                        |enabled| async {
+                            queue_telemetry_event(EventKind::CoolingEnableChanged(enabled.clone()))
+                                .await;
+                            send_cooler_command(enabled, &cooler_command_tx).await;
+                        },
+                    )
                     .await;
             }
-            MachinePower::Off => {
-                queue_telemetry_event(EventKind::CoolingEnableChanged(CoolingEnabled::Inhibit))
-                    .await;
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetCoolantPump(CoolantPump::Idle))
-                    .await;
-                // TODO: delay
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetStirrer(Stirrer::Idle))
-                    .await;
+            Either::Second(monitors) => {
+                let comms_is_ok_now =
+                    *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
+                if !comms_is_ok && comms_is_ok_now {
+                    send_cooler_command(enabled.clone(), &cooler_command_tx).await;
+                    comms_is_ok = true;
+                }
             }
         }
     }
+}
+
+async fn send_cooler_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
+    enabled: CoolingEnabled,
+    tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
+) {
+    tx.publish(CoolerControlCommand::SetCoolantPump(match enabled {
+        CoolingEnabled::Inhibit => CoolantPump::Idle,
+        CoolingEnabled::Enable => CoolantPump::Run,
+    }))
+    .await;
+
+    // TODO: delay?
+
+    tx.publish(CoolerControlCommand::SetStirrer(match enabled {
+        CoolingEnabled::Inhibit => Stirrer::Idle,
+        CoolingEnabled::Enable => Stirrer::Run,
+    }))
+    .await;
 }
 
 pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();

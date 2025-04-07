@@ -31,7 +31,7 @@ pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     8,
 > = PubSubChannel::new();
 
-pub(crate) static MONITORS_CHANGED: Watch<CriticalSectionRawMutex, Monitors, 2> = Watch::new();
+pub(crate) static MONITORS_CHANGED: Watch<CriticalSectionRawMutex, Monitors, 3> = Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn observation_task() {

@@ -21,6 +21,14 @@ pub(crate) struct ObservedValue<T: Clone + PartialEq> {
     value: T,
 }
 
+impl<T: Clone + PartialEq> core::ops::Deref for ObservedValue<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
 impl<T: Clone + PartialEq> ObservedValue<T> {
     pub(crate) fn new(initial: T) -> Self {
         Self { value: initial }

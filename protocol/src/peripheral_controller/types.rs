@@ -41,6 +41,10 @@ pub struct Monitors {
 }
 
 impl Monitors {
+    pub fn get(&self, monitor: MonitorKind) -> &Severity {
+        self.inner.get(&monitor).unwrap()
+    }
+
     pub fn get_mut(&mut self, monitor: MonitorKind) -> &mut Severity {
         self.inner.get_mut(&monitor).unwrap()
     }
