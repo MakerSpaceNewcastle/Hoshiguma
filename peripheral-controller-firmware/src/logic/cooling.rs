@@ -8,7 +8,7 @@ use crate::{
     telemetry::queue_telemetry_event,
 };
 use defmt::{info, unwrap};
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{select3, Either3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use hoshiguma_protocol::{
     cooler::types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
@@ -19,19 +19,34 @@ use hoshiguma_protocol::{
     types::Severity,
 };
 
+pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();
+
 #[embassy_executor::task]
-pub(crate) async fn power_control() {
+pub(crate) async fn control_task() {
     let mut machine_power_rx = MACHINE_POWER_CHANGED.receiver().unwrap();
+    let mut cooling_demand_rx = COOLING_DEMAND.receiver().unwrap();
     let mut monitor_rx = MONITORS_CHANGED.receiver().unwrap();
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
 
-    let mut enabled = ObservedValue::new(CoolingEnabled::Inhibit);
+    let mut machine_power = MachinePower::Off;
+    let mut external_demand = CoolingDemand::Idle;
     let mut comms_is_ok = false;
 
+    let mut enabled = ObservedValue::new(CoolingEnabled::Inhibit);
+    let mut demand = ObservedValue::new(CoolingDemand::Idle);
+
     loop {
-        match select(machine_power_rx.changed(), monitor_rx.changed()).await {
-            Either::First(power) => {
+        match select3(
+            machine_power_rx.changed(),
+            cooling_demand_rx.changed(),
+            monitor_rx.changed(),
+        )
+        .await
+        {
+            Either3::First(power) => {
+                machine_power = power.clone();
+
                 enabled
                     .update_and_async(
                         match power {
@@ -45,18 +60,57 @@ pub(crate) async fn power_control() {
                         },
                     )
                     .await;
+
+                set_demand(
+                    &cooler_command_tx,
+                    &mut demand,
+                    &machine_power,
+                    &external_demand,
+                )
+                .await;
             }
-            Either::Second(monitors) => {
+            Either3::Second(new_demand) => {
+                external_demand = new_demand;
+
+                set_demand(
+                    &cooler_command_tx,
+                    &mut demand,
+                    &machine_power,
+                    &external_demand,
+                )
+                .await;
+            }
+            Either3::Third(monitors) => {
                 let comms_is_ok_now =
                     *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
                 if !comms_is_ok && comms_is_ok_now {
-                    info!("Communications restored, resending cooler enable command");
+                    info!("Communications restored, resending cooler commands");
                     send_cooler_enable_command(enabled.clone(), &cooler_command_tx).await;
+                    send_cooler_demand_command(demand.clone(), &cooler_command_tx).await;
                 }
                 comms_is_ok = comms_is_ok_now;
             }
         }
     }
+}
+
+async fn set_demand<const A: usize, const B: usize, const C: usize>(
+    cooler_command_tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, A, B, C>,
+    demand: &mut ObservedValue<CoolingDemand>,
+    machine_power: &MachinePower,
+    external_demand: &CoolingDemand,
+) {
+    let new_demand = match machine_power {
+        MachinePower::On => external_demand,
+        MachinePower::Off => &CoolingDemand::Idle,
+    };
+
+    demand
+        .update_and_async(new_demand.clone(), |demand| async {
+            queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
+            send_cooler_demand_command(demand, &cooler_command_tx).await;
+        })
+        .await;
 }
 
 async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
@@ -74,44 +128,6 @@ async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const P
         CoolingEnabled::Enable => Stirrer::Run,
     }))
     .await;
-}
-
-pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();
-
-#[embassy_executor::task]
-pub(crate) async fn cooling_control() {
-    let mut cooling_demand_rx = COOLING_DEMAND.receiver().unwrap();
-    let mut monitor_rx = MONITORS_CHANGED.receiver().unwrap();
-
-    let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
-
-    let mut demand = ObservedValue::new(CoolingDemand::Idle);
-    let mut comms_is_ok = false;
-
-    // TODO: do not allow cooling when not enabled
-
-    loop {
-        match select(cooling_demand_rx.changed(), monitor_rx.changed()).await {
-            Either::First(new_demand) => {
-                demand
-                    .update_and_async(new_demand, |demand| async {
-                        queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone()))
-                            .await;
-                        send_cooler_demand_command(demand, &cooler_command_tx).await;
-                    })
-                    .await;
-            }
-            Either::Second(monitors) => {
-                let comms_is_ok_now =
-                    *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
-                if !comms_is_ok && comms_is_ok_now {
-                    info!("Communications restored, resending cooler demand command");
-                    send_cooler_demand_command(demand.clone(), &cooler_command_tx).await;
-                }
-                comms_is_ok = comms_is_ok_now;
-            }
-        }
-    }
 }
 
 async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
@@ -132,7 +148,7 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
 }
 
 #[embassy_executor::task]
-pub(crate) async fn thermal_monitor() {
+pub(crate) async fn demand_task() {
     let mut temperatures_rx = COOLER_TEMPERATURES_READ.receiver().unwrap();
 
     let cooling_demand_tx = COOLING_DEMAND.sender();
@@ -141,7 +157,7 @@ pub(crate) async fn thermal_monitor() {
         let temperatures = temperatures_rx.changed().await;
 
         // TODO
-        if let Ok(heat_exchange_temperature) = temperatures.heat_exchange_fluid{
+        if let Ok(heat_exchange_temperature) = temperatures.heat_exchange_fluid {
             if heat_exchange_temperature >= 12.0 {
                 cooling_demand_tx.send(CoolingDemand::Demand);
             } else {

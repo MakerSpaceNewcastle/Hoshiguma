@@ -223,9 +223,8 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::fume_extraction::task()));
 
     // Cooler control tasks
-    unwrap!(spawner.spawn(logic::cooling::power_control()));
-    unwrap!(spawner.spawn(logic::cooling::cooling_control()));
-    unwrap!(spawner.spawn(logic::cooling::thermal_monitor()));
+    unwrap!(spawner.spawn(logic::cooling::control_task()));
+    unwrap!(spawner.spawn(logic::cooling::demand_task()));
 
     // Telemetry reporting
     unwrap!(spawner.spawn(telemetry::task(r.telemetry)));
