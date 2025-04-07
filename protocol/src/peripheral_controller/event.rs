@@ -3,7 +3,13 @@ use super::types::{
     FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
     MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
-use crate::{cooler::types::Temperatures as CoolerTemperatures, types::SystemInformation};
+use crate::{
+    cooler::types::{
+        CoolantFlow, HeaderTankCoolantLevelReading, HeatExchangeFluidLevel,
+        Temperatures as CoolerTemperatures,
+    },
+    types::SystemInformation,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,13 +39,19 @@ pub enum EventKind {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ObservationEvent {
+    // Self
+    TemperaturesA(Temperatures),
     AirAssistDemand(AirAssistDemand),
     ChassisIntrusion(ChassisIntrusion),
     FumeExtractionMode(FumeExtractionMode),
     MachinePower(MachinePower),
     MachineRun(MachineRun),
-    TemperaturesA(Temperatures),
+
+    // Forwarded from cooler
     TemperaturesB(CoolerTemperatures),
+    CoolantFlow(CoolantFlow),
+    HeatExchangerFluidLevel(HeatExchangeFluidLevel),
+    CoolantHeaderTankLevel(HeaderTankCoolantLevelReading),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

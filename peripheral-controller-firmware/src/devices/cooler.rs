@@ -26,7 +26,10 @@ use hoshiguma_protocol::{
             HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
         },
     },
-    peripheral_controller::{event::EventKind as SuperEventKind, types::MonitorKind},
+    peripheral_controller::{
+        event::{EventKind as SuperEventKind, ObservationEvent as SuperObservationEvent},
+        types::MonitorKind,
+    },
     types::Severity,
 };
 use static_cell::StaticCell;
@@ -136,16 +139,32 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                                 queue_telemetry_event(SuperEventKind::CoolerBoot(info)).await;
                             }
                             EventKind::Observation(ObservationEvent::CoolantFlow(v)) => {
-                                coolant_flow_tx.send(v);
+                                coolant_flow_tx.send(v.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::CoolantFlow(v),
+                                ))
+                                .await;
                             }
                             EventKind::Observation(ObservationEvent::Temperatures(v)) => {
-                                temperatures_tx.send(v);
+                                temperatures_tx.send(v.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::TemperaturesB(v),
+                                ))
+                                .await;
                             }
                             EventKind::Observation(ObservationEvent::HeatExchangeFluidLevel(v)) => {
-                                heat_exchanger_fluid_level_tx.send(v);
+                                heat_exchanger_fluid_level_tx.send(v.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::HeatExchangerFluidLevel(v),
+                                ))
+                                .await;
                             }
                             EventKind::Observation(ObservationEvent::HeaderTankCoolantLevel(v)) => {
-                                header_tank_level_tx.send(v);
+                                header_tank_level_tx.send(v.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::CoolantHeaderTankLevel(v),
+                                ))
+                                .await;
                             }
                             EventKind::Control(_) => {
                                 // Do nothing

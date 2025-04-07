@@ -54,6 +54,14 @@ pub(crate) async fn task() {
         }
 
         // Check heat exchanger temperature
-        // TODO
+        if let Ok(new_severity) = temperature_to_state(20.0, 25.0, state.heat_exchange_fluid) {
+            coolant_flow_severity
+                .update_and_async(new_severity, |severity| async {
+                    status_tx
+                        .publish((MonitorKind::CoolantFlowOvertemperatureB, severity))
+                        .await;
+                })
+                .await;
+        }
     }
 }
