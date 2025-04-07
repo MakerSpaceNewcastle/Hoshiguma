@@ -19,7 +19,7 @@ use embassy_sync::{
 use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::{
     cooler::{
-        event::{EventKind, ObservationEvent},
+        event::{ControlEvent, EventKind, ObservationEvent},
         rpc::{Request, Response},
         types::{
             Compressor, CoolantFlow, CoolantPump, HeaderTankCoolantLevelReading,
@@ -166,8 +166,17 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                                 ))
                                 .await;
                             }
-                            EventKind::Control(_) => {
-                                // Do nothing
+                            EventKind::Control(ControlEvent::Stirrer(v)) => {
+                                // TODO
+                            }
+                            EventKind::Control(ControlEvent::Compressor(v)) => {
+                                // TODO
+                            }
+                            EventKind::Control(ControlEvent::RadiatorFan(v)) => {
+                                // TODO
+                            }
+                            EventKind::Control(ControlEvent::CoolantPump(v)) => {
+                                // TODO
                             }
                         }
 
