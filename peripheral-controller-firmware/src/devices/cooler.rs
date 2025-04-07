@@ -5,7 +5,7 @@ use crate::{
     CoolerCommunicationResources,
 };
 use defmt::{info, unwrap, warn, Format};
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{select3, Either3};
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART1,
@@ -16,7 +16,7 @@ use embassy_sync::{
     pubsub::{PubSubChannel, Publisher, WaitResult},
     watch::Watch,
 };
-use embassy_time::{Duration, Instant, Timer};
+use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::{
     cooler::{
         event::{ControlEvent, EventKind, ObservationEvent},
@@ -110,6 +110,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let mut client = Client::<_, Request, Response>::new(transport);
 
     let mut comm_status = CommunicationStatusReporter::default();
+    let mut comm_status_check_tick = Ticker::every(Duration::from_secs(1));
 
     let mut control_rx = unwrap!(COOLER_CONTROL.subscriber());
 
@@ -124,8 +125,14 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let header_tank_level_tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
 
     loop {
-        match select(Timer::after(event_poll_interval), control_rx.next_message()).await {
-            Either::First(_) => {
+        match select3(
+            Timer::after(event_poll_interval),
+            control_rx.next_message(),
+            comm_status_check_tick.next(),
+        )
+        .await
+        {
+            Either3::First(_) => {
                 match client
                     .call(
                         Request::GetOldestEvent,
@@ -211,7 +218,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     }
                 }
             }
-            Either::Second(WaitResult::Message(cmd)) => {
+            Either3::Second(WaitResult::Message(cmd)) => {
                 let request: Request = cmd.into();
 
                 'cmd_send: for attempt in 0..5 {
@@ -231,8 +238,11 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     }
                 }
             }
-            Either::Second(WaitResult::Lagged(_)) => {
+            Either3::Second(WaitResult::Lagged(_)) => {
                 // TODO: probably just panic here
+            }
+            Either3::Third(_) => {
+                comm_status.evaluate().await;
             }
         }
     }
