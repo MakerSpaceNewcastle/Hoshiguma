@@ -42,9 +42,6 @@ pub(crate) async fn observation_task() {
 
     loop {
         match rx.next_message().await {
-            WaitResult::Lagged(n) => {
-                panic!("Monitor observer channel lagged, losing {} messages", n)
-            }
             WaitResult::Message(new_status) => {
                 debug!("Monitor changed: {} -> {}", new_status.0, new_status.1);
 
@@ -54,6 +51,9 @@ pub(crate) async fn observation_task() {
                     tx.send(monitors.clone());
                     queue_telemetry_event(EventKind::MonitorsChanged(monitors.clone())).await;
                 }
+            }
+            WaitResult::Lagged(msg_count) => {
+                panic!("Subscriber lagged, losing {} messages", msg_count);
             }
         }
     }
