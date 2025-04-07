@@ -121,7 +121,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let mut comm_status_check_tick = Ticker::every(Duration::from_secs(1));
 
     let mut control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
-    let mut control_ack_tx = unwrap!(COOLER_CONTROL_ACK.publisher());
+    let control_ack_tx = unwrap!(COOLER_CONTROL_ACK.publisher());
 
     const SHORT_EVENT_POLL: Duration = Duration::from_millis(50);
     const LONG_EVENT_POLL: Duration = Duration::from_millis(500);
@@ -186,36 +186,36 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                                 .await;
                             }
                             EventKind::Control(ControlEvent::Stirrer(v)) => {
-                                control_ack_tx
-                                    .publish(CoolerControlCommand::SetStirrer(v.clone()))
-                                    .await;
+                                // control_ack_tx
+                                //     .publish(CoolerControlCommand::SetStirrer(v.clone()))
+                                //     .await;
                                 queue_telemetry_event(SuperEventKind::Control(
                                     SuperControlEvent::CoolerStirrer(v),
                                 ))
                                 .await;
                             }
                             EventKind::Control(ControlEvent::Compressor(v)) => {
-                                control_ack_tx
-                                    .publish(CoolerControlCommand::SetCompressor(v.clone()))
-                                    .await;
+                                // control_ack_tx
+                                //     .publish(CoolerControlCommand::SetCompressor(v.clone()))
+                                //     .await;
                                 queue_telemetry_event(SuperEventKind::Control(
                                     SuperControlEvent::CoolerCompressor(v),
                                 ))
                                 .await;
                             }
                             EventKind::Control(ControlEvent::RadiatorFan(v)) => {
-                                control_ack_tx
-                                    .publish(CoolerControlCommand::SetRadiatorFan(v.clone()))
-                                    .await;
+                                // control_ack_tx
+                                //     .publish(CoolerControlCommand::SetRadiatorFan(v.clone()))
+                                //     .await;
                                 queue_telemetry_event(SuperEventKind::Control(
                                     SuperControlEvent::CoolerRadiatorFan(v),
                                 ))
                                 .await;
                             }
                             EventKind::Control(ControlEvent::CoolantPump(v)) => {
-                                control_ack_tx
-                                    .publish(CoolerControlCommand::SetCoolantPump(v.clone()))
-                                    .await;
+                                // control_ack_tx
+                                //     .publish(CoolerControlCommand::SetCoolantPump(v.clone()))
+                                //     .await;
                                 queue_telemetry_event(SuperEventKind::Control(
                                     SuperControlEvent::CoolantPump(v),
                                 ))
@@ -314,9 +314,12 @@ impl CommunicationStatusReporter {
     }
 
     async fn evaluate(&mut self) {
+        const WARN_TIMEOUT: Duration = Duration::from_secs(3);
+        const CRITICAL_TIMEOUT: Duration = Duration::from_secs(10);
+
         let severity = match self.status {
             CommunicationStatus::Ok { last } => {
-                if Instant::now().saturating_duration_since(last) > Duration::from_secs(10) {
+                if Instant::now().saturating_duration_since(last) > WARN_TIMEOUT {
                     self.status = CommunicationStatus::Failed {
                         since: Instant::now(),
                     };
@@ -326,7 +329,7 @@ impl CommunicationStatusReporter {
                 }
             }
             CommunicationStatus::Failed { since } => {
-                if Instant::now().saturating_duration_since(since) > Duration::from_secs(10) {
+                if Instant::now().saturating_duration_since(since) > CRITICAL_TIMEOUT {
                     Severity::Critical
                 } else {
                     Severity::Warn
@@ -337,7 +340,7 @@ impl CommunicationStatusReporter {
         self.severity
             .update_and_async(severity, |severity| async {
                 self.monitor_tx
-                    .publish((MonitorKind::HeatExchangerFluidLow, severity))
+                    .publish((MonitorKind::CoolerCommunicationFault, severity))
                     .await;
             })
             .await;

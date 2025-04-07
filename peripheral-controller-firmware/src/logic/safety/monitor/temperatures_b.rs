@@ -10,6 +10,7 @@ pub(crate) async fn task() {
 
     let mut sensor_severity = ObservedSeverity::default();
     let mut coolant_flow_severity = ObservedSeverity::default();
+    let mut heat_exchanger_severity = ObservedSeverity::default();
 
     let mut sensor_failure_counter = 0;
 
@@ -55,10 +56,10 @@ pub(crate) async fn task() {
 
         // Check heat exchanger temperature
         if let Ok(new_severity) = temperature_to_state(20.0, 25.0, state.heat_exchange_fluid) {
-            coolant_flow_severity
+            heat_exchanger_severity
                 .update_and_async(new_severity, |severity| async {
                     status_tx
-                        .publish((MonitorKind::CoolantFlowOvertemperatureB, severity))
+                        .publish((MonitorKind::HeatExchangerOvertemperature, severity))
                         .await;
                 })
                 .await;
