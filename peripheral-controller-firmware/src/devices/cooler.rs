@@ -1,3 +1,4 @@
+use super::TemperaturesExt;
 use crate::{
     logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS},
     telemetry::queue_telemetry_event,
@@ -266,5 +267,20 @@ impl CommunicationStatusReporter {
                     .await;
             })
             .await;
+    }
+}
+
+impl TemperaturesExt for Temperatures {
+    fn any_failed_sensors(&self) -> bool {
+        let sensors = [
+            &self.onboard,
+            &self.coolant_flow,
+            &self.coolant_mid,
+            &self.coolant_return,
+            &self.heat_exchange_fluid,
+            &self.heat_exchanger_loop,
+        ];
+
+        sensors.iter().any(|i| i.is_err())
     }
 }

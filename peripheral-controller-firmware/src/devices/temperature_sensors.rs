@@ -1,3 +1,4 @@
+use super::TemperaturesExt;
 use crate::{telemetry::queue_telemetry_event, OnewireResources};
 use defmt::{info, warn};
 use ds18b20::{Ds18b20, Resolution};
@@ -13,12 +14,8 @@ use hoshiguma_protocol::{
 };
 use one_wire_bus::{Address, OneWire};
 
-pub(crate) trait TemperaturesExt {
-    fn overall_result(&self) -> Result<(), ()>;
-}
-
 impl TemperaturesExt for Temperatures {
-    fn overall_result(&self) -> Result<(), ()> {
+    fn any_failed_sensors(&self) -> bool {
         let sensors = [
             &self.onboard,
             &self.electronics_bay_top,
@@ -28,13 +25,7 @@ impl TemperaturesExt for Temperatures {
             &self.coolant_pump,
         ];
 
-        let any_error = sensors.iter().any(|i| i.is_err());
-
-        if any_error {
-            Err(())
-        } else {
-            Ok(())
-        }
+        sensors.iter().any(|i| i.is_err())
     }
 }
 

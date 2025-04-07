@@ -10,3 +10,7 @@ pub(crate) mod machine_power_detector;
 pub(crate) mod machine_run_detector;
 pub(crate) mod status_lamp;
 pub(crate) mod temperature_sensors;
+
+pub(crate) trait TemperaturesExt {
+    fn any_failed_sensors(&self) -> bool;
+}

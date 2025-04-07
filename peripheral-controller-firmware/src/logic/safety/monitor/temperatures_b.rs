@@ -1,5 +1,5 @@
 use super::{temperature_to_state, ObservedSeverity, NEW_MONITOR_STATUS};
-use crate::devices::cooler::COOLER_TEMPERATURES_READ;
+use crate::devices::{cooler::COOLER_TEMPERATURES_READ, TemperaturesExt};
 use defmt::{unwrap, warn};
 use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
 
@@ -17,24 +17,21 @@ pub(crate) async fn task() {
         let state = temperatures_rx.changed().await;
 
         // Check for faulty sensors
-        let new_sensor_severity = match state.overall_result() {
-            Ok(_) => {
-                sensor_failure_counter = 0;
-                Severity::Normal
-            }
-            Err(_) => {
-                sensor_failure_counter += 1;
-                warn!(
-                    "One or more temperature sensors have failed {} times in a row",
-                    sensor_failure_counter
-                );
+        let new_sensor_severity = if state.any_failed_sensors() {
+            sensor_failure_counter += 1;
+            warn!(
+                "One or more temperature sensors have failed {} times in a row",
+                sensor_failure_counter
+            );
 
-                if sensor_failure_counter < 3 {
-                    Severity::Normal
-                } else {
-                    Severity::Warn
-                }
+            if sensor_failure_counter < 3 {
+                Severity::Normal
+            } else {
+                Severity::Warn
             }
+        } else {
+            sensor_failure_counter = 0;
+            Severity::Normal
         };
 
         sensor_severity
