@@ -205,7 +205,8 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_flow::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::heat_exchanger_task()));
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::coolant_header_tank_task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::temperatures::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::temperatures_a::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::temperatures_b::task()));
 
     // Air assist control tasks
     unwrap!(spawner.spawn(devices::air_assist_demand_detector::task(
