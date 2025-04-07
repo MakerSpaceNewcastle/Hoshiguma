@@ -7,7 +7,7 @@ use crate::{
     },
     telemetry::queue_telemetry_event,
 };
-use defmt::unwrap;
+use defmt::{info, unwrap};
 use embassy_futures::select::{select, Either};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use hoshiguma_protocol::{
@@ -50,9 +50,10 @@ pub(crate) async fn power_control() {
                 let comms_is_ok_now =
                     *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
                 if !comms_is_ok && comms_is_ok_now {
+                    info!("Communications restored, resending cooler enable command");
                     send_cooler_command(enabled.clone(), &cooler_command_tx).await;
-                    comms_is_ok = true;
                 }
+                comms_is_ok = comms_is_ok_now;
             }
         }
     }
@@ -67,8 +68,6 @@ async fn send_cooler_command<const CAP: usize, const SUBS: usize, const PUBS: us
         CoolingEnabled::Enable => CoolantPump::Run,
     }))
     .await;
-
-    // TODO: delay?
 
     tx.publish(CoolerControlCommand::SetStirrer(match enabled {
         CoolingEnabled::Inhibit => Stirrer::Idle,
@@ -85,7 +84,7 @@ pub(crate) async fn cooling_control() {
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
 
-    // TODO: validation of cooler state
+    // TODO: validation of cooler state (as per above)
 
     loop {
         let demand = cooling_demand_rx.changed().await;
@@ -96,7 +95,6 @@ pub(crate) async fn cooling_control() {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Run))
                     .await;
-                // TODO: delay
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCompressor(Compressor::Run))
                     .await;
@@ -105,7 +103,6 @@ pub(crate) async fn cooling_control() {
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Idle))
                     .await;
-                // TODO: delay
                 cooler_command_tx
                     .publish(CoolerControlCommand::SetCompressor(Compressor::Idle))
                     .await;
