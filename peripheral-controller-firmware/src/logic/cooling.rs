@@ -41,7 +41,7 @@ pub(crate) async fn power_control() {
                         |enabled| async {
                             queue_telemetry_event(EventKind::CoolingEnableChanged(enabled.clone()))
                                 .await;
-                            send_cooler_command(enabled, &cooler_command_tx).await;
+                            send_cooler_enable_command(enabled, &cooler_command_tx).await;
                         },
                     )
                     .await;
@@ -51,7 +51,7 @@ pub(crate) async fn power_control() {
                     *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
                 if !comms_is_ok && comms_is_ok_now {
                     info!("Communications restored, resending cooler enable command");
-                    send_cooler_command(enabled.clone(), &cooler_command_tx).await;
+                    send_cooler_enable_command(enabled.clone(), &cooler_command_tx).await;
                 }
                 comms_is_ok = comms_is_ok_now;
             }
@@ -59,7 +59,7 @@ pub(crate) async fn power_control() {
     }
 }
 
-async fn send_cooler_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
+async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
     enabled: CoolingEnabled,
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
@@ -89,32 +89,36 @@ pub(crate) async fn cooling_control() {
     loop {
         let demand = cooling_demand_rx.changed().await;
         queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
-
-        match demand {
-            CoolingDemand::Demand => {
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Run))
-                    .await;
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetCompressor(Compressor::Run))
-                    .await;
-            }
-            CoolingDemand::Idle => {
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetRadiatorFan(RadiatorFan::Idle))
-                    .await;
-                cooler_command_tx
-                    .publish(CoolerControlCommand::SetCompressor(Compressor::Idle))
-                    .await;
-            }
-        }
+        send_cooler_demand_command(demand, &cooler_command_tx).await;
     }
+}
+
+async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
+    demand: CoolingDemand,
+    tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
+) {
+    tx.publish(CoolerControlCommand::SetRadiatorFan(match demand {
+        CoolingDemand::Idle => RadiatorFan::Idle,
+        CoolingDemand::Demand => RadiatorFan::Run,
+    }))
+    .await;
+
+    tx.publish(CoolerControlCommand::SetCompressor(match demand {
+        CoolingDemand::Idle => Compressor::Idle,
+        CoolingDemand::Demand => Compressor::Run,
+    }))
+    .await;
 }
 
 #[embassy_executor::task]
 pub(crate) async fn thermal_monitor() {
+    let cooling_demand_tx = COOLING_DEMAND.sender();
+
     loop {
         // TODO
-        embassy_time::Timer::after_secs(10).await;
+        cooling_demand_tx.send(CoolingDemand::Idle);
+        embassy_time::Timer::after_secs(30).await;
+        cooling_demand_tx.send(CoolingDemand::Demand);
+        embassy_time::Timer::after_secs(30).await;
     }
 }
