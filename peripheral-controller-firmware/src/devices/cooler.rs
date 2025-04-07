@@ -238,8 +238,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     }
                 }
             }
-            Either3::Second(WaitResult::Lagged(_)) => {
-                // TODO: probably just panic here
+            Either3::Second(WaitResult::Lagged(msg_count)) => {
+                panic!("Subscriber lagged, losing {} messages", msg_count);
             }
             Either3::Third(_) => {
                 comm_status.evaluate().await;
