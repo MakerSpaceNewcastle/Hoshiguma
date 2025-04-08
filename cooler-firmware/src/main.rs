@@ -106,16 +106,8 @@ fn main() -> ! {
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
     // Devices
-    unwrap!(spawner.spawn(devices::radiator_fan::task(r.radiator_fan)));
-    unwrap!(spawner.spawn(devices::compressor::task(r.compressor)));
-    unwrap!(spawner.spawn(devices::stirrer::task(r.stirrer)));
-    unwrap!(spawner.spawn(devices::coolant_pump::task(r.coolant_pump)));
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
     unwrap!(spawner.spawn(devices::coolant_flow_sensor::task(r.flow_sensor)));
-    unwrap!(spawner.spawn(devices::heat_exchanger_level_sensor::task(
-        r.heat_exchanger_level
-    )));
-    unwrap!(spawner.spawn(devices::header_tank_level_sensor::task(r.header_tank_level)));
 
     // RPC/telemetry/control
     unwrap!(spawner.spawn(rpc::task(r.communication)));
