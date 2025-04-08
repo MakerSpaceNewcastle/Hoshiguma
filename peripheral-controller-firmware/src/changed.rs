@@ -18,11 +18,17 @@ pub(crate) fn checked_set<T: PartialEq>(value: &mut T, new: T) -> Changed {
 }
 
 pub(crate) struct ObservedValue<T: Clone + PartialEq> {
-    value: T,
+    value: Option<T>,
+}
+
+impl<T: Clone + PartialEq> Default for ObservedValue<T> {
+    fn default() -> Self {
+        Self { value: None }
+    }
 }
 
 impl<T: Clone + PartialEq> core::ops::Deref for ObservedValue<T> {
-    type Target = T;
+    type Target = Option<T>;
 
     fn deref(&self) -> &Self::Target {
         &self.value
@@ -31,16 +37,19 @@ impl<T: Clone + PartialEq> core::ops::Deref for ObservedValue<T> {
 
 impl<T: Clone + PartialEq> ObservedValue<T> {
     pub(crate) fn new(initial: T) -> Self {
-        Self { value: initial }
+        Self {
+            value: Some(initial),
+        }
     }
 
     pub(crate) fn update(&mut self, new_value: T) -> Changed {
-        checked_set(&mut self.value, new_value)
+        checked_set(&mut self.value, Some(new_value))
     }
 
     pub(crate) fn update_and<F: FnOnce(T) -> ()>(&mut self, new_value: T, on_change: F) {
         if self.update(new_value) == Changed::Yes {
-            on_change(self.value.clone());
+            // Will always have a value when changed
+            on_change(self.value.clone().unwrap());
         }
     }
 
@@ -50,7 +59,8 @@ impl<T: Clone + PartialEq> ObservedValue<T> {
         Fut: Future<Output = ()>,
     {
         if self.update(new_value) == Changed::Yes {
-            on_change(self.value.clone()).await;
+            // Will always have a value when changed
+            on_change(self.value.clone().unwrap()).await;
         }
     }
 }

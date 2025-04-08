@@ -61,12 +61,6 @@ pub(crate) async fn observation_task() {
 
 pub(crate) type ObservedSeverity = ObservedValue<Severity>;
 
-impl Default for ObservedSeverity {
-    fn default() -> Self {
-        Self::new(Severity::Critical)
-    }
-}
-
 fn temperature_to_state(
     warn: f32,
     critical: f32,

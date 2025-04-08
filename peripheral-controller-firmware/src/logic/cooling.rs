@@ -86,8 +86,8 @@ pub(crate) async fn control_task() {
                     *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
                 if !comms_is_ok && comms_is_ok_now {
                     info!("Communications restored, resending cooler commands");
-                    send_cooler_enable_command(enabled.clone(), &cooler_command_tx).await;
-                    send_cooler_demand_command(demand.clone(), &cooler_command_tx).await;
+                    send_cooler_enable_command(enabled.clone().unwrap(), &cooler_command_tx).await;
+                    send_cooler_demand_command(demand.clone().unwrap(), &cooler_command_tx).await;
                 }
                 comms_is_ok = comms_is_ok_now;
             }
