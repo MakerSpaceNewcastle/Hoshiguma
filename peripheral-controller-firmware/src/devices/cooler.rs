@@ -90,26 +90,6 @@ bind_interrupts!(struct Irqs {
     UART1_IRQ  => BufferedInterruptHandler<UART1>;
 });
 
-struct Moniitaaaaaa<T: 'static + Clone + PartialEq, const N: usize> {
-    tx: Sender<'static, CriticalSectionRawMutex, T, N>,
-    observer: ObservedValue<T>,
-}
-
-impl<T: 'static + Clone + PartialEq, const N: usize> Moniitaaaaaa<T, N> {
-    fn new(tx: Sender<'static, CriticalSectionRawMutex, T, N>) -> Self {
-        Self {
-            tx,
-            observer: ObservedValue::default(),
-        }
-    }
-
-    async fn update(&mut self, value: T) {
-        self.observer.update_and(value, |value| {
-            self.tx.send(value);
-        });
-    }
-}
-
 #[embassy_executor::task]
 pub(crate) async fn task(r: CoolerCommunicationResources) {
     const TX_BUFFER_SIZE: usize = 256;
@@ -136,11 +116,17 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     let mut control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
 
-    let mut coolant_flow = Moniitaaaaaa::new(COOLANT_FLOW_READ.sender());
-    let mut temperatures = Moniitaaaaaa::new(COOLER_TEMPERATURES_READ.sender());
-    let mut heat_exchanger_fluid_level =
-        Moniitaaaaaa::new(HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender());
-    let mut header_tank_level = Moniitaaaaaa::new(HEADER_TANK_COOLANT_LEVEL_CHANGED.sender());
+    let mut coolant_flow = ObservedValue::default();
+    let coolant_flow_tx = COOLANT_FLOW_READ.sender();
+
+    let mut temperatures = ObservedValue::default();
+    let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
+
+    let mut heat_exchanger_fluid_level = ObservedValue::default();
+    let heat_exchanger_fluid_level_tx = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
+
+    let mut header_tank_level = ObservedValue::default();
+    let header_tank_level_tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
 
     loop {
         match select3(
@@ -159,13 +145,44 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         info!("Got state from cooler: {:?}", state);
                         comm_status.comm_good().await;
 
-                        coolant_flow.update(state.coolant_flow_rate).await;
-                        temperatures.update(state.temperatures).await;
-                        heat_exchanger_fluid_level
-                            .update(state.heat_exchange_fluid_level)
+                        coolant_flow
+                            .update_and_async(state.coolant_flow_rate, |value| async {
+                                coolant_flow_tx.send(value.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::CoolantFlow(value),
+                                ))
+                                .await;
+                            })
                             .await;
+
+                        temperatures
+                            .update_and_async(state.temperatures, |value| async {
+                                temperatures_tx.send(value.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::TemperaturesB(value),
+                                ))
+                                .await;
+                            })
+                            .await;
+
+                        heat_exchanger_fluid_level
+                            .update_and_async(state.heat_exchange_fluid_level, |value| async {
+                                heat_exchanger_fluid_level_tx.send(value.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::HeatExchangerFluidLevel(value),
+                                ))
+                                .await;
+                            })
+                            .await;
+
                         header_tank_level
-                            .update(state.coolant_header_tank_level)
+                            .update_and_async(state.coolant_header_tank_level, |value| async {
+                                header_tank_level_tx.send(value.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::CoolantHeaderTankLevel(value),
+                                ))
+                                .await;
+                            })
                             .await;
 
                         //     EventKind::Control(ControlEvent::Stirrer(v)) => {
