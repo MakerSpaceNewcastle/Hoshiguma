@@ -8,6 +8,14 @@ use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
 use defmt::{info, unwrap};
 use defmt_rtt as _;
+use devices::{
+    compressor::Compressor,
+    coolant_pump::CoolantPump,
+    header_tank_level_sensor::HeaderTankLevelSensor,
+    heat_exchanger_level_sensor::HeatExchangerLevelSensor,
+    radiator_fan::RadiatorFan,
+    stirrer::{self, Stirrer},
+};
 use embassy_executor::raw::Executor;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
@@ -89,7 +97,7 @@ fn main() -> ! {
     let p = PicoPlc::default();
     let r = split_resources!(p);
 
-    info!("Version: {}", git_version!());
+    info!("{}", system_information());
 
     // Unused IO
     let _in5 = Input::new(p.IN_5, Pull::Down);
@@ -100,6 +108,16 @@ fn main() -> ! {
     let _relay6 = Output::new(p.RELAY_6, Level::Low);
     let _relay7 = Output::new(p.RELAY_7, Level::Low);
 
+    // Outputs
+    let stirrer = Stirrer::new(r.stirrer);
+    let coolant_pump = CoolantPump::new(r.coolant_pump);
+    let compressor = Compressor::new(r.compressor);
+    let radiator_fan = RadiatorFan::new(r.radiator_fan);
+
+    // Inputs
+    let header_tank_level = HeaderTankLevelSensor::new(r.header_tank_level);
+    let heat_exchanger_level = HeatExchangerLevelSensor::new(r.heat_exchanger_level);
+
     let executor_0 = EXECUTOR_0.init(Executor::new(usize::MAX as *mut ()));
     let spawner = executor_0.spawner();
 
@@ -109,7 +127,7 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
     unwrap!(spawner.spawn(devices::coolant_flow_sensor::task(r.flow_sensor)));
 
-    // RPC/telemetry/control
+    // RPC control
     unwrap!(spawner.spawn(rpc::task(r.communication)));
 
     // CPU usage reporting
