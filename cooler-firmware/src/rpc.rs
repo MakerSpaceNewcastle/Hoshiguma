@@ -13,16 +13,12 @@ use embassy_rp::{
     peripherals::UART0,
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_protocol::{
-    cooler::{
-        event::{Event, EventKind},
-        rpc::{Request, Response},
-        types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
-        SERIAL_BAUD,
-    },
-    event_queue::EventQueue,
+use hoshiguma_protocol::cooler::{
+    event::{Event, EventKind},
+    rpc::{Request, Response},
+    types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
+    SERIAL_BAUD,
 };
 use static_cell::StaticCell;
 use teeny_rpc::{server::Server, transport::embedded::EioTransport};
@@ -51,12 +47,6 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
     let transport = EioTransport::new(uart);
     let mut server = Server::<_, Request, Response>::new(transport);
 
-    // Queue to hold events before they are requested
-    let mut event_queue = EventQueue::<_, 32>::default();
-
-    // Report boot
-    report_event(EventKind::Boot(crate::system_information())).await;
-
     let radiator_fan_tx = RADIATOR_FAN.sender();
     let compressor_tx = COMPRESSOR.sender();
     let stirrer_tx = STIRRER.sender();
@@ -81,24 +71,8 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
                     Request::GetSystemInformation => {
                         Some(Response::GetSystemInformation(crate::system_information()))
                     }
-                    Request::GetEventCount => Some(Response::GetEventCount(event_queue.len())),
-                    Request::GetEventStatistics => {
-                        Some(Response::GetEventStatistics(event_queue.statistics()))
-                    }
-                    Request::GetOldestEvent => {
-                        let transaction = event_queue.ret_request();
-                        let event = event_queue.ret_get(&transaction);
-
-                        match server.send_response(Response::GetOldestEvent(event)).await {
-                            Ok(_) => {
-                                event_queue.ret_commit(transaction);
-                            }
-                            Err(e) => {
-                                warn!("Server failed sending response: {}", e);
-                            }
-                        }
-
-                        None
+                    Request::GetState => {
+                        // TODO
                     }
                     Request::SetRadiatorFan(setting) => {
                         radiator_fan_tx.send(setting);
@@ -127,9 +101,7 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
             Either3::First(Err(e)) => {
                 warn!("Server failed waiting for request: {}", e);
             }
-            Either3::Second(event) => {
-                event_queue.push(event);
-            }
+            Either3::Second(event) => {}
             Either3::Third(_) => {
                 if watchdog.check() == CommunicationWatchdogState::Triggered {
                     warn!("Turning off cooling due to communication watchdog");
@@ -142,34 +114,6 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
             }
         }
     }
-}
-
-static NEW_EVENT: Channel<CriticalSectionRawMutex, Event, 8> = Channel::new();
-
-/// Queues a telemetry event to be retrieved via RPC.
-///
-/// # Arguments
-///
-/// * `event` - The kind of event to be queued.
-pub(crate) async fn report_event(event: EventKind) {
-    let event = Event {
-        timestamp_milliseconds: Instant::now().as_millis(),
-        kind: event,
-    };
-    NEW_EVENT.send(event).await;
-}
-
-/// The `CommunicationWatchdog` is used to monitor communication and trigger an action if a timeout
-/// occurs.
-struct CommunicationWatchdog {
-    /// The duration after which the watchdog will trigger if no communication is detected.
-    timeout: Duration,
-
-    /// The last instant when communication was detected.
-    last: Instant,
-
-    /// A boolean indicating whether the watchdog has been triggered.
-    triggered: bool,
 }
 
 impl CommunicationWatchdog {
