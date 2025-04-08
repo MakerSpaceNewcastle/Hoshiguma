@@ -5,8 +5,8 @@ use super::types::{
 };
 use crate::{
     cooler::types::{
-        Compressor, CoolantFlow, CoolantPump, HeaderTankCoolantLevelReading,
-        HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures as CoolerTemperatures,
+        CompressorState, CoolantFlow, CoolantPumpState, HeaderTankCoolantLevelReading,
+        HeatExchangeFluidLevel, RadiatorFanState, StirrerState, Temperatures as CoolerTemperatures,
     },
     types::SystemInformation,
 };
@@ -65,8 +65,8 @@ pub enum ControlEvent {
     StatusLamp(StatusLamp),
 
     // Forwarded from cooler
-    CoolerStirrer(Stirrer),
-    CoolerCompressor(Compressor),
-    CoolerRadiatorFan(RadiatorFan),
-    CoolantPump(CoolantPump),
+    CoolerStirrer(StirrerState),
+    CoolerCompressor(CompressorState),
+    CoolerRadiatorFan(RadiatorFanState),
+    CoolantPump(CoolantPumpState),
 }

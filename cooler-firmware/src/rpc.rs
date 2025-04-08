@@ -17,7 +17,7 @@ use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::cooler::{
     event::{Event, EventKind},
     rpc::{Request, Response},
-    types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
+    types::{CompressorState, CoolantPumpState, RadiatorFanState, StirrerState},
     SERIAL_BAUD,
 };
 use static_cell::StaticCell;
@@ -106,10 +106,10 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
                 if watchdog.check() == CommunicationWatchdogState::Triggered {
                     warn!("Turning off cooling due to communication watchdog");
 
-                    radiator_fan_tx.send(RadiatorFan::Idle);
-                    compressor_tx.send(Compressor::Idle);
-                    stirrer_tx.send(Stirrer::Idle);
-                    coolant_pump_tx.send(CoolantPump::Idle);
+                    radiator_fan_tx.send(RadiatorFanState::Idle);
+                    compressor_tx.send(CompressorState::Idle);
+                    stirrer_tx.send(StirrerState::Idle);
+                    coolant_pump_tx.send(CoolantPumpState::Idle);
                 }
             }
         }

@@ -10,10 +10,10 @@ pub struct State {
     coolant_header_tank_level: HeaderTankCoolantLevelReading,
     coolant_flow_rate: CoolantFlow,
 
-    stirrer: Stirrer,
-    coolant_pump: CoolantPump,
-    radiator_fan: RadiatorFan,
-    compressor: Compressor,
+    stirrer: StirrerState,
+    coolant_pump: CoolantPumpState,
+    radiator_fan: RadiatorFanState,
+    compressor: CompressorState,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,28 +31,28 @@ pub struct Temperatures {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Compressor {
+pub enum CompressorState {
     Idle,
     Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum RadiatorFan {
+pub enum RadiatorFanState {
     Idle,
     Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Stirrer {
+pub enum StirrerState {
     Idle,
     Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum CoolantPump {
+pub enum CoolantPumpState {
     Idle,
     Run,
 }
