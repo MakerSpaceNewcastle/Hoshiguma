@@ -128,7 +128,15 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::coolant_flow_sensor::task(r.flow_sensor)));
 
     // RPC control
-    unwrap!(spawner.spawn(rpc::task(r.communication)));
+    unwrap!(spawner.spawn(rpc::task(
+        r.communication,
+        stirrer,
+        coolant_pump,
+        compressor,
+        radiator_fan,
+        header_tank_level,
+        heat_exchanger_level
+    )));
 
     // CPU usage reporting
     unwrap!(spawner.spawn(report_cpu_usage()));

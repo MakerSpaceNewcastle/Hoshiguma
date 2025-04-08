@@ -1,4 +1,12 @@
-use crate::ControlCommunicationResources;
+use crate::{
+    devices::{
+        compressor::Compressor, coolant_pump::CoolantPump,
+        header_tank_level_sensor::HeaderTankLevelSensor,
+        heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
+        stirrer::Stirrer,
+    },
+    ControlCommunicationResources,
+};
 use core::time::Duration as CoreDuration;
 use defmt::warn;
 use embassy_futures::select::{select, Either};
@@ -20,7 +28,15 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-pub(crate) async fn task(r: ControlCommunicationResources) {
+pub(crate) async fn task(
+    r: ControlCommunicationResources,
+    mut stirrer: Stirrer,
+    mut coolant_pump: CoolantPump,
+    mut compressor: Compressor,
+    mut radiator_fan: RadiatorFan,
+    header_tank_level: HeaderTankLevelSensor,
+    heat_exchanger_level: HeatExchangerLevelSensor,
+) {
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
@@ -53,31 +69,33 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
                 watchdog.feed();
 
                 let response = match request {
-                    Request::Ping(i) => Some(Response::Ping(i)),
+                    Request::Ping(i) => Response::Ping(i),
                     Request::GetSystemInformation => {
-                        Some(Response::GetSystemInformation(crate::system_information()))
+                        Response::GetSystemInformation(crate::system_information())
                     }
                     Request::GetState => {
                         todo!();
                     }
                     Request::SetRadiatorFan(setting) => {
-                        todo!();
+                        radiator_fan.set(setting);
+                        Response::SetRadiatorFan
                     }
                     Request::SetCompressor(setting) => {
-                        todo!();
+                        compressor.set(setting);
+                        Response::SetCompressor
                     }
                     Request::SetStirrer(setting) => {
-                        todo!();
+                        stirrer.set(setting);
+                        Response::SetStirrer
                     }
                     Request::SetCoolantPump(setting) => {
-                        todo!();
+                        coolant_pump.set(setting);
+                        Response::SetCoolantPump
                     }
                 };
 
-                if let Some(response) = response {
-                    if let Err(e) = server.send_response(response).await {
-                        warn!("Server failed sending response: {}", e);
-                    }
+                if let Err(e) = server.send_response(response).await {
+                    warn!("Server failed sending response: {}", e);
                 }
             }
             Either::First(Err(e)) => {
