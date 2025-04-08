@@ -15,7 +15,7 @@ use embassy_rp::{
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     pubsub::{PubSubChannel, Publisher, WaitResult},
-    watch::{Sender, Watch},
+    watch::Watch,
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::{
@@ -109,7 +109,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let transport = EioTransport::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport);
 
-    let mut get_state_tick = Ticker::every(Duration::from_millis(500));
+    let mut get_state_tick = Ticker::every(Duration::from_secs(1));
 
     let mut comm_status = CommunicationStatusReporter::default();
     let mut comm_status_check_tick = Ticker::every(Duration::from_secs(1));
@@ -117,16 +117,18 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let mut control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
 
     let mut coolant_flow = ObservedValue::default();
-    let coolant_flow_tx = COOLANT_FLOW_READ.sender();
-
     let mut temperatures = ObservedValue::default();
-    let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
-
     let mut heat_exchanger_fluid_level = ObservedValue::default();
-    let heat_exchanger_fluid_level_tx = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
-
     let mut header_tank_level = ObservedValue::default();
+    let coolant_flow_tx = COOLANT_FLOW_READ.sender();
+    let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
+    let heat_exchanger_fluid_level_tx = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
     let header_tank_level_tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
+
+    let mut stirrer = ObservedValue::default();
+    let mut coolant_pump = ObservedValue::default();
+    let mut compressor = ObservedValue::default();
+    let mut radiator_fan = ObservedValue::default();
 
     loop {
         match select3(
@@ -185,30 +187,41 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                             })
                             .await;
 
-                        //     EventKind::Control(ControlEvent::Stirrer(v)) => {
-                        //         queue_telemetry_event(SuperEventKind::Control(
-                        //             SuperControlEvent::CoolerStirrer(v),
-                        //         ))
-                        //         .await;
-                        //     }
-                        //     EventKind::Control(ControlEvent::Compressor(v)) => {
-                        //         queue_telemetry_event(SuperEventKind::Control(
-                        //             SuperControlEvent::CoolerCompressor(v),
-                        //         ))
-                        //         .await;
-                        //     }
-                        //     EventKind::Control(ControlEvent::RadiatorFan(v)) => {
-                        //         queue_telemetry_event(SuperEventKind::Control(
-                        //             SuperControlEvent::CoolerRadiatorFan(v),
-                        //         ))
-                        //         .await;
-                        //     }
-                        //     EventKind::Control(ControlEvent::CoolantPump(v)) => {
-                        //         queue_telemetry_event(SuperEventKind::Control(
-                        //             SuperControlEvent::CoolantPump(v),
-                        //         ))
-                        //         .await;
-                        //     }
+                        stirrer
+                            .update_and_async(state.stirrer, |value| async {
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolerStirrer(value),
+                                ))
+                                .await
+                            })
+                            .await;
+
+                        coolant_pump
+                            .update_and_async(state.coolant_pump, |value| async {
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolantPump(value),
+                                ))
+                                .await
+                            })
+                            .await;
+
+                        compressor
+                            .update_and_async(state.compressor, |value| async {
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolerCompressor(value),
+                                ))
+                                .await
+                            })
+                            .await;
+
+                        radiator_fan
+                            .update_and_async(state.radiator_fan, |value| async {
+                                queue_telemetry_event(SuperEventKind::Control(
+                                    SuperControlEvent::CoolerRadiatorFan(value),
+                                ))
+                                .await
+                            })
+                            .await;
                     }
                     Ok(_) => {
                         warn!("Unexpected RPC response");
