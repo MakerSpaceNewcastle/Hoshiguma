@@ -86,7 +86,7 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
             Either::Second(_) => {
                 if watchdog.check() == CommunicationWatchdogState::Triggered {
                     warn!("Turning off cooling due to communication watchdog");
-                    todo!();
+                    machine.set_off();
                 }
             }
         }

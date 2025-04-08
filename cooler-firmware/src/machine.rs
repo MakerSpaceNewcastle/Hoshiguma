@@ -4,7 +4,9 @@ use crate::devices::{
     heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
     stirrer::Stirrer, temperature_sensors::TemperatureSensors,
 };
-use hoshiguma_protocol::cooler::types::State;
+use hoshiguma_protocol::cooler::types::{
+    CompressorState, CoolantPumpState, RadiatorFanState, State, StirrerState,
+};
 
 pub(crate) struct Machine {
     pub stirrer: Stirrer,
@@ -31,5 +33,12 @@ impl Machine {
             coolant_flow_rate: self.coolant_flow_sensor.get().await,
             temperatures: self.temperature_sensors.get().await,
         }
+    }
+
+    pub(crate) fn set_off(&mut self) {
+        self.stirrer.set(StirrerState::Idle);
+        self.coolant_pump.set(CoolantPumpState::Idle);
+        self.compressor.set(CompressorState::Idle);
+        self.radiator_fan.set(RadiatorFanState::Idle);
     }
 }
