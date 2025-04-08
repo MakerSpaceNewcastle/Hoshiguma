@@ -12,7 +12,7 @@ use embassy_futures::select::{select3, Either3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use embassy_time::{Duration, Instant};
 use hoshiguma_protocol::{
-    cooler::types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
+    cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState, StirrerState},
     peripheral_controller::{
         event::EventKind,
         types::{CoolingDemand, CoolingEnabled, MachinePower, MonitorKind},
@@ -119,14 +119,14 @@ async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const P
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
     tx.publish(CoolerControlCommand::SetCoolantPump(match enabled {
-        CoolingEnabled::Inhibit => CoolantPump::Idle,
-        CoolingEnabled::Enable => CoolantPump::Run,
+        CoolingEnabled::Inhibit => CoolantPumpState::Idle,
+        CoolingEnabled::Enable => CoolantPumpState::Run,
     }))
     .await;
 
     tx.publish(CoolerControlCommand::SetStirrer(match enabled {
-        CoolingEnabled::Inhibit => Stirrer::Idle,
-        CoolingEnabled::Enable => Stirrer::Run,
+        CoolingEnabled::Inhibit => StirrerState::Idle,
+        CoolingEnabled::Enable => StirrerState::Run,
     }))
     .await;
 }
@@ -136,14 +136,14 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
     tx.publish(CoolerControlCommand::SetRadiatorFan(match demand {
-        CoolingDemand::Idle => RadiatorFan::Idle,
-        CoolingDemand::Demand => RadiatorFan::Run,
+        CoolingDemand::Idle => RadiatorFanState::Idle,
+        CoolingDemand::Demand => RadiatorFanState::Run,
     }))
     .await;
 
     tx.publish(CoolerControlCommand::SetCompressor(match demand {
-        CoolingDemand::Idle => Compressor::Idle,
-        CoolingDemand::Demand => Compressor::Run,
+        CoolingDemand::Idle => CompressorState::Idle,
+        CoolingDemand::Demand => CompressorState::Run,
     }))
     .await;
 }

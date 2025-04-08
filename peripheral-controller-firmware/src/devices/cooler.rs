@@ -19,11 +19,10 @@ use embassy_sync::{
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::{
     cooler::{
-        event::{ControlEvent, EventKind, ObservationEvent},
         rpc::{Request, Response},
         types::{
-            Compressor, CoolantFlow, CoolantPump, HeaderTankCoolantLevelReading,
-            HeatExchangeFluidLevel, RadiatorFan, Stirrer, Temperatures,
+            CompressorState, CoolantFlow, CoolantPumpState, HeaderTankCoolantLevelReading,
+            HeatExchangeFluidLevel, RadiatorFanState, StirrerState, Temperatures,
         },
     },
     peripheral_controller::{
@@ -40,10 +39,10 @@ use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
 #[derive(Debug, Clone, Format)]
 pub(crate) enum CoolerControlCommand {
-    SetRadiatorFan(RadiatorFan),
-    SetCompressor(Compressor),
-    SetStirrer(Stirrer),
-    SetCoolantPump(CoolantPump),
+    SetRadiatorFan(RadiatorFanState),
+    SetCompressor(CompressorState),
+    SetStirrer(StirrerState),
+    SetCoolantPump(CoolantPumpState),
 }
 
 impl From<CoolerControlCommand> for Request {
@@ -109,15 +108,12 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let transport = EioTransport::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport);
 
+    let mut get_state_tick = Ticker::every(Duration::from_millis(500));
+
     let mut comm_status = CommunicationStatusReporter::default();
     let mut comm_status_check_tick = Ticker::every(Duration::from_secs(1));
 
     let mut control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
-
-    const SHORT_EVENT_POLL: Duration = Duration::from_millis(50);
-    const LONG_EVENT_POLL: Duration = Duration::from_millis(500);
-
-    let mut event_poll_interval = LONG_EVENT_POLL;
 
     let coolant_flow_tx = COOLANT_FLOW_READ.sender();
     let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
@@ -126,7 +122,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     loop {
         match select3(
-            Timer::after(event_poll_interval),
+            get_state_tick.next(),
             control_command_rx.next_message(),
             comm_status_check_tick.next(),
         )
@@ -134,79 +130,70 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
         {
             Either3::First(_) => {
                 match client
-                    .call(
-                        Request::GetOldestEvent,
-                        core::time::Duration::from_millis(50),
-                    )
+                    .call(Request::GetState, core::time::Duration::from_millis(50))
                     .await
                 {
-                    Ok(Response::GetOldestEvent(Some(event))) => {
-                        info!("Got event from cooler: {:?}", event);
+                    Ok(Response::GetState(state)) => {
+                        info!("Got state from cooler: {:?}", state);
                         comm_status.comm_good().await;
 
-                        match event.kind {
-                            EventKind::Boot(info) => {
-                                queue_telemetry_event(SuperEventKind::CoolerBoot(info)).await;
-                            }
-                            EventKind::Observation(ObservationEvent::CoolantFlow(v)) => {
-                                coolant_flow_tx.send(v.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::CoolantFlow(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Observation(ObservationEvent::Temperatures(v)) => {
-                                temperatures_tx.send(v.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::TemperaturesB(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Observation(ObservationEvent::HeatExchangeFluidLevel(v)) => {
-                                heat_exchanger_fluid_level_tx.send(v.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::HeatExchangerFluidLevel(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Observation(ObservationEvent::HeaderTankCoolantLevel(v)) => {
-                                header_tank_level_tx.send(v.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::CoolantHeaderTankLevel(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Control(ControlEvent::Stirrer(v)) => {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolerStirrer(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Control(ControlEvent::Compressor(v)) => {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolerCompressor(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Control(ControlEvent::RadiatorFan(v)) => {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolerRadiatorFan(v),
-                                ))
-                                .await;
-                            }
-                            EventKind::Control(ControlEvent::CoolantPump(v)) => {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolantPump(v),
-                                ))
-                                .await;
-                            }
-                        }
-
-                        event_poll_interval = SHORT_EVENT_POLL;
-                    }
-                    Ok(Response::GetOldestEvent(None)) => {
-                        comm_status.comm_good().await;
-                        event_poll_interval = LONG_EVENT_POLL;
+                        // match event.kind {
+                        //     EventKind::Boot(info) => {
+                        //         queue_telemetry_event(SuperEventKind::CoolerBoot(info)).await;
+                        //     }
+                        //     EventKind::Observation(ObservationEvent::CoolantFlow(v)) => {
+                        //         coolant_flow_tx.send(v.clone());
+                        //         queue_telemetry_event(SuperEventKind::Observation(
+                        //             SuperObservationEvent::CoolantFlow(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Observation(ObservationEvent::Temperatures(v)) => {
+                        //         temperatures_tx.send(v.clone());
+                        //         queue_telemetry_event(SuperEventKind::Observation(
+                        //             SuperObservationEvent::TemperaturesB(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Observation(ObservationEvent::HeatExchangeFluidLevel(v)) => {
+                        //         heat_exchanger_fluid_level_tx.send(v.clone());
+                        //         queue_telemetry_event(SuperEventKind::Observation(
+                        //             SuperObservationEvent::HeatExchangerFluidLevel(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Observation(ObservationEvent::HeaderTankCoolantLevel(v)) => {
+                        //         header_tank_level_tx.send(v.clone());
+                        //         queue_telemetry_event(SuperEventKind::Observation(
+                        //             SuperObservationEvent::CoolantHeaderTankLevel(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Control(ControlEvent::Stirrer(v)) => {
+                        //         queue_telemetry_event(SuperEventKind::Control(
+                        //             SuperControlEvent::CoolerStirrer(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Control(ControlEvent::Compressor(v)) => {
+                        //         queue_telemetry_event(SuperEventKind::Control(
+                        //             SuperControlEvent::CoolerCompressor(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Control(ControlEvent::RadiatorFan(v)) => {
+                        //         queue_telemetry_event(SuperEventKind::Control(
+                        //             SuperControlEvent::CoolerRadiatorFan(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        //     EventKind::Control(ControlEvent::CoolantPump(v)) => {
+                        //         queue_telemetry_event(SuperEventKind::Control(
+                        //             SuperControlEvent::CoolantPump(v),
+                        //         ))
+                        //         .await;
+                        //     }
+                        // }
                     }
                     Ok(_) => {
                         warn!("Unexpected RPC response");
