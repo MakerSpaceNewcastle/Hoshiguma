@@ -17,7 +17,14 @@ const LITRES_PER_PULSE: f64 = 0.001; // TODO
 const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
 
 #[embassy_executor::task]
-pub(crate) async fn task(pwm: Pwm<'static>) {
+async fn task(r: FlowSensorResources) {
+    let pwm = Pwm::new_input(
+        r.pwm,
+        r.pin,
+        Pull::Down,
+        InputMode::RisingEdge,
+        PwmConfig::default(),
+    );
     let mut ticker = Ticker::every(MEASUREMENT_INTERVAL);
 
     loop {
@@ -36,7 +43,7 @@ pub(crate) async fn task(pwm: Pwm<'static>) {
 
         let flow = CoolantFlow::new(litres, seconds);
 
-        READING.lock().await.replace(flow.clone());
+        READING.lock().await.replace(flow);
     }
 }
 
@@ -44,16 +51,7 @@ pub(crate) struct CoolantFlowSensor {}
 
 impl CoolantFlowSensor {
     pub(crate) fn new(spawner: &Spawner, r: FlowSensorResources) -> Self {
-        let pwm = Pwm::new_input(
-            r.pwm,
-            r.pin,
-            Pull::Down,
-            InputMode::RisingEdge,
-            PwmConfig::default(),
-        );
-
-        unwrap!(spawner.spawn(task(pwm)));
-
+        unwrap!(spawner.spawn(task(r)));
         Self {}
     }
 
