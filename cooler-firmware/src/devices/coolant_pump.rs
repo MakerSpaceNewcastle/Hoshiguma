@@ -13,18 +13,14 @@ impl CoolantPump {
     }
 
     pub(crate) fn set(&mut self, state: CoolantPumpState) {
-        let level = match state {
+        self.output.set_level(match state {
             CoolantPumpState::Idle => Level::Low,
             CoolantPumpState::Run => Level::High,
-        };
-
-        self.output.set_level(level);
+        });
     }
 
     pub(crate) fn get(&mut self) -> CoolantPumpState {
-        let level = self.output.get_output_level();
-
-        match level {
+        match self.output.get_output_level() {
             Level::Low => CoolantPumpState::Idle,
             Level::High => CoolantPumpState::Run,
         }

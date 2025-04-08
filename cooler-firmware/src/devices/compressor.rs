@@ -13,18 +13,14 @@ impl Compressor {
     }
 
     pub(crate) fn set(&mut self, state: CompressorState) {
-        let level = match state {
+        self.output.set_level(match state {
             CompressorState::Idle => Level::Low,
             CompressorState::Run => Level::High,
-        };
-
-        self.output.set_level(level);
+        });
     }
 
     pub(crate) fn get(&mut self) -> CompressorState {
-        let level = self.output.get_output_level();
-
-        match level {
+        match self.output.get_output_level() {
             Level::Low => CompressorState::Idle,
             Level::High => CompressorState::Run,
         }

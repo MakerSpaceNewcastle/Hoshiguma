@@ -13,18 +13,14 @@ impl RadiatorFan {
     }
 
     pub(crate) fn set(&mut self, state: RadiatorFanState) {
-        let level = match state {
+        self.output.set_level(match state {
             RadiatorFanState::Idle => Level::Low,
             RadiatorFanState::Run => Level::High,
-        };
-
-        self.output.set_level(level);
+        });
     }
 
     pub(crate) fn get(&mut self) -> RadiatorFanState {
-        let level = self.output.get_output_level();
-
-        match level {
+        match self.output.get_output_level() {
             Level::Low => RadiatorFanState::Idle,
             Level::High => RadiatorFanState::Run,
         }

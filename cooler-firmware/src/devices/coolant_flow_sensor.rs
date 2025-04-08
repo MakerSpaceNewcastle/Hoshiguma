@@ -1,14 +1,11 @@
-use crate::{rpc::report_event, FlowSensorResources};
+use crate::FlowSensorResources;
 use defmt::info;
 use embassy_rp::{
     gpio::Pull,
     pwm::{Config as PwmConfig, InputMode, Pwm},
 };
 use embassy_time::{Duration, Ticker};
-use hoshiguma_protocol::cooler::{
-    event::{EventKind, ObservationEvent},
-    types::CoolantFlow,
-};
+use hoshiguma_protocol::cooler::types::CoolantFlow;
 
 const LITRES_PER_PULSE: f64 = 0.001; // TODO
 const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
@@ -41,6 +38,6 @@ pub(crate) async fn task(r: FlowSensorResources) {
 
         let flow = CoolantFlow::new(litres, seconds);
 
-        report_event(EventKind::Observation(ObservationEvent::CoolantFlow(flow))).await;
+        // TODO
     }
 }

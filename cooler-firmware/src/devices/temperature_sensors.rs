@@ -1,15 +1,9 @@
-use crate::{rpc::report_event, OnewireResources};
+use crate::OnewireResources;
 use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_protocol::{
-    cooler::{
-        event::{EventKind, ObservationEvent},
-        types::Temperatures,
-    },
-    types::TemperatureReading,
-};
+use hoshiguma_protocol::{cooler::types::Temperatures, types::TemperatureReading};
 use one_wire_bus::{Address, OneWire};
 
 #[embassy_executor::task]
@@ -57,10 +51,7 @@ pub(crate) async fn task(r: OnewireResources) {
             heat_exchanger_loop: read_sensor(&heat_exchanger_loop_sensor),
         };
 
-        report_event(EventKind::Observation(ObservationEvent::Temperatures(
-            readings,
-        )))
-        .await;
+        // TODO
 
         ticker.next().await;
     }
