@@ -5,15 +5,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct State {
-    temperatures: Temperatures,
-    heat_exchange_fluid_level: HeatExchangeFluidLevel,
-    coolant_header_tank_level: HeaderTankCoolantLevelReading,
-    coolant_flow_rate: CoolantFlow,
+    pub stirrer: StirrerState,
+    pub coolant_pump: CoolantPumpState,
+    pub compressor: CompressorState,
+    pub radiator_fan: RadiatorFanState,
 
-    stirrer: StirrerState,
-    coolant_pump: CoolantPumpState,
-    radiator_fan: RadiatorFanState,
-    compressor: CompressorState,
+    pub coolant_header_tank_level: HeaderTankCoolantLevelReading,
+    pub heat_exchange_fluid_level: HeatExchangeFluidLevel,
+    pub coolant_flow_rate: CoolantFlow,
+    pub temperatures: Temperatures,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

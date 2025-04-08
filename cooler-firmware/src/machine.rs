@@ -11,6 +11,7 @@ pub(crate) struct Machine {
     pub coolant_pump: CoolantPump,
     pub compressor: Compressor,
     pub radiator_fan: RadiatorFan,
+
     pub header_tank_level: HeaderTankLevelSensor,
     pub heat_exchanger_level: HeatExchangerLevelSensor,
     pub coolant_flow_sensor: CoolantFlowSensor,
@@ -18,7 +19,17 @@ pub(crate) struct Machine {
 }
 
 impl Machine {
-    pub(crate) async fn state(&self) -> State {
-        todo!();
+    pub(crate) async fn state(&mut self) -> State {
+        State {
+            stirrer: self.stirrer.get(),
+            coolant_pump: self.coolant_pump.get(),
+            compressor: self.compressor.get(),
+            radiator_fan: self.radiator_fan.get(),
+
+            coolant_header_tank_level: self.header_tank_level.get(),
+            heat_exchange_fluid_level: self.heat_exchanger_level.get(),
+            coolant_flow_rate: self.coolant_flow_sensor.get().await,
+            temperatures: self.temperature_sensors.get().await,
+        }
     }
 }
