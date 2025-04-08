@@ -1,12 +1,4 @@
-use crate::{
-    devices::{
-        compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
-        header_tank_level_sensor::HeaderTankLevelSensor,
-        heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
-        stirrer::Stirrer,
-    },
-    ControlCommunicationResources,
-};
+use crate::{machine::Machine, ControlCommunicationResources};
 use core::time::Duration as CoreDuration;
 use defmt::warn;
 use embassy_futures::select::{select, Either};
@@ -28,16 +20,7 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-pub(crate) async fn task(
-    r: ControlCommunicationResources,
-    mut stirrer: Stirrer,
-    mut coolant_pump: CoolantPump,
-    mut compressor: Compressor,
-    mut radiator_fan: RadiatorFan,
-    header_tank_level: HeaderTankLevelSensor,
-    heat_exchanger_level: HeatExchangerLevelSensor,
-    coolant_flow_sensor: CoolantFlowSensor,
-) {
+pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine) {
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
@@ -78,19 +61,19 @@ pub(crate) async fn task(
                         todo!();
                     }
                     Request::SetRadiatorFan(setting) => {
-                        radiator_fan.set(setting);
+                        machine.radiator_fan.set(setting);
                         Response::SetRadiatorFan
                     }
                     Request::SetCompressor(setting) => {
-                        compressor.set(setting);
+                        machine.compressor.set(setting);
                         Response::SetCompressor
                     }
                     Request::SetStirrer(setting) => {
-                        stirrer.set(setting);
+                        machine.stirrer.set(setting);
                         Response::SetStirrer
                     }
                     Request::SetCoolantPump(setting) => {
-                        coolant_pump.set(setting);
+                        machine.coolant_pump.set(setting);
                         Response::SetCoolantPump
                     }
                 };

@@ -2,6 +2,7 @@
 #![no_main]
 
 mod devices;
+mod machine;
 mod rpc;
 
 use assign_resources::assign_resources;
@@ -12,7 +13,7 @@ use devices::{
     compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
     header_tank_level_sensor::HeaderTankLevelSensor,
     heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
-    stirrer::Stirrer,
+    stirrer::Stirrer, temperature_sensors::TemperatureSensors,
 };
 use embassy_executor::raw::Executor;
 use embassy_rp::{
@@ -21,6 +22,7 @@ use embassy_rp::{
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
+use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
@@ -118,15 +120,9 @@ fn main() -> ! {
     let header_tank_level = HeaderTankLevelSensor::new(r.header_tank_level);
     let heat_exchanger_level = HeatExchangerLevelSensor::new(r.heat_exchanger_level);
     let coolant_flow_sensor = CoolantFlowSensor::new(&spawner, r.flow_sensor);
+    let temperature_sensors = TemperatureSensors::new(&spawner, r.onewire);
 
-    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
-
-    // Devices
-    unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
-
-    // RPC control
-    unwrap!(spawner.spawn(rpc::task(
-        r.communication,
+    let machine = Machine {
         stirrer,
         coolant_pump,
         compressor,
@@ -134,9 +130,13 @@ fn main() -> ! {
         header_tank_level,
         heat_exchanger_level,
         coolant_flow_sensor,
-    )));
+        temperature_sensors,
+    };
 
-    // CPU usage reporting
+    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
+
+    unwrap!(spawner.spawn(rpc::task(r.communication, machine,)));
+
     unwrap!(spawner.spawn(report_cpu_usage()));
 
     #[cfg(feature = "test-panic-on-core-0")]
