@@ -4,6 +4,7 @@ use crate::devices::{
     heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
     stirrer::Stirrer, temperature_sensors::TemperatureSensors,
 };
+use hoshiguma_protocol::cooler::types::State;
 
 pub(crate) struct Machine {
     pub stirrer: Stirrer,
@@ -14,4 +15,10 @@ pub(crate) struct Machine {
     pub heat_exchanger_level: HeatExchangerLevelSensor,
     pub coolant_flow_sensor: CoolantFlowSensor,
     pub temperature_sensors: TemperatureSensors,
+}
+
+impl Machine {
+    pub(crate) async fn state(&self) -> State {
+        todo!();
+    }
 }

@@ -57,9 +57,7 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
                     Request::GetSystemInformation => {
                         Response::GetSystemInformation(crate::system_information())
                     }
-                    Request::GetState => {
-                        todo!();
-                    }
+                    Request::GetState => Response::GetState(machine.state().await),
                     Request::SetRadiatorFan(setting) => {
                         machine.radiator_fan.set(setting);
                         Response::SetRadiatorFan
