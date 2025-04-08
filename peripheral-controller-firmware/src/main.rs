@@ -20,7 +20,6 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker};
-use git_version::git_version;
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -138,7 +137,7 @@ fn main() -> ! {
     let p = PicoPlc::default();
     let r = split_resources!(p);
 
-    info!("Version: {}", git_version!());
+    info!("{}", system_information());
 
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
