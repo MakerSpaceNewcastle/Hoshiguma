@@ -27,9 +27,7 @@ enum Command {
     Ping,
     GetSystemInformation,
 
-    GetEventCount,
-    GetEventStatistics,
-    GetOldestEvent,
+    GetState,
 
     SetRadiatorFanOff,
     SetRadiatorFanOn,
@@ -55,9 +53,7 @@ impl Runner for Cli {
             let request = match self.command {
                 Command::Ping => Request::Ping(42),
                 Command::GetSystemInformation => Request::GetSystemInformation,
-                Command::GetEventCount => Request::GetEventCount,
-                Command::GetEventStatistics => Request::GetEventStatistics,
-                Command::GetOldestEvent => Request::GetOldestEvent,
+                Command::GetState => Request::GetState,
                 Command::SetRadiatorFanOff => Request::SetRadiatorFan(RadiatorFan::Idle),
                 Command::SetRadiatorFanOn => Request::SetRadiatorFan(RadiatorFan::Run),
                 Command::SetCompressorOff => Request::SetCompressor(Compressor::Idle),
