@@ -40,23 +40,19 @@ use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
 #[derive(Debug, Clone, Format)]
 pub(crate) enum CoolerControlCommand {
-    SetRadiatorFan(RadiatorFanState),
-    SetCompressor(CompressorState),
-    SetStirrer(StirrerState),
-    SetCoolantPump(CoolantPumpState),
+    RadiatorFan(RadiatorFanState),
+    Compressor(CompressorState),
+    Stirrer(StirrerState),
+    CoolantPump(CoolantPumpState),
 }
 
 impl From<CoolerControlCommand> for Request {
     fn from(cmd: CoolerControlCommand) -> Self {
         match cmd {
-            CoolerControlCommand::SetRadiatorFan(radiator_fan) => {
-                Self::SetRadiatorFan(radiator_fan)
-            }
-            CoolerControlCommand::SetCompressor(compressor) => Self::SetCompressor(compressor),
-            CoolerControlCommand::SetStirrer(stirrer) => Self::SetStirrer(stirrer),
-            CoolerControlCommand::SetCoolantPump(coolant_pump) => {
-                Self::SetCoolantPump(coolant_pump)
-            }
+            CoolerControlCommand::RadiatorFan(radiator_fan) => Self::SetRadiatorFan(radiator_fan),
+            CoolerControlCommand::Compressor(compressor) => Self::SetCompressor(compressor),
+            CoolerControlCommand::Stirrer(stirrer) => Self::SetStirrer(stirrer),
+            CoolerControlCommand::CoolantPump(coolant_pump) => Self::SetCoolantPump(coolant_pump),
         }
     }
 }

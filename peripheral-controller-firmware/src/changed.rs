@@ -46,7 +46,7 @@ impl<T: Clone + PartialEq> ObservedValue<T> {
         checked_set(&mut self.value, Some(new_value))
     }
 
-    pub(crate) fn update_and<F: FnOnce(T) -> ()>(&mut self, new_value: T, on_change: F) {
+    pub(crate) fn update_and<F: FnOnce(T)>(&mut self, new_value: T, on_change: F) {
         if self.update(new_value) == Changed::Yes {
             // Will always have a value when changed
             on_change(self.value.clone().unwrap());

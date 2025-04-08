@@ -109,7 +109,7 @@ async fn set_demand<const A: usize, const B: usize, const C: usize>(
     demand
         .update_and_async(new_demand.clone(), |demand| async {
             queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
-            send_cooler_demand_command(demand, &cooler_command_tx).await;
+            send_cooler_demand_command(demand, cooler_command_tx).await;
         })
         .await;
 }
@@ -118,13 +118,13 @@ async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const P
     enabled: CoolingEnabled,
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
-    tx.publish(CoolerControlCommand::SetCoolantPump(match enabled {
+    tx.publish(CoolerControlCommand::CoolantPump(match enabled {
         CoolingEnabled::Inhibit => CoolantPumpState::Idle,
         CoolingEnabled::Enable => CoolantPumpState::Run,
     }))
     .await;
 
-    tx.publish(CoolerControlCommand::SetStirrer(match enabled {
+    tx.publish(CoolerControlCommand::Stirrer(match enabled {
         CoolingEnabled::Inhibit => StirrerState::Idle,
         CoolingEnabled::Enable => StirrerState::Run,
     }))
@@ -135,13 +135,13 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
     demand: CoolingDemand,
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
-    tx.publish(CoolerControlCommand::SetRadiatorFan(match demand {
+    tx.publish(CoolerControlCommand::RadiatorFan(match demand {
         CoolingDemand::Idle => RadiatorFanState::Idle,
         CoolingDemand::Demand => RadiatorFanState::Run,
     }))
     .await;
 
-    tx.publish(CoolerControlCommand::SetCompressor(match demand {
+    tx.publish(CoolerControlCommand::Compressor(match demand {
         CoolingDemand::Idle => CompressorState::Idle,
         CoolingDemand::Demand => CompressorState::Run,
     }))
