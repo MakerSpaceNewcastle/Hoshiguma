@@ -2,7 +2,7 @@ use crate::Runner;
 use clap::{Parser, Subcommand};
 use hoshiguma_protocol::cooler::{
     rpc::{Request, Response},
-    types::{Compressor, CoolantPump, RadiatorFan, Stirrer},
+    types::{CompressorState, CoolantPumpState, RadiatorFanState, StirrerState},
 };
 use log::{info, warn};
 use std::time::Duration;
@@ -54,14 +54,14 @@ impl Runner for Cli {
                 Command::Ping => Request::Ping(42),
                 Command::GetSystemInformation => Request::GetSystemInformation,
                 Command::GetState => Request::GetState,
-                Command::SetRadiatorFanOff => Request::SetRadiatorFan(RadiatorFan::Idle),
-                Command::SetRadiatorFanOn => Request::SetRadiatorFan(RadiatorFan::Run),
-                Command::SetCompressorOff => Request::SetCompressor(Compressor::Idle),
-                Command::SetCompressorOn => Request::SetCompressor(Compressor::Run),
-                Command::SetStirrerOff => Request::SetStirrer(Stirrer::Idle),
-                Command::SetStirrerOn => Request::SetStirrer(Stirrer::Run),
-                Command::SetCoolantPumpOff => Request::SetCoolantPump(CoolantPump::Idle),
-                Command::SetCoolantPumpOn => Request::SetCoolantPump(CoolantPump::Run),
+                Command::SetRadiatorFanOff => Request::SetRadiatorFan(RadiatorFanState::Idle),
+                Command::SetRadiatorFanOn => Request::SetRadiatorFan(RadiatorFanState::Run),
+                Command::SetCompressorOff => Request::SetCompressor(CompressorState::Idle),
+                Command::SetCompressorOn => Request::SetCompressor(CompressorState::Run),
+                Command::SetStirrerOff => Request::SetStirrer(StirrerState::Idle),
+                Command::SetStirrerOn => Request::SetStirrer(StirrerState::Run),
+                Command::SetCoolantPumpOff => Request::SetCoolantPump(CoolantPumpState::Idle),
+                Command::SetCoolantPumpOn => Request::SetCoolantPump(CoolantPumpState::Run),
             };
 
             match client.call(request, timeout).await {
