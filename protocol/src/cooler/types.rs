@@ -1,7 +1,20 @@
-use core::ops::Deref;
-
 use crate::types::TemperatureReading;
+use core::ops::Deref;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub struct State {
+    temperatures: Temperatures,
+    heat_exchange_fluid_level: HeatExchangeFluidLevel,
+    coolant_header_tank_level: HeaderTankCoolantLevelReading,
+    coolant_flow_rate: CoolantFlow,
+
+    stirrer: Stirrer,
+    coolant_pump: CoolantPump,
+    radiator_fan: RadiatorFan,
+    compressor: Compressor,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
