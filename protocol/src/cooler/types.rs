@@ -88,6 +88,8 @@ impl Deref for CoolantFlow {
 }
 
 impl CoolantFlow {
+    pub const ZERO: Self = Self(0.0);
+
     pub fn new(litres: f64, seconds: f64) -> Self {
         Self(litres / seconds)
     }

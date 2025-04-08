@@ -1,6 +1,6 @@
 use crate::{
     devices::{
-        compressor::Compressor, coolant_pump::CoolantPump,
+        compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
         header_tank_level_sensor::HeaderTankLevelSensor,
         heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
         stirrer::Stirrer,
@@ -36,6 +36,7 @@ pub(crate) async fn task(
     mut radiator_fan: RadiatorFan,
     header_tank_level: HeaderTankLevelSensor,
     heat_exchanger_level: HeatExchangerLevelSensor,
+    coolant_flow_sensor: CoolantFlowSensor,
 ) {
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
