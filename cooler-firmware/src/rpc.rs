@@ -1,13 +1,7 @@
-use crate::{
-    devices::{
-        compressor::COMPRESSOR, coolant_pump::COOLANT_PUMP, radiator_fan::RADIATOR_FAN,
-        stirrer::STIRRER,
-    },
-    ControlCommunicationResources,
-};
+use crate::ControlCommunicationResources;
 use core::time::Duration as CoreDuration;
 use defmt::warn;
-use embassy_futures::select::{select3, Either3};
+use embassy_futures::select::{select, Either};
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART0,
@@ -15,9 +9,7 @@ use embassy_rp::{
 };
 use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::cooler::{
-    event::{Event, EventKind},
     rpc::{Request, Response},
-    types::{CompressorState, CoolantPumpState, RadiatorFanState, StirrerState},
     SERIAL_BAUD,
 };
 use static_cell::StaticCell;
@@ -47,23 +39,17 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
     let transport = EioTransport::new(uart);
     let mut server = Server::<_, Request, Response>::new(transport);
 
-    let radiator_fan_tx = RADIATOR_FAN.sender();
-    let compressor_tx = COMPRESSOR.sender();
-    let stirrer_tx = STIRRER.sender();
-    let coolant_pump_tx = COOLANT_PUMP.sender();
-
     let mut watchdog = CommunicationWatchdog::new(Duration::from_secs(5));
     let mut watchdog_check_tick = Ticker::every(Duration::from_secs(1));
 
     loop {
-        match select3(
+        match select(
             server.wait_for_request(CoreDuration::from_secs(5)),
-            NEW_EVENT.receive(),
             watchdog_check_tick.next(),
         )
         .await
         {
-            Either3::First(Ok(request)) => {
+            Either::First(Ok(request)) => {
                 watchdog.feed();
 
                 let response = match request {
@@ -72,23 +58,19 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
                         Some(Response::GetSystemInformation(crate::system_information()))
                     }
                     Request::GetState => {
-                        // TODO
+                        todo!();
                     }
                     Request::SetRadiatorFan(setting) => {
-                        radiator_fan_tx.send(setting);
-                        Some(Response::SetRadiatorFan)
+                        todo!();
                     }
                     Request::SetCompressor(setting) => {
-                        compressor_tx.send(setting);
-                        Some(Response::SetCompressor)
+                        todo!();
                     }
                     Request::SetStirrer(setting) => {
-                        stirrer_tx.send(setting);
-                        Some(Response::SetStirrer)
+                        todo!();
                     }
                     Request::SetCoolantPump(setting) => {
-                        coolant_pump_tx.send(setting);
-                        Some(Response::SetCoolantPump)
+                        todo!();
                     }
                 };
 
@@ -98,22 +80,30 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
                     }
                 }
             }
-            Either3::First(Err(e)) => {
+            Either::First(Err(e)) => {
                 warn!("Server failed waiting for request: {}", e);
             }
-            Either3::Second(event) => {}
-            Either3::Third(_) => {
+            Either::Second(_) => {
                 if watchdog.check() == CommunicationWatchdogState::Triggered {
                     warn!("Turning off cooling due to communication watchdog");
-
-                    radiator_fan_tx.send(RadiatorFanState::Idle);
-                    compressor_tx.send(CompressorState::Idle);
-                    stirrer_tx.send(StirrerState::Idle);
-                    coolant_pump_tx.send(CoolantPumpState::Idle);
+                    todo!();
                 }
             }
         }
     }
+}
+
+/// The `CommunicationWatchdog` is used to monitor communication and trigger an action if a timeout
+/// occurs.
+struct CommunicationWatchdog {
+    /// The duration after which the watchdog will trigger if no communication is detected.
+    timeout: Duration,
+
+    /// The last instant when communication was detected.
+    last: Instant,
+
+    /// A boolean indicating whether the watchdog has been triggered.
+    triggered: bool,
 }
 
 impl CommunicationWatchdog {
