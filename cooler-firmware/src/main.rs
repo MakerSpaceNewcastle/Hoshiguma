@@ -9,12 +9,10 @@ use core::sync::atomic::Ordering;
 use defmt::{info, unwrap};
 use defmt_rtt as _;
 use devices::{
-    compressor::Compressor,
-    coolant_pump::CoolantPump,
+    compressor::Compressor, coolant_pump::CoolantPump,
     header_tank_level_sensor::HeaderTankLevelSensor,
-    heat_exchanger_level_sensor::HeatExchangerLevelSensor,
-    radiator_fan::RadiatorFan,
-    stirrer::{self, Stirrer},
+    heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
+    stirrer::Stirrer,
 };
 use embassy_executor::raw::Executor;
 use embassy_rp::{
@@ -22,7 +20,6 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
-use git_version::git_version;
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
