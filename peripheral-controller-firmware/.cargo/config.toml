@@ -3,15 +3,13 @@ runner = [
   "probe-rs",
   "run",
   "--chip",
-  "RP2040",
-  "--protocol",
-  "swd",
+  "RP235x",
   "--log-format",
   "{L:1} {F:blue}:{l:cyan:1} {s}",
 ]
 
 [build]
-target = "thumbv6m-none-eabi"
+target = "thumbv8m.main-none-eabihf"
 
 [env]
 DEFMT_LOG = "debug"
