@@ -253,8 +253,6 @@ async fn watchdog_feed_task(r: StatusResources) {
 
     let mut feed_ticker = Ticker::every(Duration::from_millis(250));
 
-    let mut ticker = Ticker::every(Duration::from_millis(500));
-
     loop {
         // Blink LED at 1 Hz
         onboard_led.toggle();
