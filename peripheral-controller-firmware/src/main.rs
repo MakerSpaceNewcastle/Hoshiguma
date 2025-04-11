@@ -19,7 +19,7 @@ use embassy_rp::{
     multicore::{spawn_core1, Stack},
     watchdog::Watchdog,
 };
-use embassy_time::{Duration, Instant, Timer};
+use embassy_time::{Duration, Instant, Ticker};
 use git_version::git_version;
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
@@ -248,12 +248,18 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(600));
+    watchdog.start(Duration::from_millis(500));
+
+    let mut feed_ticker = Ticker::every(Duration::from_millis(250));
 
     loop {
-        watchdog.feed();
+        // Blink LED at 1 Hz
         onboard_led.toggle();
-        Timer::after_millis(500).await;
+
+        for _ in 0..4 {
+            watchdog.feed();
+            feed_ticker.next().await;
+        }
     }
 }
 
