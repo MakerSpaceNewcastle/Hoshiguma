@@ -14,6 +14,8 @@ pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirA
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: AirAssistDemandDetectResources) {
+    crate::trace::name_task("aa dmnd det").await;
+
     let pin = Input::new(r.detect, Pull::Down);
     let mut input = PolledInput::new(pin, Duration::from_millis(10));
 

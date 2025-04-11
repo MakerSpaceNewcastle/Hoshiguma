@@ -14,6 +14,8 @@ pub(crate) static CHASSIS_INTRUSION_CHANGED: Watch<CriticalSectionRawMutex, Chas
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: ChassisIntrusionDetectResources) {
+    crate::trace::name_task("chs int det").await;
+
     let pin = Input::new(r.detect, Pull::Down);
     let mut input = PolledInput::new(pin, Duration::from_micros(50));
 

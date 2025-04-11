@@ -14,6 +14,8 @@ pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachineP
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachinePowerDetectResources) {
+    crate::trace::name_task("mach pwr det").await;
+
     let pin = Input::new(r.detect, Pull::Down);
     let mut input = PolledInput::new(pin, Duration::from_millis(10));
 

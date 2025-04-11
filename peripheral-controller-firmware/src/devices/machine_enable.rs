@@ -36,6 +36,8 @@ pub(crate) static MACHINE_ENABLE: Watch<CriticalSectionRawMutex, MachineEnable, 
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachineEnableResources) {
+    crate::trace::name_task("mach en o").await;
+
     let mut output = MachineEnableOutput::new(r);
     let mut rx = MACHINE_ENABLE.receiver().unwrap();
 
