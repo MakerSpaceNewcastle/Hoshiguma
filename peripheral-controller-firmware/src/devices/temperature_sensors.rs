@@ -1,5 +1,5 @@
 use crate::{telemetry::queue_telemetry_event, OnewireResources};
-use defmt::info;
+use defmt::{info, warn};
 use ds18b20::{Ds18b20, Resolution};
 use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
@@ -44,6 +44,8 @@ pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: OnewireResources) {
+    crate::trace::name_task("temp sens").await;
+
     let mut bus = {
         let pin = OutputOpenDrain::new(r.pin, Level::Low);
         OneWire::new(pin).unwrap()
@@ -51,8 +53,14 @@ pub(crate) async fn task(r: OnewireResources) {
 
     // Scan bus
     for device_address in bus.devices(false, &mut embassy_time::Delay) {
-        let device_address = device_address.unwrap();
-        info!("Found one wire device at address: {}", device_address.0);
+        match device_address {
+            Ok(device_address) => {
+                info!("Found one wire device at address: {}", device_address.0);
+            }
+            Err(_) => {
+                warn!("Failed to read onewire device");
+            }
+        }
     }
 
     let mut ticker = Ticker::every(Duration::from_secs(10));

@@ -24,6 +24,8 @@ pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
 
 #[embassy_executor::task]
 pub(crate) async fn alarm_evaluation_task() {
+    crate::trace::name_task("alarm chk").await;
+
     let mut running_rx = MACHINE_RUNNING_CHANGED.receiver().unwrap();
     let mut monitors_rx = MONITORS_CHANGED.receiver().unwrap();
 
@@ -61,6 +63,8 @@ pub(crate) async fn alarm_evaluation_task() {
 
 #[embassy_executor::task]
 pub(crate) async fn machine_lockout_task() {
+    crate::trace::name_task("mach lkout").await;
+
     let mut machine_locout_rx = MACHINE_LOCKOUT_CHANGED.receiver().unwrap();
 
     let machine_enable_tx = MACHINE_ENABLE.sender();

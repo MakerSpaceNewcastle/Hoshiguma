@@ -24,6 +24,8 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::task]
 pub(super) async fn task(r: TelemetryResources) {
+    crate::trace::name_task("telemetry").await;
+
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];

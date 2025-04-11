@@ -1,5 +1,14 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = "probe-rs run --chip RP2040 --protocol swd"
+runner = [
+  "probe-rs",
+  "run",
+  "--chip",
+  "RP2040",
+  "--protocol",
+  "swd",
+  "--log-format",
+  "{L:1} {F:blue}:{l:cyan:1} {s}",
+]
 
 [build]
 target = "thumbv6m-none-eabi"
