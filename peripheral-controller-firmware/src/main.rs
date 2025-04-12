@@ -255,13 +255,14 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut watchdog = Watchdog::new(r.watchdog);
     watchdog.start(Duration::from_millis(500));
 
-    let mut feed_ticker = Ticker::every(Duration::from_millis(250));
+    let mut feed_ticker = Ticker::every(Duration::from_millis(100));
 
     loop {
-        // Blink LED at 1 Hz
+        // Blink LED
         onboard_led.toggle();
 
-        for _ in 0..4 {
+        // at 1 Hz
+        for _ in 0..10 {
             watchdog.feed();
             feed_ticker.next().await;
         }
