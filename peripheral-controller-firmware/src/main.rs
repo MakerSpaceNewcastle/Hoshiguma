@@ -156,7 +156,7 @@ fn main() -> ! {
         move || {
             let executor_1 = EXECUTOR_1.init(Executor::new(usize::MAX as *mut ()));
             #[cfg(feature = "trace")]
-            trace::name_executor(executor_1.id() as u32, "core 1");
+            trace::identify_core_1_executor(executor_1.id() as u32);
             let spawner = executor_1.spawner();
 
             unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
@@ -196,7 +196,7 @@ fn main() -> ! {
     // Everything else goes on core 0
     let executor_0 = EXECUTOR_0.init(Executor::new(usize::MAX as *mut ()));
     #[cfg(feature = "trace")]
-    trace::name_executor(executor_0.id() as u32, "core 0");
+    trace::identify_core_0_executor(executor_0.id() as u32);
     let spawner = executor_0.spawner();
 
     unwrap!(spawner.spawn(logic::status_lamp::task()));
