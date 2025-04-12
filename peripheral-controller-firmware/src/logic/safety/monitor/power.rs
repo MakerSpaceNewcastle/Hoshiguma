@@ -11,6 +11,7 @@ use hoshiguma_protocol::{
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("mach pwr mon").await;
 
     let mut power_changed_rx = unwrap!(MACHINE_POWER_CHANGED.receiver());

@@ -14,6 +14,7 @@ pub(crate) static MACHINE_RUNNING_CHANGED: Watch<CriticalSectionRawMutex, Machin
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: MachineRunDetectResources) {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("mach run det").await;
 
     let pin = Input::new(r.detect, Pull::Down);

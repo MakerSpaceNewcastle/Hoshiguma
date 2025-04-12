@@ -48,6 +48,7 @@ pub(crate) static STATUS_LAMP: Watch<CriticalSectionRawMutex, StatusLamp, 2> = W
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: StatusLampResources) {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("st lamp o").await;
 
     let mut output = StatusLampOutput::new(r);

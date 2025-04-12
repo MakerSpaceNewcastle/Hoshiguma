@@ -11,6 +11,7 @@ pub(crate) static AIR_ASSIST_PUMP: Watch<CriticalSectionRawMutex, AirAssistPump,
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: AirAssistPumpResources) {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("aa pump o").await;
 
     let mut output = Output::new(r.relay, Level::Low);

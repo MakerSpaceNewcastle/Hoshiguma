@@ -44,6 +44,7 @@ pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: OnewireResources) {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("temp sens").await;
 
     let mut bus = {

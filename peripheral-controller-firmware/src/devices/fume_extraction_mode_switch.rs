@@ -17,6 +17,7 @@ pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: FumeExtractionModeSwitchResources) {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("fe mode sw").await;
 
     let pin = Input::new(r.switch, Pull::Down);

@@ -7,6 +7,7 @@ mod logic;
 mod maybe_timer;
 mod polled_input;
 mod telemetry;
+#[cfg(feature = "trace")]
 mod trace;
 
 use assign_resources::assign_resources;
@@ -154,6 +155,7 @@ fn main() -> ! {
         unsafe { &mut *core::ptr::addr_of_mut!(CORE_1_STACK) },
         move || {
             let executor_1 = EXECUTOR_1.init(Executor::new(usize::MAX as *mut ()));
+            #[cfg(feature = "trace")]
             trace::name_executor(executor_1.id() as u32, "core 1");
             let spawner = executor_1.spawner();
 
@@ -193,6 +195,7 @@ fn main() -> ! {
 
     // Everything else goes on core 0
     let executor_0 = EXECUTOR_0.init(Executor::new(usize::MAX as *mut ()));
+    #[cfg(feature = "trace")]
     trace::name_executor(executor_0.id() as u32, "core 0");
     let spawner = executor_0.spawner();
 
@@ -228,6 +231,7 @@ fn main() -> ! {
     unwrap!(spawner.spawn(telemetry::task(r.telemetry)));
 
     // Task reporting
+    #[cfg(feature = "trace")]
     unwrap!(spawner.spawn(trace::task()));
 
     #[cfg(feature = "test-panic-on-core-0")]
@@ -243,6 +247,7 @@ fn main() -> ! {
 
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: StatusResources) {
+    #[cfg(feature = "trace")]
     trace::name_task("wdt feed").await;
 
     let mut onboard_led = Output::new(r.led, Level::Low);
