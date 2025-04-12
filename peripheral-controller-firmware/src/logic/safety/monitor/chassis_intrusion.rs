@@ -11,6 +11,7 @@ use hoshiguma_protocol::{
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("chs int mon").await;
 
     let mut intrusion_rx = unwrap!(CHASSIS_INTRUSION_CHANGED.receiver());

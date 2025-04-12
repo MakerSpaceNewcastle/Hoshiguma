@@ -12,6 +12,7 @@ use hoshiguma_protocol::peripheral_controller::types::{
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
+    #[cfg(feature = "trace")]
     crate::trace::name_task("s lmp logic").await;
 
     let mut machine_power_rx = unwrap!(MACHINE_POWER_CHANGED.receiver());
