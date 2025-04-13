@@ -1,30 +1,28 @@
-use crate::{rpc::report_event, StirrerResources};
-use defmt::unwrap;
+use crate::StirrerResources;
 use embassy_rp::gpio::{Level, Output};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::cooler::{
-    event::{ControlEvent, EventKind},
-    types::Stirrer,
-};
+use hoshiguma_protocol::cooler::types::StirrerState;
 
-pub(crate) static STIRRER: Watch<CriticalSectionRawMutex, Stirrer, 2> = Watch::new();
+pub(crate) struct Stirrer {
+    output: Output<'static>,
+}
 
-#[embassy_executor::task]
-pub(crate) async fn task(r: StirrerResources) {
-    let mut output = Output::new(r.relay, Level::Low);
-    let mut rx = unwrap!(STIRRER.receiver());
+impl Stirrer {
+    pub(crate) fn new(r: StirrerResources) -> Self {
+        let output = Output::new(r.relay, Level::Low);
+        Self { output }
+    }
 
-    loop {
-        // Wait for a new setting
-        let setting = rx.changed().await;
+    pub(crate) fn set(&mut self, state: StirrerState) {
+        self.output.set_level(match state {
+            StirrerState::Idle => Level::Low,
+            StirrerState::Run => Level::High,
+        });
+    }
 
-        report_event(EventKind::Control(ControlEvent::Stirrer(setting.clone()))).await;
-
-        // Set relay output
-        let level = match setting {
-            Stirrer::Idle => Level::Low,
-            Stirrer::Run => Level::High,
-        };
-        output.set_level(level);
+    pub(crate) fn get(&mut self) -> StirrerState {
+        match self.output.get_output_level() {
+            Level::Low => StirrerState::Idle,
+            Level::High => StirrerState::Run,
+        }
     }
 }

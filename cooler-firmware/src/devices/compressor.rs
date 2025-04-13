@@ -1,33 +1,28 @@
-use crate::{rpc::report_event, CompressorResources};
-use defmt::unwrap;
+use crate::CompressorResources;
 use embassy_rp::gpio::{Level, Output};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::cooler::{
-    event::{ControlEvent, EventKind},
-    types::Compressor,
-};
+use hoshiguma_protocol::cooler::types::CompressorState;
 
-pub(crate) static COMPRESSOR: Watch<CriticalSectionRawMutex, Compressor, 2> = Watch::new();
+pub(crate) struct Compressor {
+    output: Output<'static>,
+}
 
-#[embassy_executor::task]
-pub(crate) async fn task(r: CompressorResources) {
-    let mut output = Output::new(r.relay, Level::Low);
-    let mut rx = unwrap!(COMPRESSOR.receiver());
+impl Compressor {
+    pub(crate) fn new(r: CompressorResources) -> Self {
+        let output = Output::new(r.relay, Level::Low);
+        Self { output }
+    }
 
-    loop {
-        // Wait for a new setting
-        let setting = rx.changed().await;
+    pub(crate) fn set(&mut self, state: CompressorState) {
+        self.output.set_level(match state {
+            CompressorState::Idle => Level::Low,
+            CompressorState::Run => Level::High,
+        });
+    }
 
-        report_event(EventKind::Control(ControlEvent::Compressor(
-            setting.clone(),
-        )))
-        .await;
-
-        // Set relay output
-        let level = match setting {
-            Compressor::Idle => Level::Low,
-            Compressor::Run => Level::High,
-        };
-        output.set_level(level);
+    pub(crate) fn get(&mut self) -> CompressorState {
+        match self.output.get_output_level() {
+            Level::Low => CompressorState::Idle,
+            Level::High => CompressorState::Run,
+        }
     }
 }
