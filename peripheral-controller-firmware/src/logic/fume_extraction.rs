@@ -59,7 +59,7 @@ const TIMEOUT: Duration = Duration::from_secs(45);
 #[embassy_executor::task]
 pub(crate) async fn task() {
     #[cfg(feature = "trace")]
-    crate::trace::name_task("fe logic").await;
+    crate::trace::name_task("fume extract logic").await;
 
     let mut state = FumeExtractionState::default();
 

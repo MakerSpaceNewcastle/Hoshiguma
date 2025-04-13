@@ -1,8 +1,5 @@
-use super::NEW_MONITOR_STATUS;
-use crate::{
-    changed::{checked_set, Changed},
-    devices::machine_power_detector::MACHINE_POWER_CHANGED,
-};
+use super::{ObservedSeverity, NEW_MONITOR_STATUS};
+use crate::devices::machine_power_detector::MACHINE_POWER_CHANGED;
 use defmt::unwrap;
 use hoshiguma_protocol::{
     peripheral_controller::types::{MachinePower, MonitorKind},
@@ -17,7 +14,7 @@ pub(crate) async fn task() {
     let mut power_changed_rx = unwrap!(MACHINE_POWER_CHANGED.receiver());
     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-    let mut severity = Severity::Critical;
+    let mut severity = ObservedSeverity::default();
 
     loop {
         let state = power_changed_rx.changed().await;
@@ -27,10 +24,12 @@ pub(crate) async fn task() {
             MachinePower::On => Severity::Normal,
         };
 
-        if checked_set(&mut severity, new_severity) == Changed::Yes {
-            status_tx
-                .publish((MonitorKind::LogicPowerSupplyNotPresent, severity.clone()))
-                .await;
-        }
+        severity
+            .update_and_async(new_severity, |severity| async {
+                status_tx
+                    .publish((MonitorKind::LogicPowerSupplyNotPresent, severity))
+                    .await;
+            })
+            .await;
     }
 }

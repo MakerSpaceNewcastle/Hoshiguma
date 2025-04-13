@@ -37,7 +37,7 @@ pub(crate) static LASER_ENABLE: Watch<CriticalSectionRawMutex, LaserEnable, 2> =
 #[embassy_executor::task]
 pub(crate) async fn task(r: LaserEnableResources) {
     #[cfg(feature = "trace")]
-    crate::trace::name_task("las en o").await;
+    crate::trace::name_task("laser en o/p").await;
 
     let mut output = LaserEnableOutput::new(r);
     let mut rx = LASER_ENABLE.receiver().unwrap();

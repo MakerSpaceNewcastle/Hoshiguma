@@ -33,7 +33,7 @@ const TIMEOUT: Duration = Duration::from_secs(1);
 #[embassy_executor::task]
 pub(crate) async fn task() {
     #[cfg(feature = "trace")]
-    crate::trace::name_task("aa logic").await;
+    crate::trace::name_task("air assist logic").await;
 
     let mut state = AirAssistState::Idle;
 

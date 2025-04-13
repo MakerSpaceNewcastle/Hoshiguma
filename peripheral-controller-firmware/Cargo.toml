@@ -40,8 +40,6 @@ git-version = "0.3.5"
 teeny-rpc = { git = "https://github.com/DanNixon/teeny-rpc", default-features = false, features = ["no-std"] }
 hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 
-embedded-io-async = "0.6.1"
-
 heapless = { version = "0.8.0", features = ["defmt-03"], optional = true }
 
 [patch.crates-io]

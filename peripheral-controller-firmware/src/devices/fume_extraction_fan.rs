@@ -12,7 +12,7 @@ pub(crate) static FUME_EXTRACTION_FAN: Watch<CriticalSectionRawMutex, FumeExtrac
 #[embassy_executor::task]
 pub(crate) async fn task(r: FumeExtractionFanResources) {
     #[cfg(feature = "trace")]
-    crate::trace::name_task("fe fan o").await;
+    crate::trace::name_task("fe fan o/p").await;
 
     let mut output = Output::new(r.relay, Level::Low);
     let mut rx = FUME_EXTRACTION_FAN.receiver().unwrap();
