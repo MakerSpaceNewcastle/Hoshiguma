@@ -742,7 +742,6 @@ dependencies = [
  "embassy-sync 0.6.2 (git+https://github.com/embassy-rs/embassy/)",
  "embassy-time",
  "embassy-time-driver",
- "embedded-io-async",
  "git-version",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hoshiguma-protocol",

@@ -21,7 +21,6 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker};
-use git_version::git_version;
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -56,10 +55,6 @@ assign_resources! {
     },
     fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
         switch: IN_5,
-    },
-    coolant_resevoir_level_sensor: CoolantResevoirLevelSensorResources {
-        empty: IN_1,
-        low: IN_2,
     },
     air_assist_pump: AirAssistPumpResources {
         relay: RELAY_6,
@@ -143,10 +138,12 @@ fn main() -> ! {
     let p = PicoPlc::default();
     let r = split_resources!(p);
 
-    info!("Version: {}", git_version!());
+    info!("{}", system_information());
 
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
+    let _in1 = Input::new(p.IN_1, Pull::Down);
+    let _in2 = Input::new(p.IN_2, Pull::Down);
     let _relay5 = Output::new(p.RELAY_5, Level::Low);
 
     // Safety critical things go on core 1
@@ -202,16 +199,16 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::status_lamp::task()));
     unwrap!(spawner.spawn(devices::status_lamp::task(r.status_lamp)));
 
-    unwrap!(spawner.spawn(devices::coolant_resevoir_level_sensor::task(
-        r.coolant_resevoir_level_sensor
-    )));
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
     unwrap!(spawner.spawn(devices::cooler::task(r.cooler)));
 
     // State monitor tasks
     unwrap!(spawner.spawn(logic::safety::monitor::power::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::temperatures::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::coolant_flow::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::heat_exchanger_task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::coolant_header_tank_task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::temperatures_a::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::temperatures_b::task()));
 
     // Air assist control tasks
     unwrap!(spawner.spawn(devices::air_assist_demand_detector::task(
@@ -226,6 +223,10 @@ fn main() -> ! {
     )));
     unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
     unwrap!(spawner.spawn(logic::fume_extraction::task()));
+
+    // Cooler control tasks
+    unwrap!(spawner.spawn(logic::cooling::control_task()));
+    unwrap!(spawner.spawn(logic::cooling::demand_task()));
 
     // Telemetry reporting
     unwrap!(spawner.spawn(telemetry::task(r.telemetry)));
@@ -253,11 +254,13 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(500));
+    // watchdog.start(Duration::from_millis(500));
 
     let mut feed_ticker = Ticker::every(Duration::from_millis(100));
 
     loop {
+        let start = Instant::now();
+
         // Blink LED
         onboard_led.toggle();
 
@@ -265,6 +268,15 @@ async fn watchdog_feed_task(r: StatusResources) {
         for _ in 0..10 {
             watchdog.feed();
             feed_ticker.next().await;
+        }
+
+        let end = Instant::now();
+        let duration = end - start;
+        if duration > Duration::from_millis(1050) {
+            defmt::warn!(
+                "WDT feed loop took a suspicious amount of time: {}",
+                duration
+            );
         }
     }
 }

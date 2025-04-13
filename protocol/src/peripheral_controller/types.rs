@@ -10,19 +10,30 @@ pub enum MonitorKind {
 
     ChassisIntrusion,
 
-    CoolantResevoirLevelSensorFault,
-    CoolantResevoirLevel,
+    CoolerCommunicationFault,
 
-    TemperatureSensorFault,
-    CoolantFlowTemperature,
-    CoolantResevoirTemperature,
+    CoolantHeaderTankLevelSensorFault,
+    CoolantHeaderTankEmpty,
+    CoolantHeaderTankOverfilled,
+
+    HeatExchangerFluidLow,
+
+    CoolantFlowInsufficient,
+
+    TemperatureSensorFaultA,
+    TemperatureSensorFaultB,
+
+    CoolantFlowOvertemperatureA,
+    CoolantFlowOvertemperatureB,
+
+    HeatExchangerOvertemperature,
 }
 
 /// The number of monitors in the system.
 ///
 /// This constant defines the total count of monitor types that are observed.
 /// It must be equal to the number of variants of `MonitorKind`.
-const NUM_MONITORS: usize = 7;
+const NUM_MONITORS: usize = 13;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Monitors {
@@ -30,6 +41,10 @@ pub struct Monitors {
 }
 
 impl Monitors {
+    pub fn get(&self, monitor: MonitorKind) -> &Severity {
+        self.inner.get(&monitor).unwrap()
+    }
+
     pub fn get_mut(&mut self, monitor: MonitorKind) -> &mut Severity {
         self.inner.get_mut(&monitor).unwrap()
     }
@@ -78,6 +93,20 @@ pub enum MachineOperationLockout {
     Permitted,
     PermittedUntilIdle,
     Denied,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum CoolingEnabled {
+    Inhibit,
+    Enable,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum CoolingDemand {
+    Idle,
+    Demand,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -137,16 +166,6 @@ pub enum ChassisIntrusion {
     Intruded,
 }
 
-pub type CoolantResevoirLevelReading = Result<CoolantResevoirLevel, ()>;
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum CoolantResevoirLevel {
-    Full,
-    Low,
-    Empty,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MachinePower {
@@ -169,13 +188,6 @@ pub struct Temperatures {
 
     pub laser_chamber: TemperatureReading,
 
-    pub ambient: TemperatureReading,
-
     pub coolant_flow: TemperatureReading,
     pub coolant_return: TemperatureReading,
-
-    pub coolant_resevoir_bottom: TemperatureReading,
-    pub coolant_resevoir_top: TemperatureReading,
-
-    pub coolant_pump: TemperatureReading,
 }

@@ -1,9 +1,15 @@
 use super::types::{
-    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading,
+    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolingDemand, CoolingEnabled,
     FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
     MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
-use crate::types::SystemInformation;
+use crate::{
+    cooler::types::{
+        CompressorState, CoolantFlow, CoolantPumpState, HeaderTankCoolantLevelReading,
+        HeatExchangeFluidLevel, RadiatorFanState, StirrerState, Temperatures as CoolerTemperatures,
+    },
+    types::SystemInformation,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -17,30 +23,50 @@ pub struct Event {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum EventKind {
     Boot(SystemInformation),
+    CoolerBoot(SystemInformation),
+
     MonitorsChanged(Monitors),
     LockoutChanged(MachineOperationLockout),
+
+    CoolingEnableChanged(CoolingEnabled),
+    CoolingDemandChanged(CoolingDemand),
+
     Observation(ObservationEvent),
+
     Control(ControlEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ObservationEvent {
+    // Self
+    TemperaturesA(Temperatures),
     AirAssistDemand(AirAssistDemand),
     ChassisIntrusion(ChassisIntrusion),
-    CoolantResevoirLevel(CoolantResevoirLevelReading),
     FumeExtractionMode(FumeExtractionMode),
     MachinePower(MachinePower),
     MachineRun(MachineRun),
-    Temperatures(Temperatures),
+
+    // Forwarded from cooler
+    TemperaturesB(CoolerTemperatures),
+    CoolantFlow(CoolantFlow),
+    HeatExchangerFluidLevel(HeatExchangeFluidLevel),
+    CoolantHeaderTankLevel(HeaderTankCoolantLevelReading),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ControlEvent {
+    // Self
     AirAssistPump(AirAssistPump),
     FumeExtractionFan(FumeExtractionFan),
     LaserEnable(LaserEnable),
     MachineEnable(MachineEnable),
     StatusLamp(StatusLamp),
+
+    // Forwarded from cooler
+    CoolerStirrer(StirrerState),
+    CoolerCompressor(CompressorState),
+    CoolerRadiatorFan(RadiatorFanState),
+    CoolantPump(CoolantPumpState),
 }
