@@ -1,4 +1,5 @@
 use crate::TelemetryResources;
+use core::time::Duration as CoreDuration;
 use defmt::warn;
 use embassy_futures::select::{select, Either};
 use embassy_rp::{
@@ -43,8 +44,8 @@ pub(super) async fn task(r: TelemetryResources) {
     );
 
     // Setup RPC server
-    let transport = EioTransport::new(uart);
-    let mut server = Server::<_, Request, Response>::new(transport);
+    let transport = EioTransport::<_, 512>::new(uart);
+    let mut server = Server::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
 
     // Queue to hold events before they are requested
     let mut event_queue = EventQueue::<_, 32>::default();
@@ -54,7 +55,7 @@ pub(super) async fn task(r: TelemetryResources) {
 
     loop {
         match select(
-            server.wait_for_request(core::time::Duration::from_secs(5)),
+            server.wait_for_request(CoreDuration::from_secs(5)),
             TELEMETRY_MESSAGES.receive(),
         )
         .await

@@ -48,8 +48,8 @@ pub(crate) async fn task(r: ControlCommunicationResources) {
         r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config,
     );
 
-    let transport = EioTransport::new(uart);
-    let mut server = Server::<_, Request, Response>::new(transport);
+    let transport = EioTransport::<_, 512>::new(uart);
+    let mut server = Server::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
 
     // Queue to hold events before they are requested
     let mut event_queue = EventQueue::<_, 32>::default();

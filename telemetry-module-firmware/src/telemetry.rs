@@ -1,3 +1,4 @@
+use core::time::Duration as CoreDuration;
 use defmt::{info, warn};
 use embassy_rp::{
     bind_interrupts,
@@ -36,8 +37,8 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
     let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
 
     // Setup RPC client
-    let transport = EioTransport::new(uart);
-    let mut client = Client::<_, Request, Response>::new(transport);
+    let transport = EioTransport::<_, 512>::new(uart);
+    let mut client = Client::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
 
     let tx = TELEMETRY_MESSAGES.publisher().unwrap();
 
@@ -46,10 +47,7 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
 
     'telem_rx: loop {
         match client
-            .call(
-                Request::GetOldestEvent,
-                core::time::Duration::from_millis(50),
-            )
+            .call(Request::GetOldestEvent, CoreDuration::from_millis(50))
             .await
         {
             Ok(Response::GetOldestEvent(Some(event))) => {

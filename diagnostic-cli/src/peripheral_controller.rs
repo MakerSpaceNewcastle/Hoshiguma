@@ -33,7 +33,7 @@ enum Command {
 
 impl Runner for Cli {
     async fn run(&self, transport: SerialTransport) -> Result<(), ()> {
-        let mut client = Client::<_, Request, Response>::new(transport);
+        let mut client = Client::<_, Request, Response>::new(transport, Duration::from_millis(100));
         let timeout = Duration::from_millis(self.timeout);
 
         match &self.command {

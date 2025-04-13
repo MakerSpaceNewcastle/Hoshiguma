@@ -34,7 +34,7 @@ static_cell = "2.1.0"
 heapless = { git = "https://github.com/rust-embedded/heapless", rev = "4e31d3e604a15739d064ae729eb8fb8b5bda3b46", features = ["defmt-03"] }
 
 # Telemetry RX
-teeny-rpc = { path = "../teeny-rpc", default-features = false, features = ["no-std"] }
+teeny-rpc = { git = "https://github.com/DanNixon/teeny-rpc", default-features = false, features = ["no-std"] }
 hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 git-version = "0.3.5"
 
