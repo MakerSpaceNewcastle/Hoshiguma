@@ -1373,6 +1373,7 @@ dependencies = [
 [[package]]
 name = "teeny-rpc"
 version = "0.1.0"
+source = "git+https://github.com/DanNixon/teeny-rpc#d4c540ab2e5a6f94ad6aa54c1528b2b79b49974c"
 dependencies = [
  "defmt",
  "embassy-time",

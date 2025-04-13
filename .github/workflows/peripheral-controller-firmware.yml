@@ -9,14 +9,12 @@ on:
       - '.github/workflows/peripheral-controller.yml'
       - 'devenv.*'
       - 'protocol/**'
-      - 'teeny-rpc/**'
       - 'peripheral-controller-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/peripheral-controller.yml'
       - 'devenv.*'
       - 'protocol/**'
-      - 'teeny-rpc/**'
       - 'peripheral-controller-firmware/**'
 
 jobs:
