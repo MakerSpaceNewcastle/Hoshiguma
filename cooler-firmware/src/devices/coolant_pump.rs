@@ -1,33 +1,28 @@
-use crate::{rpc::report_event, CoolantPumpResources};
-use defmt::unwrap;
+use crate::CoolantPumpResources;
 use embassy_rp::gpio::{Level, Output};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::cooler::{
-    event::{ControlEvent, EventKind},
-    types::CoolantPump,
-};
+use hoshiguma_protocol::cooler::types::CoolantPumpState;
 
-pub(crate) static COOLANT_PUMP: Watch<CriticalSectionRawMutex, CoolantPump, 2> = Watch::new();
+pub(crate) struct CoolantPump {
+    output: Output<'static>,
+}
 
-#[embassy_executor::task]
-pub(crate) async fn task(r: CoolantPumpResources) {
-    let mut output = Output::new(r.relay, Level::Low);
-    let mut rx = unwrap!(COOLANT_PUMP.receiver());
+impl CoolantPump {
+    pub(crate) fn new(r: CoolantPumpResources) -> Self {
+        let output = Output::new(r.relay, Level::Low);
+        Self { output }
+    }
 
-    loop {
-        // Wait for a new setting
-        let setting = rx.changed().await;
+    pub(crate) fn set(&mut self, state: CoolantPumpState) {
+        self.output.set_level(match state {
+            CoolantPumpState::Idle => Level::Low,
+            CoolantPumpState::Run => Level::High,
+        });
+    }
 
-        report_event(EventKind::Control(ControlEvent::CoolantPump(
-            setting.clone(),
-        )))
-        .await;
-
-        // Set relay output
-        let level = match setting {
-            CoolantPump::Idle => Level::Low,
-            CoolantPump::Run => Level::High,
-        };
-        output.set_level(level);
+    pub(crate) fn get(&mut self) -> CoolantPumpState {
+        match self.output.get_output_level() {
+            Level::Low => CoolantPumpState::Idle,
+            Level::High => CoolantPumpState::Run,
+        }
     }
 }

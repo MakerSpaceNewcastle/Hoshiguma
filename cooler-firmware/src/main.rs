@@ -2,26 +2,30 @@
 #![no_main]
 
 mod devices;
-mod polled_input;
+mod machine;
 mod rpc;
 
 use assign_resources::assign_resources;
-use core::sync::atomic::Ordering;
 use defmt::{info, unwrap};
 use defmt_rtt as _;
-use embassy_executor::raw::Executor;
+use devices::{
+    compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
+    header_tank_level_sensor::HeaderTankLevelSensor,
+    heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
+    stirrer::Stirrer, temperature_sensors::TemperatureSensors,
+};
+use embassy_executor::Spawner;
 use embassy_rp::{
     gpio::{Input, Level, Output, Pull},
     watchdog::Watchdog,
 };
-use embassy_time::{Duration, Instant, Ticker, Timer};
-use git_version::git_version;
+use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
+use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use pico_plc_bsp::peripherals::{self, PicoPlc};
-use portable_atomic::AtomicU64;
-use static_cell::StaticCell;
+use portable_atomic as _;
 
 assign_resources! {
     status: StatusResources {
@@ -39,8 +43,8 @@ assign_resources! {
         low: IN_1,
     },
     header_tank_level: HeaderTankLevelSensorResources {
-        empty: IN_2,
-        low : IN_3,
+        empty: IN_3,
+        low : IN_2,
     },
     compressor: CompressorResources {
         relay: RELAY_0,
@@ -82,15 +86,12 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-static EXECUTOR_0: StaticCell<Executor> = StaticCell::new();
-static SLEEP_TICKS_CORE_0: AtomicU64 = AtomicU64::new(0);
-
-#[cortex_m_rt::entry]
-fn main() -> ! {
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
     let p = PicoPlc::default();
     let r = split_resources!(p);
 
-    info!("Version: {}", git_version!());
+    info!("{}", system_information());
 
     // Unused IO
     let _in5 = Input::new(p.IN_5, Pull::Down);
@@ -101,39 +102,35 @@ fn main() -> ! {
     let _relay6 = Output::new(p.RELAY_6, Level::Low);
     let _relay7 = Output::new(p.RELAY_7, Level::Low);
 
-    let executor_0 = EXECUTOR_0.init(Executor::new(usize::MAX as *mut ()));
-    let spawner = executor_0.spawner();
+    // Outputs
+    let stirrer = Stirrer::new(r.stirrer);
+    let coolant_pump = CoolantPump::new(r.coolant_pump);
+    let compressor = Compressor::new(r.compressor);
+    let radiator_fan = RadiatorFan::new(r.radiator_fan);
+
+    // Inputs
+    let header_tank_level = HeaderTankLevelSensor::new(r.header_tank_level);
+    let heat_exchanger_level = HeatExchangerLevelSensor::new(r.heat_exchanger_level);
+    let coolant_flow_sensor = CoolantFlowSensor::new(&spawner, r.flow_sensor);
+    let temperature_sensors = TemperatureSensors::new(&spawner, r.onewire);
+
+    let machine = Machine {
+        stirrer,
+        coolant_pump,
+        compressor,
+        radiator_fan,
+        header_tank_level,
+        heat_exchanger_level,
+        coolant_flow_sensor,
+        temperature_sensors,
+    };
 
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
 
-    // Devices
-    unwrap!(spawner.spawn(devices::radiator_fan::task(r.radiator_fan)));
-    unwrap!(spawner.spawn(devices::compressor::task(r.compressor)));
-    unwrap!(spawner.spawn(devices::stirrer::task(r.stirrer)));
-    unwrap!(spawner.spawn(devices::coolant_pump::task(r.coolant_pump)));
-    unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
-    unwrap!(spawner.spawn(devices::coolant_flow_sensor::task(r.flow_sensor)));
-    unwrap!(spawner.spawn(devices::heat_exchanger_level_sensor::task(
-        r.heat_exchanger_level
-    )));
-    unwrap!(spawner.spawn(devices::header_tank_level_sensor::task(r.header_tank_level)));
-
-    // RPC/telemetry/control
-    unwrap!(spawner.spawn(rpc::task(r.communication)));
-
-    // CPU usage reporting
-    unwrap!(spawner.spawn(report_cpu_usage()));
+    unwrap!(spawner.spawn(rpc::task(r.communication, machine,)));
 
     #[cfg(feature = "test-panic-on-core-0")]
     unwrap!(spawner.spawn(dummy_panic()));
-
-    loop {
-        let before = Instant::now().as_ticks();
-        cortex_m::asm::wfe();
-        let after = Instant::now().as_ticks();
-        SLEEP_TICKS_CORE_0.fetch_add(after - before, Ordering::Relaxed);
-        unsafe { executor_0.poll() };
-    }
 }
 
 #[embassy_executor::task]
@@ -147,35 +144,6 @@ async fn watchdog_feed_task(r: StatusResources) {
         watchdog.feed();
         onboard_led.toggle();
         Timer::after_millis(500).await;
-    }
-}
-
-#[embassy_executor::task]
-async fn report_cpu_usage() {
-    let mut previous_tick = 0u64;
-    let mut previous_sleep_tick_core_0 = 0u64;
-
-    let mut ticker = Ticker::every(Duration::from_secs(1));
-
-    loop {
-        ticker.next().await;
-
-        let current_tick = Instant::now().as_ticks();
-        let tick_difference = (current_tick - previous_tick) as f32;
-
-        let current_sleep_tick_core_0 = SLEEP_TICKS_CORE_0.load(Ordering::Relaxed);
-
-        let calc_cpu_usage = |current_sleep_tick: u64, previous_sleep_tick: u64| -> f32 {
-            let sleep_tick_difference = (current_sleep_tick - previous_sleep_tick) as f32;
-            1f32 - sleep_tick_difference / tick_difference
-        };
-
-        let usage_core_0 = calc_cpu_usage(current_sleep_tick_core_0, previous_sleep_tick_core_0);
-
-        previous_tick = current_tick;
-        previous_sleep_tick_core_0 = current_sleep_tick_core_0;
-
-        info!("Usage: core 0 = {}", usage_core_0);
     }
 }
 

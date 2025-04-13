@@ -1,33 +1,28 @@
-use crate::{rpc::report_event, RadiatorFanResources};
-use defmt::unwrap;
+use crate::RadiatorFanResources;
 use embassy_rp::gpio::{Level, Output};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::cooler::{
-    event::{ControlEvent, EventKind},
-    types::RadiatorFan,
-};
+use hoshiguma_protocol::cooler::types::RadiatorFanState;
 
-pub(crate) static RADIATOR_FAN: Watch<CriticalSectionRawMutex, RadiatorFan, 2> = Watch::new();
+pub(crate) struct RadiatorFan {
+    output: Output<'static>,
+}
 
-#[embassy_executor::task]
-pub(crate) async fn task(r: RadiatorFanResources) {
-    let mut output = Output::new(r.relay, Level::Low);
-    let mut rx = unwrap!(RADIATOR_FAN.receiver());
+impl RadiatorFan {
+    pub(crate) fn new(r: RadiatorFanResources) -> Self {
+        let output = Output::new(r.relay, Level::Low);
+        Self { output }
+    }
 
-    loop {
-        // Wait for a new setting
-        let setting = rx.changed().await;
+    pub(crate) fn set(&mut self, state: RadiatorFanState) {
+        self.output.set_level(match state {
+            RadiatorFanState::Idle => Level::Low,
+            RadiatorFanState::Run => Level::High,
+        });
+    }
 
-        report_event(EventKind::Control(ControlEvent::RadiatorFan(
-            setting.clone(),
-        )))
-        .await;
-
-        // Set relay output
-        let level = match setting {
-            RadiatorFan::Idle => Level::Low,
-            RadiatorFan::Run => Level::High,
-        };
-        output.set_level(level);
+    pub(crate) fn get(&mut self) -> RadiatorFanState {
+        match self.output.get_output_level() {
+            Level::Low => RadiatorFanState::Idle,
+            Level::High => RadiatorFanState::Run,
+        }
     }
 }

@@ -1,27 +1,21 @@
-use crate::{polled_input::PolledInput, rpc::report_event, HeatExchangerLevelSensorResources};
+use crate::HeatExchangerLevelSensorResources;
 use embassy_rp::gpio::{Input, Level, Pull};
-use embassy_time::Duration;
-use hoshiguma_protocol::cooler::{
-    event::{EventKind, ObservationEvent},
-    types::HeatExchangeFluidLevel,
-};
+use hoshiguma_protocol::cooler::types::HeatExchangeFluidLevel;
 
-#[embassy_executor::task]
-pub(crate) async fn task(r: HeatExchangerLevelSensorResources) {
-    let low = Input::new(r.low, Pull::Down);
-    let mut low = PolledInput::new(low, Duration::from_millis(500));
+pub(crate) struct HeatExchangerLevelSensor {
+    low: Input<'static>,
+}
 
-    loop {
-        let new = low.wait_for_change().await;
+impl HeatExchangerLevelSensor {
+    pub(crate) fn new(r: HeatExchangerLevelSensorResources) -> Self {
+        let low = Input::new(r.low, Pull::Down);
+        Self { low }
+    }
 
-        let state = match new {
+    pub(crate) fn get(&self) -> HeatExchangeFluidLevel {
+        match self.low.get_level() {
             Level::Low => HeatExchangeFluidLevel::Normal,
             Level::High => HeatExchangeFluidLevel::Low,
-        };
-
-        report_event(EventKind::Observation(
-            ObservationEvent::HeatExchangeFluidLevel(state),
-        ))
-        .await;
+        }
     }
 }

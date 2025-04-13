@@ -1,5 +1,20 @@
 use crate::types::TemperatureReading;
+use core::ops::Deref;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub struct State {
+    pub stirrer: StirrerState,
+    pub coolant_pump: CoolantPumpState,
+    pub compressor: CompressorState,
+    pub radiator_fan: RadiatorFanState,
+
+    pub coolant_header_tank_level: HeaderTankCoolantLevelReading,
+    pub heat_exchange_fluid_level: HeatExchangeFluidLevel,
+    pub coolant_flow_rate: CoolantFlow,
+    pub temperatures: Temperatures,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
@@ -16,28 +31,28 @@ pub struct Temperatures {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Compressor {
+pub enum CompressorState {
     Idle,
     Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum RadiatorFan {
+pub enum RadiatorFanState {
     Idle,
     Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Stirrer {
+pub enum StirrerState {
     Idle,
     Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum CoolantPump {
+pub enum CoolantPumpState {
     Idle,
     Run,
 }
@@ -59,12 +74,23 @@ pub enum HeaderTankCoolantLevel {
     Full,
 }
 
+/// The flow of coolant in litres per minute.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct CoolantFlow(f64);
 
+impl Deref for CoolantFlow {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl CoolantFlow {
-    pub fn new(litres: f64, seconds: f64) -> Self {
-        Self(litres / seconds)
+    pub const ZERO: Self = Self(0.0);
+
+    pub fn new(litres_per_minute: f64) -> Self {
+        Self(litres_per_minute)
     }
 }

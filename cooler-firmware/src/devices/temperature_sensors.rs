@@ -1,19 +1,26 @@
-use crate::{rpc::report_event, OnewireResources};
-use defmt::info;
+use crate::OnewireResources;
+use core::cell::RefCell;
+use defmt::{info, unwrap};
 use ds18b20::{Ds18b20, Resolution};
+use embassy_executor::Spawner;
 use embassy_rp::gpio::{Level, OutputOpenDrain};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_protocol::{
-    cooler::{
-        event::{EventKind, ObservationEvent},
-        types::Temperatures,
-    },
-    types::TemperatureReading,
-};
+use hoshiguma_protocol::{cooler::types::Temperatures, types::TemperatureReading};
 use one_wire_bus::{Address, OneWire};
 
+static READING: Mutex<CriticalSectionRawMutex, RefCell<Temperatures>> =
+    Mutex::new(RefCell::new(Temperatures {
+        onboard: Err(()),
+        coolant_flow: Err(()),
+        coolant_mid: Err(()),
+        coolant_return: Err(()),
+        heat_exchange_fluid: Err(()),
+        heat_exchanger_loop: Err(()),
+    }));
+
 #[embassy_executor::task]
-pub(crate) async fn task(r: OnewireResources) {
+async fn task(r: OnewireResources) {
     let mut bus = {
         let pin = OutputOpenDrain::new(r.pin, Level::Low);
         OneWire::new(pin).unwrap()
@@ -37,6 +44,8 @@ pub(crate) async fn task(r: OnewireResources) {
     let coolant_return_sensor = Ds18b20::new::<()>(Address(2989910039812399400)).unwrap();
 
     loop {
+        ticker.next().await;
+
         ds18b20::start_simultaneous_temp_measurement(&mut bus, &mut Delay).unwrap();
 
         Timer::after_millis(Resolution::Bits12.max_measurement_time_millis() as u64).await;
@@ -57,11 +66,21 @@ pub(crate) async fn task(r: OnewireResources) {
             heat_exchanger_loop: read_sensor(&heat_exchanger_loop_sensor),
         };
 
-        report_event(EventKind::Observation(ObservationEvent::Temperatures(
-            readings,
-        )))
-        .await;
+        info!("{}", readings);
 
-        ticker.next().await;
+        READING.lock().await.replace(readings);
+    }
+}
+
+pub(crate) struct TemperatureSensors {}
+
+impl TemperatureSensors {
+    pub(crate) fn new(spawner: &Spawner, r: OnewireResources) -> Self {
+        unwrap!(spawner.spawn(task(r)));
+        Self {}
+    }
+
+    pub(crate) async fn get(&self) -> Temperatures {
+        READING.lock().await.borrow().clone()
     }
 }
