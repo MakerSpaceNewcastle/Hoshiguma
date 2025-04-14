@@ -27,7 +27,7 @@ pub(crate) async fn task() {
         severity
             .update_and_async(new_severity, |severity| async {
                 status_tx
-                    .publish((MonitorKind::LogicPowerSupplyNotPresent, severity))
+                    .publish((MonitorKind::MachinePowerOff, severity))
                     .await;
             })
             .await;
