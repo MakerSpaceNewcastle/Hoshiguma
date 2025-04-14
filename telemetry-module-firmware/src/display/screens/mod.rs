@@ -1,67 +1,41 @@
-mod auto_summary;
-mod device;
-mod inputs;
-mod monitors;
+mod home;
 mod network;
-mod outputs;
-mod summary;
-mod temperatures;
+mod telemetry;
+mod telemetry_module;
+mod time;
 
-use super::{state::DisplayDataState, DrawType};
+use super::DrawType;
 use crate::display::DrawTypeDrawable;
 use defmt::{debug, info, Format};
 use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
 
-pub(super) trait DrawableScreen {
-    type Color;
-    type Output;
-
-    fn draw<D>(
-        &self,
-        target: &mut D,
-        draw_type: &DrawType,
-        state: &DisplayDataState,
-    ) -> Result<Self::Output, D::Error>
-    where
-        D: DrawTarget<Color = Self::Color>;
-}
-
 #[derive(Clone, Format)]
 pub(super) enum Screen {
-    AutoSummary,
-    Summary,
-    Monitors,
-    Temperatures,
-    Inputs,
-    Outputs,
+    Home,
+    Telemetry,
+    Time,
     Network,
-    Device,
+    Module,
 }
 
 impl Screen {
     pub(super) fn name(&self) -> &'static str {
         match self {
-            Screen::AutoSummary => "Home",
-            Screen::Summary => "Summary",
-            Screen::Monitors => "Monitors",
-            Screen::Temperatures => "Temperatures",
-            Screen::Inputs => "Inputs",
-            Screen::Outputs => "Outputs",
+            Screen::Home => "Home",
+            Screen::Telemetry => "Telemetry",
+            Screen::Time => "Time",
             Screen::Network => "Network",
-            Screen::Device => "Device",
+            Screen::Module => "Telem. Module",
         }
     }
 }
 
-pub(super) const SCREENS: [Screen; 8] = [
-    Screen::AutoSummary,
-    Screen::Summary,
-    Screen::Monitors,
-    Screen::Temperatures,
-    Screen::Inputs,
-    Screen::Outputs,
+pub(super) const SCREENS: [Screen; 5] = [
+    Screen::Home,
+    Screen::Telemetry,
+    Screen::Time,
     Screen::Network,
-    Screen::Device,
+    Screen::Module,
 ];
 
 #[derive(Default, Format)]
@@ -93,16 +67,11 @@ impl ScreenSelector {
     }
 }
 
-impl DrawableScreen for ScreenSelector {
+impl DrawTypeDrawable for ScreenSelector {
     type Color = Rgb565;
     type Output = ();
 
-    fn draw<D>(
-        &self,
-        target: &mut D,
-        draw_type: &DrawType,
-        state: &DisplayDataState,
-    ) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, target: &mut D, draw_type: &DrawType) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
@@ -110,18 +79,11 @@ impl DrawableScreen for ScreenSelector {
         debug!("Drawing screen {}", screen);
 
         match screen {
-            Screen::AutoSummary => {
-                self::auto_summary::AutoSummary::new(state).draw(target, draw_type)
-            }
-            Screen::Summary => self::summary::Summary::new(state).draw(target, draw_type),
-            Screen::Monitors => self::monitors::Monitors::new(state).draw(target, draw_type),
-            Screen::Temperatures => {
-                self::temperatures::Temperatures::new(state).draw(target, draw_type)
-            }
-            Screen::Inputs => self::inputs::Inputs::new(state).draw(target, draw_type),
-            Screen::Outputs => self::outputs::Outputs::new(state).draw(target, draw_type),
-            Screen::Network => self::network::Network::new(state).draw(target, draw_type),
-            Screen::Device => self::device::Device::new(state).draw(target, draw_type),
+            Screen::Home => self::home::Home {}.draw(target, draw_type),
+            Screen::Telemetry => self::telemetry::Telemetry {}.draw(target, draw_type),
+            Screen::Time => self::time::Time {}.draw(target, draw_type),
+            Screen::Network => self::network::Network {}.draw(target, draw_type),
+            Screen::Module => self::telemetry_module::TelemetryModule {}.draw(target, draw_type),
         }
     }
 }

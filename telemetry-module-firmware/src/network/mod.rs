@@ -1,5 +1,7 @@
-pub(crate) mod mqtt;
+pub(crate) mod telemetry_tx;
+pub(crate) mod time;
 
+use core::cell::RefCell;
 use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{info, unwrap, warn};
@@ -12,23 +14,15 @@ use embassy_rp::{
     peripherals::{DMA_CH0, PIO0},
     pio::{InterruptHandler, Pio},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_sync::blocking_mutex::CriticalSectionMutex;
 use embassy_time::Timer;
 use rand::RngCore;
 use static_cell::StaticCell;
 
-const WIFI_SSID: &str = "Maker Space";
+pub(crate) const WIFI_SSID: &str = env!("WIFI_SSID");
 
-#[derive(Clone)]
-pub(crate) enum NetworkEvent {
-    NetworkConnected(StaticConfigV4),
-
-    MqttBrokerConnected,
-    MqttBrokerDisconnected,
-}
-
-pub(crate) static NETWORK_EVENTS: Channel<CriticalSectionRawMutex, NetworkEvent, 16> =
-    Channel::new();
+pub(crate) static DHCP_CONFIG: CriticalSectionMutex<RefCell<Option<StaticConfigV4>>> =
+    CriticalSectionMutex::new(RefCell::new(None));
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
@@ -38,16 +32,25 @@ bind_interrupts!(struct Irqs {
 async fn cyw43_task(
     runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>,
 ) -> ! {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("cyw43").await;
+
     runner.run().await
 }
 
 #[embassy_executor::task]
 async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'static>>) -> ! {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("net stack").await;
+
     runner.run().await
 }
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("net init").await;
+
     let pwr = Output::new(r.pwr, Level::Low);
     let cs = Output::new(r.cs, Level::High);
 
@@ -115,21 +118,16 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         info!("DHCP is now up");
 
         let config = stack.config_v4().unwrap();
-        NETWORK_EVENTS
-            .send(NetworkEvent::NetworkConnected(config))
-            .await;
+        DHCP_CONFIG.lock(|v| {
+            v.borrow_mut().replace(config);
+        });
     }
 
-    loop {
-        // Start the MQTT client
-        if mqtt::run_client(stack).await.is_err() {
-            // Notify of MQTT broker connection loss
-            NETWORK_EVENTS
-                .send(NetworkEvent::MqttBrokerDisconnected)
-                .await;
-        }
+    unwrap!(spawner.spawn(time::task(stack)));
+    unwrap!(spawner.spawn(telemetry_tx::task(stack)));
 
-        // Wait a little bit of time before connecting again
-        Timer::after_millis(500).await;
+    loop {
+        // Do nothing now
+        Timer::after_secs(300).await;
     }
 }

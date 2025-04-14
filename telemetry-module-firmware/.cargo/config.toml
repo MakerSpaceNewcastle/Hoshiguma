@@ -1,8 +1,22 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = "probe-rs run --chip RP2040 --protocol swd"
+runner = [
+  "probe-rs",
+  "run",
+  "--chip",
+  "RP2040",
+  "--protocol",
+  "swd",
+  "--log-format",
+  "{L:1} {F:blue}:{l:cyan:1} {s}",
+]
 
 [build]
 target = "thumbv6m-none-eabi"
 
 [env]
 DEFMT_LOG = "debug"
+WIFI_SSID = "Maker Space"
+WIFI_PASSWORD = "abcd1234"
+TELEGRAF_URL = "https://hoshiguma-telemetry-feed.makerspace.dan-nixon.com/"
+TELEGRAF_USERNAME = "hoshiguma"
+TELEGRAF_PASSWORD = "fuck_no"
