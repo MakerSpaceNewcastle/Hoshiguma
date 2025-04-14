@@ -1,14 +1,9 @@
 use crate::{
     display::{
-        drawables::{
-            info_background::INFO_PANE_REGION,
-            measurement::{Measurement, Severity},
-            subtitle::Subtitle,
-        },
-        state::DisplayDataState,
+        drawables::{info_background::INFO_PANE_REGION, measurement::Measurement},
         DrawType, DrawTypeDrawable,
     },
-    network::mqtt::BROKER_IP,
+    network::{DHCP_CONFIG, WIFI_SSID},
 };
 use core::fmt::Write;
 use embedded_graphics::{
@@ -16,17 +11,9 @@ use embedded_graphics::{
     prelude::{DrawTarget, Point},
 };
 
-pub(super) struct Network<'a> {
-    state: &'a DisplayDataState,
-}
+pub(super) struct Network {}
 
-impl<'a> Network<'a> {
-    pub(super) fn new(state: &'a DisplayDataState) -> Self {
-        Self { state }
-    }
-}
-
-impl DrawTypeDrawable for Network<'_> {
+impl DrawTypeDrawable for Network {
     type Color = Rgb565;
     type Output = ();
 
@@ -35,37 +22,24 @@ impl DrawTypeDrawable for Network<'_> {
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 35;
-        let cursor = Point::new(
+        let mut cursor = Point::new(
             INFO_PANE_REGION.top_left.x + 2,
             INFO_PANE_REGION.top_left.y + 11,
         );
 
-        let cursor = Subtitle::new(cursor, "Local Network").draw(target, draw_type)?;
+        // WiFi SSID
+        cursor = Measurement::new(cursor, value_offset, "SSID", Some(WIFI_SSID))
+            .draw(target, draw_type)?;
 
-        // Network connection status
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "State",
-            Some(match self.state.ipv4_config {
-                Some(_) => "Connected",
-                None => "Disconnected",
-            }),
-            Some(match self.state.ipv4_config {
-                Some(_) => Severity::Normal,
-                None => Severity::Critical,
-            }),
-        )
-        .draw(target, draw_type)?;
+        let dhcp_config = DHCP_CONFIG.lock(|v| v.borrow().clone());
 
         // Our IP address
-        let cursor = Measurement::new(
+        cursor = Measurement::new(
             cursor,
             value_offset,
             "IP",
-            self.state
-                .ipv4_config
-                .as_ref()
+            dhcp_config
+                .clone()
                 .map(|config| {
                     let mut s = heapless::String::<16>::new();
                     s.write_fmt(format_args!("{}", config.address.address()))
@@ -73,18 +47,16 @@ impl DrawTypeDrawable for Network<'_> {
                     s
                 })
                 .as_deref(),
-            None,
         )
         .draw(target, draw_type)?;
 
         // Gateway IP address
-        let cursor = Measurement::new(
+        cursor = Measurement::new(
             cursor,
             value_offset,
             "Gtwy",
-            self.state
-                .ipv4_config
-                .as_ref()
+            dhcp_config
+                .clone()
                 .map(|config| {
                     let mut s = heapless::String::<16>::new();
                     s.write_fmt(format_args!("{}", config.gateway.unwrap()))
@@ -92,44 +64,28 @@ impl DrawTypeDrawable for Network<'_> {
                     s
                 })
                 .as_deref(),
-            None,
         )
         .draw(target, draw_type)?;
 
-        let cursor = cursor + Point::new(0, 5);
-
-        let cursor = Subtitle::new(cursor, "MQTT").draw(target, draw_type)?;
-
-        // MQTT connection status
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "State",
-            Some(match self.state.mqtt_broker_connected {
-                true => "Connected",
-                false => "Disconnected",
-            }),
-            Some(match self.state.mqtt_broker_connected {
-                true => Severity::Normal,
-                false => Severity::Critical,
-            }),
-        )
-        .draw(target, draw_type)?;
-
-        // MQTT broker IP address
-        let mqtt_broker_ip_str = {
-            let mut s = heapless::String::<16>::new();
-            s.write_fmt(format_args!("{}", BROKER_IP)).unwrap();
-            s
-        };
-        Measurement::new(
-            cursor,
-            value_offset,
-            "Brkr",
-            Some(&mqtt_broker_ip_str),
-            None,
-        )
-        .draw(target, draw_type)?;
+        // DNS IP addresses
+        for (name, idx) in [("DNS1", 0), ("DNS2", 1), ("DNS3", 2)] {
+            cursor = Measurement::new(
+                cursor,
+                value_offset,
+                name,
+                dhcp_config
+                    .clone()
+                    .and_then(|config| {
+                        config.dns_servers.get(idx).map(|addr| {
+                            let mut s = heapless::String::<16>::new();
+                            s.write_fmt(format_args!("{}", addr)).unwrap();
+                            s
+                        })
+                    })
+                    .as_deref(),
+            )
+            .draw(target, draw_type)?;
+        }
 
         Ok(())
     }

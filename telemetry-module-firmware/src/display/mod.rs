@@ -1,17 +1,13 @@
 mod drawables;
 mod screens;
-pub(super) mod state;
 
-use self::{
-    screens::{DrawableScreen, ScreenSelector},
-    state::{DisplayDataState, STATE_CHANGED},
-};
+use self::screens::ScreenSelector;
 use crate::ui_button::{UiEvent, UI_INPUTS};
 use core::cell::RefCell;
 use defmt::{debug, warn, Format};
 use drawables::{boot_screen::BootScreen, screen::Screen};
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
-use embassy_futures::select::{select3, Either3};
+use embassy_futures::select::{select, Either};
 use embassy_rp::{
     gpio::{Level, Output},
     spi::{Config as SpiConfig, Spi},
@@ -54,6 +50,9 @@ trait DrawTypeDrawable {
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::DisplayResources) {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("display").await;
+
     let mut config = SpiConfig::default();
     config.frequency = 64_000_000;
 
@@ -85,51 +84,35 @@ pub(super) async fn task(r: crate::DisplayResources) {
     Timer::after_secs(2).await;
 
     let mut screen_selector = ScreenSelector::default();
-    let mut state = DisplayDataState::default();
 
     let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
 
     // Initial full display draw
-    draw(&mut display, DrawType::Full, &screen_selector, &state).await;
+    draw(&mut display, DrawType::Full, &screen_selector).await;
 
     loop {
-        let draw_type = match select3(
-            ui_event_rx.next_message(),
-            STATE_CHANGED.wait(),
-            embassy_time::Timer::after_secs(5),
-        )
-        .await
-        {
-            Either3::First(msg) => match msg {
+        let draw_type = match select(ui_event_rx.next_message(), Timer::after_secs(1)).await {
+            Either::First(msg) => match msg {
                 WaitResult::Message(UiEvent::ButtonPushed) => {
                     screen_selector.select_next();
                     Some(DrawType::Full)
                 }
                 _ => None,
             },
-            Either3::Second(new_state) => {
-                state = new_state;
-                Some(DrawType::ValuesOnly)
-            }
-            Either3::Third(_) => {
+            Either::Second(_) => {
                 // Nothing special to do here, just redraw the screen
-                // TODO: is this actually needed?
                 Some(DrawType::ValuesOnly)
             }
         };
 
         if let Some(draw_type) = draw_type {
-            draw(&mut display, draw_type, &screen_selector, &state).await;
+            draw(&mut display, draw_type, &screen_selector).await;
         }
     }
 }
 
-async fn draw<D>(
-    display: &mut D,
-    draw_type: DrawType,
-    screen_selector: &ScreenSelector,
-    state: &DisplayDataState,
-) where
+async fn draw<D>(display: &mut D, draw_type: DrawType, screen_selector: &ScreenSelector)
+where
     D: DrawTarget<Color = Rgb565>,
 {
     debug!("Display draw ({})", draw_type);
@@ -138,7 +121,7 @@ async fn draw<D>(
         warn!("Failed to draw screen title");
     }
 
-    if screen_selector.draw(display, &draw_type, state).is_err() {
+    if screen_selector.draw(display, &draw_type).is_err() {
         warn!("Failed to draw screen");
     }
 }

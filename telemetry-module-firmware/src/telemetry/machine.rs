@@ -1,28 +1,32 @@
-use core::time::Duration as CoreDuration;
+use crate::{
+    metric::{Metric, MetricKind},
+    network::telemetry_tx::METRIC_TX,
+};
+use core::{sync::atomic::Ordering, time::Duration as CoreDuration};
 use defmt::{info, warn};
 use embassy_rp::{
     bind_interrupts,
     peripherals::UART0,
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
-use embassy_time::{Duration, Ticker};
-use hoshiguma_protocol::peripheral_controller::{
-    event::Event,
-    rpc::{Request, Response},
-};
+use embassy_time::Timer;
+use hoshiguma_protocol::peripheral_controller::rpc::{Request, Response};
+use portable_atomic::AtomicU64;
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
-pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Event, 64, 2, 1> =
-    PubSubChannel::new();
+pub(crate) static TELEMETRY_RX_SUCCESS: AtomicU64 = AtomicU64::new(0);
+pub(crate) static TELEMETRY_RX_FAIL: AtomicU64 = AtomicU64::new(0);
 
 bind_interrupts!(struct Irqs {
     UART0_IRQ  => BufferedInterruptHandler<UART0>;
 });
 
 #[embassy_executor::task]
-pub(super) async fn task(r: crate::TelemetryUartResources) {
+pub(crate) async fn task(r: crate::TelemetryUartResources) {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("machine telemetry").await;
+
     const TX_BUFFER_SIZE: usize = 32;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buf = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
@@ -40,10 +44,7 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
     let transport = EioTransport::<_, 512>::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
 
-    let tx = TELEMETRY_MESSAGES.publisher().unwrap();
-
-    // Request events every 200ms
-    let mut ticker = Ticker::every(Duration::from_millis(200));
+    let metric_tx = METRIC_TX.publisher().unwrap();
 
     'telem_rx: loop {
         match client
@@ -52,10 +53,15 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
         {
             Ok(Response::GetOldestEvent(Some(event))) => {
                 info!("Got event from controller: {:?}", event);
-                tx.publish(event).await;
+                TELEMETRY_RX_SUCCESS.add(1, Ordering::Relaxed);
+                metric_tx
+                    .publish(Metric::new(
+                        crate::network::time::wall_time(),
+                        MetricKind::PeripheralControllerEvent(event.kind),
+                    ))
+                    .await;
 
                 // Immediately request further events
-                ticker.reset();
                 continue 'telem_rx;
             }
             Ok(Response::GetOldestEvent(None)) => {
@@ -63,12 +69,15 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
             }
             Ok(_) => {
                 warn!("Unexpected RPC response");
+                TELEMETRY_RX_FAIL.add(1, Ordering::Relaxed);
             }
             Err(e) => {
                 warn!("RPC error: {}", e);
+                TELEMETRY_RX_FAIL.add(1, Ordering::Relaxed);
             }
         }
 
-        ticker.next().await;
+        // Request events every second
+        Timer::after_secs(1).await;
     }
 }

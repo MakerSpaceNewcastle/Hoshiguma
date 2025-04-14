@@ -38,12 +38,7 @@ jobs:
           MQTT_PASSWORD: "not real"
         run: |
           set -x
-
           cd ./telemetry-module-firmware
-
-          rustup target add thumbv6m-none-eabi
-          rustup show
-
           cargo clippy -- -Dwarnings
 
   build:
@@ -63,15 +58,8 @@ jobs:
 
       - name: Build
         shell: devenv shell bash -- -e {0}
-        env:
-          WIFI_PASSWORD: "loool dont steal me"
-          MQTT_PASSWORD: "not real"
         run: |
           set -x
-
           cd ./telemetry-module-firmware
-
-          rustup target add thumbv6m-none-eabi
-          rustup show
-
           cargo build --release
+          cargo build --release -F trace
