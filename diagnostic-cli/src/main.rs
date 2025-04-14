@@ -41,8 +41,6 @@ impl Runner for Device {
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
-
     let cli = Cli::parse();
 
     let transport = SerialTransport::new(&cli.port, cli.baud).unwrap();

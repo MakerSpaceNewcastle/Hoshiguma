@@ -6,7 +6,7 @@ use strum::{EnumIter, IntoEnumIterator};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, EnumIter)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MonitorKind {
-    LogicPowerSupplyNotPresent,
+    MachinePowerOff,
 
     ChassisIntrusion,
 

@@ -6,10 +6,14 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
+chrono = "0.4.40"
 clap = { version = "4.3.18", features = ["derive"] }
+crossterm = "0.29.0"
 env_logger = "0.11.7"
 hoshiguma-protocol = { path = "../protocol" }
 log = "0.4.27"
+ratatui = "0.29.0"
+strum = "0.27.1"
 teeny-rpc = { git = "https://github.com/DanNixon/teeny-rpc" }
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread", "time"] }
 
