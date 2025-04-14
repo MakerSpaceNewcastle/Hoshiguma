@@ -11,8 +11,7 @@ use embedded_graphics::{
     prelude::{DrawTarget, Point},
 };
 use hoshiguma_protocol::peripheral_controller::types::{
-    AirAssistDemand, ChassisIntrusion, CoolantResevoirLevel, FumeExtractionMode, MachinePower,
-    MachineRun,
+    AirAssistDemand, ChassisIntrusion, FumeExtractionMode, MachinePower, MachineRun,
 };
 
 pub(super) struct Inputs<'a> {
@@ -107,25 +106,7 @@ impl DrawTypeDrawable for Inputs<'_> {
         )
         .draw(target, draw_type)?;
 
-        // Coolant resevoir level
-        Measurement::new(
-            cursor,
-            value_offset,
-            "Cool Level",
-            match self.state.coolant_resevoir_level.as_ref() {
-                Some(Ok(CoolantResevoirLevel::Full)) => Some("Full"),
-                Some(Ok(CoolantResevoirLevel::Low)) => Some("Low"),
-                Some(Ok(CoolantResevoirLevel::Empty)) => Some("Empty"),
-                _ => None,
-            },
-            match self.state.coolant_resevoir_level.as_ref() {
-                Some(Ok(CoolantResevoirLevel::Full)) => Some(Severity::Normal),
-                Some(Ok(CoolantResevoirLevel::Low)) => Some(Severity::Warning),
-                Some(Ok(CoolantResevoirLevel::Empty)) => Some(Severity::Critical),
-                _ => None,
-            },
-        )
-        .draw(target, draw_type)?;
+        // TODO: cooler things
 
         Ok(())
     }

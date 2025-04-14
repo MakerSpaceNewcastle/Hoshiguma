@@ -81,7 +81,7 @@ impl DrawTypeDrawable for Summary<'_> {
             value_offset,
             "Cool Flw",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.coolant_flow.ok().map(|t| {
@@ -101,7 +101,7 @@ impl DrawTypeDrawable for Summary<'_> {
             value_offset,
             "Cool Rtn",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.coolant_return.ok().map(|t| {
@@ -117,45 +117,7 @@ impl DrawTypeDrawable for Summary<'_> {
 
         let cursor = cursor + Point::new(0, 5);
 
-        // Coolant resevoir top temperature
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "Res Top",
-            self.state
-                .temperatures
-                .as_ref()
-                .and_then(|temperatures| {
-                    temperatures.coolant_resevoir_top.ok().map(|t| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{} C", t)).unwrap();
-                        s
-                    })
-                })
-                .as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        // Coolant resevoir bottom temperature
-        Measurement::new(
-            cursor,
-            value_offset,
-            "Res Bott",
-            self.state
-                .temperatures
-                .as_ref()
-                .and_then(|temperatures| {
-                    temperatures.coolant_resevoir_bottom.ok().map(|t| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{} C", t)).unwrap();
-                        s
-                    })
-                })
-                .as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
+        // TODO: cooler things
 
         Ok(())
     }

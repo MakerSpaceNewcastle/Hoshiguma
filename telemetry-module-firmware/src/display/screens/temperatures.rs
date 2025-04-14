@@ -38,7 +38,7 @@ impl DrawTypeDrawable for Temperatures<'_> {
             value_offset,
             "Board",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.onboard.ok().map(|t| {
@@ -57,7 +57,7 @@ impl DrawTypeDrawable for Temperatures<'_> {
             value_offset,
             "Elec Bay",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.electronics_bay_top.ok().map(|t| {
@@ -76,7 +76,7 @@ impl DrawTypeDrawable for Temperatures<'_> {
             value_offset,
             "Laser Bay",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.laser_chamber.ok().map(|t| {
@@ -93,28 +93,9 @@ impl DrawTypeDrawable for Temperatures<'_> {
         let cursor = Measurement::new(
             cursor,
             value_offset,
-            "Ambient",
-            self.state
-                .temperatures
-                .as_ref()
-                .and_then(|temperatures| {
-                    temperatures.ambient.ok().map(|t| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{} C", t)).unwrap();
-                        s
-                    })
-                })
-                .as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
             "Cool Flow",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.coolant_flow.ok().map(|t| {
@@ -128,72 +109,15 @@ impl DrawTypeDrawable for Temperatures<'_> {
         )
         .draw(target, draw_type)?;
 
-        let cursor = Measurement::new(
+        Measurement::new(
             cursor,
             value_offset,
             "Cool Ret",
             self.state
-                .temperatures
+                .temperatures_a
                 .as_ref()
                 .and_then(|temperatures| {
                     temperatures.coolant_return.ok().map(|t| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{} C", t)).unwrap();
-                        s
-                    })
-                })
-                .as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "Res Top",
-            self.state
-                .temperatures
-                .as_ref()
-                .and_then(|temperatures| {
-                    temperatures.coolant_resevoir_top.ok().map(|t| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{} C", t)).unwrap();
-                        s
-                    })
-                })
-                .as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "Res Bottom",
-            self.state
-                .temperatures
-                .as_ref()
-                .and_then(|temperatures| {
-                    temperatures.coolant_resevoir_bottom.ok().map(|t| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{} C", t)).unwrap();
-                        s
-                    })
-                })
-                .as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        Measurement::new(
-            cursor,
-            value_offset,
-            "Cool Pump",
-            self.state
-                .temperatures
-                .as_ref()
-                .and_then(|temperatures| {
-                    temperatures.coolant_pump.ok().map(|t| {
                         let mut s = heapless::String::<16>::new();
                         s.write_fmt(format_args!("{} C", t)).unwrap();
                         s

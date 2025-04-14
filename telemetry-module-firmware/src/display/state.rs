@@ -12,9 +12,9 @@ use heapless::String;
 use hoshiguma_protocol::peripheral_controller::{
     event::{ControlEvent, EventKind, ObservationEvent},
     types::{
-        AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolantResevoirLevelReading,
-        FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
-        MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
+        AirAssistDemand, AirAssistPump, ChassisIntrusion, FumeExtractionFan, FumeExtractionMode,
+        LaserEnable, MachineEnable, MachineOperationLockout, MachinePower, MachineRun, Monitors,
+        StatusLamp, Temperatures,
     },
 };
 
@@ -34,11 +34,10 @@ pub(crate) struct DisplayDataState {
     // Controller observation
     pub(crate) air_assist_demand: Option<AirAssistDemand>,
     pub(crate) chassis_intrusion: Option<ChassisIntrusion>,
-    pub(crate) coolant_resevoir_level: Option<CoolantResevoirLevelReading>,
     pub(crate) fume_extraction_mode: Option<FumeExtractionMode>,
     pub(crate) machine_power: Option<MachinePower>,
     pub(crate) machine_run_status: Option<MachineRun>,
-    pub(crate) temperatures: Option<Temperatures>,
+    pub(crate) temperatures_a: Option<Temperatures>,
 
     // Controller outputs
     pub(crate) air_assist_pump: Option<AirAssistPump>,
@@ -96,9 +95,6 @@ pub(crate) async fn task() {
                         EventKind::Observation(ObservationEvent::ChassisIntrusion(v)) => {
                             state.chassis_intrusion = Some(v);
                         }
-                        EventKind::Observation(ObservationEvent::CoolantResevoirLevel(v)) => {
-                            state.coolant_resevoir_level = Some(v);
-                        }
                         EventKind::Observation(ObservationEvent::FumeExtractionMode(v)) => {
                             state.fume_extraction_mode = Some(v);
                         }
@@ -108,8 +104,8 @@ pub(crate) async fn task() {
                         EventKind::Observation(ObservationEvent::MachineRun(v)) => {
                             state.machine_run_status = Some(v);
                         }
-                        EventKind::Observation(ObservationEvent::Temperatures(v)) => {
-                            state.temperatures = Some(v);
+                        EventKind::Observation(ObservationEvent::TemperaturesA(v)) => {
+                            state.temperatures_a = Some(v);
                         }
                         EventKind::Control(ControlEvent::AirAssistPump(v)) => {
                             state.air_assist_pump = Some(v);
