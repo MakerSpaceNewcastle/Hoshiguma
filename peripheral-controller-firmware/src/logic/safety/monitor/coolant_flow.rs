@@ -14,13 +14,18 @@ pub(crate) async fn task() {
 
     let mut severity = ObservedSeverity::default();
 
+    const WARN: f64 = 1.5;
+    const CRITICAL: f64 = 1.0;
+
     loop {
         let reading = level_rx.changed().await;
 
         severity
             .update_and_async(
-                if *reading < 0.05 {
+                if *reading < CRITICAL {
                     Severity::Critical
+                } else if *reading < WARN {
+                    Severity::Warn
                 } else {
                     Severity::Normal
                 },
