@@ -79,15 +79,8 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
 
     let mut led = Output::new(r.led, Level::Low);
 
-    // Flash LED fast to indicate boot
-    for _ in 0..10 {
-        watchdog.feed();
-        led.toggle();
-        Timer::after_millis(50).await;
-    }
-
-    let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
     let mut ticker = Ticker::every(steady_blink_delay);
+    let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
 
     loop {
         match select(ticker.next(), ui_event_rx.next_message()).await {
