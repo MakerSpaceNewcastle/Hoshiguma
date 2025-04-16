@@ -12,6 +12,7 @@ pub(crate) async fn task() {
     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
     let mut sensor_severity = ObservedSeverity::default();
+    let mut electronics_severity = ObservedSeverity::default();
     let mut coolant_flow_severity = ObservedSeverity::default();
 
     let mut sensor_failure_counter = 0;
@@ -37,6 +38,7 @@ pub(crate) async fn task() {
             Severity::Normal
         };
 
+        // Check for sensor fault
         sensor_severity
             .update_and_async(new_sensor_severity, |severity| async {
                 status_tx
@@ -44,6 +46,24 @@ pub(crate) async fn task() {
                     .await;
             })
             .await;
+
+        // Check electronics temperatures
+        if let Some(new_severity) = [
+            temperature_to_state(30.0, 35.0, state.onboard),
+            temperature_to_state(25.0, 30.0, state.electronics_bay_top),
+        ]
+        .iter()
+        .flatten()
+        .max()
+        {
+            electronics_severity
+                .update_and_async(new_severity.clone(), |severity| async {
+                    status_tx
+                        .publish((MonitorKind::MachineElectronicsOvertemperature, severity))
+                        .await;
+                })
+                .await;
+        }
 
         // Check coolant flow temperature
         if let Ok(new_severity) = temperature_to_state(25.0, 40.0, state.coolant_flow) {

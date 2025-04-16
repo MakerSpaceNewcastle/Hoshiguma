@@ -12,6 +12,9 @@ pub enum MonitorKind {
 
     CoolerCommunicationFault,
 
+    MachineElectronicsOvertemperature,
+    CoolerElectronicsOvertemperature,
+
     CoolantHeaderTankLevelSensorFault,
     CoolantHeaderTankEmpty,
     CoolantHeaderTankOverfilled,
@@ -33,7 +36,7 @@ pub enum MonitorKind {
 ///
 /// This constant defines the total count of monitor types that are observed.
 /// It must be equal to the number of variants of `MonitorKind`.
-const NUM_MONITORS: usize = 13;
+const NUM_MONITORS: usize = 15;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Monitors {

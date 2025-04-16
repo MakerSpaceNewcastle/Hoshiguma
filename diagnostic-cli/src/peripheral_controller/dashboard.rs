@@ -25,6 +25,8 @@ enum Parameter {
     MonitorMachinePowerOff,
     MonitorChassisIntrusion,
     MonitorCoolerCommunicationFault,
+    MonitorMachineElectronicsOvertemperature,
+    MonitorCoolerElectronicsOvertemperature,
     MonitorCoolantHeaderTankLevelSensorFault,
     MonitorCoolantHeaderTankEmpty,
     MonitorCoolantHeaderTankOverfilled,
@@ -161,6 +163,14 @@ fn event_to_values(event: EventKind) -> Vec<(Parameter, String)> {
             (
                 Parameter::MonitorCoolerCommunicationFault,
                 MonitorKind::CoolerCommunicationFault,
+            ),
+            (
+                Parameter::MonitorMachineElectronicsOvertemperature,
+                MonitorKind::MachineElectronicsOvertemperature,
+            ),
+            (
+                Parameter::MonitorCoolerElectronicsOvertemperature,
+                MonitorKind::CoolerElectronicsOvertemperature,
             ),
             (
                 Parameter::MonitorCoolantHeaderTankLevelSensorFault,
