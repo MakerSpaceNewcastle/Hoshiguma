@@ -65,7 +65,6 @@ async fn main(spawner: Spawner) {
 
     unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
 
-    unwrap!(spawner.spawn(crate::display::state::task()));
     unwrap!(spawner.spawn(crate::display::task(r.display)));
 
     unwrap!(spawner.spawn(crate::network::task(r.wifi, spawner)));
@@ -76,7 +75,7 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
     let steady_blink_delay = Duration::from_hz(1);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(steady_blink_delay + Duration::from_millis(100));
+    watchdog.start(steady_blink_delay + Duration::from_millis(500));
 
     let mut led = Output::new(r.led, Level::Low);
 

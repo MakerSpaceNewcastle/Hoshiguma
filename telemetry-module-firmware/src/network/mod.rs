@@ -1,10 +1,8 @@
-pub(crate) mod mqtt;
-
 use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_net::{Config, StackResources, StaticConfigV4};
+use embassy_net::{Config, StackResources};
 use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
@@ -12,23 +10,11 @@ use embassy_rp::{
     peripherals::{DMA_CH0, PIO0},
     pio::{InterruptHandler, Pio},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
 use rand::RngCore;
 use static_cell::StaticCell;
 
 const WIFI_SSID: &str = "Maker Space";
-
-#[derive(Clone)]
-pub(crate) enum NetworkEvent {
-    NetworkConnected(StaticConfigV4),
-
-    MqttBrokerConnected,
-    MqttBrokerDisconnected,
-}
-
-pub(crate) static NETWORK_EVENTS: Channel<CriticalSectionRawMutex, NetworkEvent, 16> =
-    Channel::new();
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
@@ -115,21 +101,11 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         info!("DHCP is now up");
 
         let config = stack.config_v4().unwrap();
-        NETWORK_EVENTS
-            .send(NetworkEvent::NetworkConnected(config))
-            .await;
+        // TODO
     }
 
     loop {
-        // Start the MQTT client
-        if mqtt::run_client(stack).await.is_err() {
-            // Notify of MQTT broker connection loss
-            NETWORK_EVENTS
-                .send(NetworkEvent::MqttBrokerDisconnected)
-                .await;
-        }
-
-        // Wait a little bit of time before connecting again
+        // TODO
         Timer::after_millis(500).await;
     }
 }
