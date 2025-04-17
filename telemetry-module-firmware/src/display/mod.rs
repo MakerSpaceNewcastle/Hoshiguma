@@ -1,8 +1,8 @@
-mod boot_screen;
+mod drawables;
 
-use self::boot_screen::BootScreen;
 use core::cell::RefCell;
 use defmt::warn;
+use drawables::boot_screen::BootScreen;
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
 use embassy_rp::{
     gpio::{Level, Output},
@@ -52,12 +52,7 @@ pub(super) async fn task(r: crate::DisplayResources) {
     if BootScreen::default().draw(&mut display).is_err() {
         warn!("Failed to draw boot screen");
     }
-    Timer::after_secs(3).await;
+    Timer::after_secs(2).await;
 
-    // TODO: show wifi connection status
-
-    loop {
-        // Just do nothing
-        Timer::after_secs(10).await;
-    }
+    // TODO
 }
