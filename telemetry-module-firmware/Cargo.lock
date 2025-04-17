@@ -915,7 +915,6 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "embedded-graphics",
- "embedded-io-async",
  "git-version",
  "heapless 0.8.0 (git+https://github.com/rust-embedded/heapless?rev=4e31d3e604a15739d064ae729eb8fb8b5bda3b46)",
  "hoshiguma-protocol",
