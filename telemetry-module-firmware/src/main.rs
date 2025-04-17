@@ -17,7 +17,7 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_sync::pubsub::WaitResult;
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::{Duration, Ticker};
 use panic_probe as _;
 use portable_atomic as _;
 
