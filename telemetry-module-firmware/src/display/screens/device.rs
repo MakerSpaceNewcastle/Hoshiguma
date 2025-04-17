@@ -1,6 +1,5 @@
 use crate::display::{
     drawables::{info_background::INFO_PANE_REGION, measurement::Measurement, subtitle::Subtitle},
-    state::DisplayDataState,
     DrawType, DrawTypeDrawable,
 };
 use core::fmt::Write;
@@ -10,17 +9,9 @@ use embedded_graphics::{
     prelude::{DrawTarget, Point},
 };
 
-pub(super) struct Device<'a> {
-    state: &'a DisplayDataState,
-}
+pub(super) struct Device {}
 
-impl<'a> Device<'a> {
-    pub(super) fn new(state: &'a DisplayDataState) -> Self {
-        Self { state }
-    }
-}
-
-impl DrawTypeDrawable for Device<'_> {
+impl DrawTypeDrawable for Device {
     type Color = Rgb565;
     type Output = ();
 
@@ -42,7 +33,6 @@ impl DrawTypeDrawable for Device<'_> {
             value_offset,
             "Rev",
             Some(git_version::git_version!()),
-            None,
         )
         .draw(target, draw_type)?;
 
@@ -51,11 +41,11 @@ impl DrawTypeDrawable for Device<'_> {
         s.write_fmt(format_args!("{}s", Instant::now().as_secs()))
             .unwrap();
         let cursor =
-            Measurement::new(cursor, value_offset, "Up", Some(&s), None).draw(target, draw_type)?;
+            Measurement::new(cursor, value_offset, "Up", Some(&s)).draw(target, draw_type)?;
 
         // Boot reason of the telemetry module
         let boot_reason = embassy_rp::pac::WATCHDOG.reason().read();
-        let cursor = Measurement::new(
+        let _cursor = Measurement::new(
             cursor,
             value_offset,
             "Bt.",
@@ -66,38 +56,6 @@ impl DrawTypeDrawable for Device<'_> {
             } else {
                 "Normal"
             }),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        let cursor = cursor + Point::new(0, 5);
-
-        let cursor = Subtitle::new(cursor, "Controller").draw(target, draw_type)?;
-
-        // Git revision of the controller
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "Rev",
-            self.state.controller_git_rev.as_deref(),
-            None,
-        )
-        .draw(target, draw_type)?;
-
-        // Uptime of the controller
-        Measurement::new(
-            cursor,
-            value_offset,
-            "Up",
-            self.state
-                .controller_uptime
-                .map(|uptime| {
-                    let mut s = heapless::String::<16>::new();
-                    s.write_fmt(format_args!("{}s", uptime / 1000)).unwrap();
-                    s
-                })
-                .as_deref(),
-            None,
         )
         .draw(target, draw_type)?;
 

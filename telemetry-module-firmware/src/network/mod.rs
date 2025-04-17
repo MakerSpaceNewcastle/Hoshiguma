@@ -1,5 +1,3 @@
-pub(crate) mod mqtt;
-
 use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{info, unwrap, warn};
@@ -18,17 +16,6 @@ use rand::RngCore;
 use static_cell::StaticCell;
 
 const WIFI_SSID: &str = "Maker Space";
-
-#[derive(Clone)]
-pub(crate) enum NetworkEvent {
-    NetworkConnected(StaticConfigV4),
-
-    MqttBrokerConnected,
-    MqttBrokerDisconnected,
-}
-
-pub(crate) static NETWORK_EVENTS: Channel<CriticalSectionRawMutex, NetworkEvent, 16> =
-    Channel::new();
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
@@ -114,22 +101,12 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         }
         info!("DHCP is now up");
 
-        let config = stack.config_v4().unwrap();
-        NETWORK_EVENTS
-            .send(NetworkEvent::NetworkConnected(config))
-            .await;
+        // TODO
+        let _config = stack.config_v4().unwrap();
     }
 
     loop {
-        // Start the MQTT client
-        if mqtt::run_client(stack).await.is_err() {
-            // Notify of MQTT broker connection loss
-            NETWORK_EVENTS
-                .send(NetworkEvent::MqttBrokerDisconnected)
-                .await;
-        }
-
-        // Wait a little bit of time before connecting again
+        // TODO
         Timer::after_millis(500).await;
     }
 }

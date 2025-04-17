@@ -144,26 +144,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "const_format"
-version = "0.2.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "126f97965c8ad46d6d9163268ff28432e8f6a1196a55578867832e3049df63dd"
-dependencies = [
- "const_format_proc_macros",
-]
-
-[[package]]
-name = "const_format_proc_macros"
-version = "0.2.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d57c2eccfb16dbac1f4e61e206105db5820c9d26c3c472bc17c774259ef7744"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-xid",
-]
-
-[[package]]
 name = "cortex-m"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -922,7 +902,6 @@ name = "hoshiguma-telemetry-module"
 version = "0.1.0"
 dependencies = [
  "assign-resources",
- "const_format",
  "cortex-m-rt",
  "cyw43",
  "cyw43-pio",
@@ -944,8 +923,6 @@ dependencies = [
  "panic-probe",
  "portable-atomic",
  "rand",
- "rust-mqtt",
- "serde-json-core",
  "static_cell",
  "teeny-rpc",
 ]
@@ -1433,18 +1410,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-mqtt"
-version = "0.3.0"
-source = "git+https://github.com/DanNixon/rust-mqtt#9e6d7f30053776c3ebe6c0d7861376e2ab1641f3"
-dependencies = [
- "defmt",
- "embedded-io",
- "embedded-io-async",
- "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand_core",
-]
-
-[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1458,12 +1423,6 @@ name = "rustversion"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7c45b9784283f1b2e7fb61b42047c2fd678ef0960d4f6f1eba131594cc369d4"
-
-[[package]]
-name = "ryu"
-version = "1.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
 name = "scopeguard"
@@ -1493,18 +1452,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60"
 dependencies = [
  "serde_derive",
-]
-
-[[package]]
-name = "serde-json-core"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b81787e655bd59cecadc91f7b6b8651330b2be6c33246039a65e5cd6f4e0828"
-dependencies = [
- "defmt",
- "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ryu",
- "serde",
 ]
 
 [[package]]

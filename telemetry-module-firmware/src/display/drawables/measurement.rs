@@ -12,12 +12,6 @@ use embedded_graphics::{
 pub(crate) const UNKNOWN_TEXT: &str = "<unknown>";
 pub(crate) const UNKNOWN_COLOUR: Rgb565 = Rgb565::CSS_MAGENTA;
 
-pub(crate) enum Severity {
-    Normal,
-    Warning,
-    Critical,
-}
-
 /// Shows the name and value of a measurement/state.
 pub(crate) struct Measurement<'a> {
     origin: Point,
@@ -26,7 +20,6 @@ pub(crate) struct Measurement<'a> {
     name: &'static str,
 
     value: Option<&'a str>,
-    severity: Option<Severity>,
 }
 
 impl<'a> Measurement<'a> {
@@ -39,14 +32,12 @@ impl<'a> Measurement<'a> {
         value_offset: i32,
         name: &'static str,
         value: Option<&'a str>,
-        severity: Option<Severity>,
     ) -> Self {
         Self {
             origin,
             value_offset: Point::new(value_offset, 0),
             name,
             value,
-            severity,
         }
     }
 }
@@ -88,12 +79,7 @@ impl DrawTypeDrawable for Measurement<'_> {
         let value_style = MonoTextStyle::new(
             &FONT_6X10,
             if self.value.is_some() {
-                match self.severity {
-                    Some(Severity::Normal) => Rgb565::CSS_GREEN,
-                    Some(Severity::Warning) => Rgb565::CSS_YELLOW,
-                    Some(Severity::Critical) => Rgb565::CSS_RED,
-                    None => LIGHT_TEXT_COLOUR,
-                }
+                LIGHT_TEXT_COLOUR
             } else {
                 UNKNOWN_COLOUR
             },

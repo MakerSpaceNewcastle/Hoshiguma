@@ -1,14 +1,6 @@
-use crate::{
-    display::{
-        drawables::{
-            info_background::INFO_PANE_REGION,
-            measurement::{Measurement, Severity},
-            subtitle::Subtitle,
-        },
-        state::DisplayDataState,
-        DrawType, DrawTypeDrawable,
-    },
-    network::mqtt::BROKER_IP,
+use crate::display::{
+    drawables::{info_background::INFO_PANE_REGION, measurement::Measurement, subtitle::Subtitle},
+    DrawType, DrawTypeDrawable,
 };
 use core::fmt::Write;
 use embedded_graphics::{
@@ -16,17 +8,9 @@ use embedded_graphics::{
     prelude::{DrawTarget, Point},
 };
 
-pub(super) struct Network<'a> {
-    state: &'a DisplayDataState,
-}
+pub(super) struct Network {}
 
-impl<'a> Network<'a> {
-    pub(super) fn new(state: &'a DisplayDataState) -> Self {
-        Self { state }
-    }
-}
-
-impl DrawTypeDrawable for Network<'_> {
+impl DrawTypeDrawable for Network {
     type Color = Rgb565;
     type Output = ();
 
@@ -47,14 +31,11 @@ impl DrawTypeDrawable for Network<'_> {
             cursor,
             value_offset,
             "State",
-            Some(match self.state.ipv4_config {
-                Some(_) => "Connected",
-                None => "Disconnected",
-            }),
-            Some(match self.state.ipv4_config {
-                Some(_) => Severity::Normal,
-                None => Severity::Critical,
-            }),
+            None,
+            // Some(match self.state.ipv4_config {
+            //     Some(_) => "Connected",
+            //     None => "Disconnected",
+            // }),
         )
         .draw(target, draw_type)?;
 
@@ -63,17 +44,17 @@ impl DrawTypeDrawable for Network<'_> {
             cursor,
             value_offset,
             "IP",
-            self.state
-                .ipv4_config
-                .as_ref()
-                .map(|config| {
-                    let mut s = heapless::String::<16>::new();
-                    s.write_fmt(format_args!("{}", config.address.address()))
-                        .unwrap();
-                    s
-                })
-                .as_deref(),
             None,
+            // self.state
+            //     .ipv4_config
+            //     .as_ref()
+            //     .map(|config| {
+            //         let mut s = heapless::String::<16>::new();
+            //         s.write_fmt(format_args!("{}", config.address.address()))
+            //             .unwrap();
+            //         s
+            //     })
+            //     .as_deref(),
         )
         .draw(target, draw_type)?;
 
@@ -82,54 +63,22 @@ impl DrawTypeDrawable for Network<'_> {
             cursor,
             value_offset,
             "Gtwy",
-            self.state
-                .ipv4_config
-                .as_ref()
-                .map(|config| {
-                    let mut s = heapless::String::<16>::new();
-                    s.write_fmt(format_args!("{}", config.gateway.unwrap()))
-                        .unwrap();
-                    s
-                })
-                .as_deref(),
             None,
+            // self.state
+            //     .ipv4_config
+            //     .as_ref()
+            //     .map(|config| {
+            //         let mut s = heapless::String::<16>::new();
+            //         s.write_fmt(format_args!("{}", config.gateway.unwrap()))
+            //             .unwrap();
+            //         s
+            //     })
+            //     .as_deref(),
         )
         .draw(target, draw_type)?;
 
+        // TODO
         let cursor = cursor + Point::new(0, 5);
-
-        let cursor = Subtitle::new(cursor, "MQTT").draw(target, draw_type)?;
-
-        // MQTT connection status
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "State",
-            Some(match self.state.mqtt_broker_connected {
-                true => "Connected",
-                false => "Disconnected",
-            }),
-            Some(match self.state.mqtt_broker_connected {
-                true => Severity::Normal,
-                false => Severity::Critical,
-            }),
-        )
-        .draw(target, draw_type)?;
-
-        // MQTT broker IP address
-        let mqtt_broker_ip_str = {
-            let mut s = heapless::String::<16>::new();
-            s.write_fmt(format_args!("{}", BROKER_IP)).unwrap();
-            s
-        };
-        Measurement::new(
-            cursor,
-            value_offset,
-            "Brkr",
-            Some(&mqtt_broker_ip_str),
-            None,
-        )
-        .draw(target, draw_type)?;
 
         Ok(())
     }
