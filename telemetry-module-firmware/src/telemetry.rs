@@ -42,8 +42,8 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
 
     let tx = TELEMETRY_MESSAGES.publisher().unwrap();
 
-    // Request events every 200ms
-    let mut ticker = Ticker::every(Duration::from_millis(200));
+    // Request events every second
+    let mut ticker = Ticker::every(Duration::from_millis(1000));
 
     'telem_rx: loop {
         match client

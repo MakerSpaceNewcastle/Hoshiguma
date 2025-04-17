@@ -16,7 +16,7 @@ use embassy_sync::{
     blocking_mutex::{raw::NoopRawMutex, Mutex},
     pubsub::WaitResult,
 };
-use embassy_time::Timer;
+use embassy_time::{Duration, Ticker, Timer};
 use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, WebColors},
@@ -83,17 +83,13 @@ pub(super) async fn task(r: crate::DisplayResources) {
     let mut screen_selector = ScreenSelector::default();
 
     let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
+    let mut value_redraw_tick = Ticker::every(Duration::from_hz(1));
 
     // Initial full display draw
     draw(&mut display, DrawType::Full, &screen_selector).await;
 
     loop {
-        let draw_type = match select(
-            ui_event_rx.next_message(),
-            embassy_time::Timer::after_secs(5),
-        )
-        .await
-        {
+        let draw_type = match select(ui_event_rx.next_message(), value_redraw_tick.next()).await {
             Either::First(msg) => match msg {
                 WaitResult::Message(UiEvent::ButtonPushed) => {
                     screen_selector.select_next();
