@@ -17,7 +17,7 @@ impl DrawTypeDrawable for Telemetry {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let value_offset = 35;
+        let value_offset = 65;
         let cursor = Point::new(
             INFO_PANE_REGION.top_left.x + 2,
             INFO_PANE_REGION.top_left.y + 11,
@@ -26,7 +26,7 @@ impl DrawTypeDrawable for Telemetry {
         // Number of events received from peripheral controller
         // TODO
         let cursor =
-            Measurement::new(cursor, value_offset, "#events rx", None).draw(target, draw_type)?;
+            Measurement::new(cursor, value_offset, "#events rx", Some("0")).draw(target, draw_type)?;
 
         // Number of receive failures
         // TODO

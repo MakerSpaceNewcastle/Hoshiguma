@@ -71,7 +71,8 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
     let steady_blink_delay = Duration::from_hz(1);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(steady_blink_delay + Duration::from_secs(1));
+    // TODO
+    // watchdog.start(steady_blink_delay + Duration::from_secs(1));
 
     let mut led = Output::new(r.led, Level::Low);
 
