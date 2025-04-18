@@ -7,3 +7,4 @@ target = "thumbv6m-none-eabi"
 [env]
 DEFMT_LOG = "debug"
 WIFI_SSID = "Maker Space"
+WIFI_PASSWORD = "abcd1234"
