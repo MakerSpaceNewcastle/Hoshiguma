@@ -94,7 +94,8 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         }
     }
 
-    let tx = IP_CONFIG.sender();
+    let ip_config_tx = IP_CONFIG.sender();
+
     // Get configuration via DHCP
     {
         info!("Waiting for DHCP");
@@ -104,7 +105,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         info!("DHCP is now up");
 
         let config = stack.config_v4().unwrap();
-        tx.send(config);
+        ip_config_tx.send(config);
     }
 
     loop {

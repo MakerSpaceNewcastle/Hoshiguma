@@ -9,9 +9,9 @@ use embedded_graphics::{
     prelude::{DrawTarget, Point},
 };
 
-pub(super) struct Device {}
+pub(super) struct TelemetryModule {}
 
-impl DrawTypeDrawable for Device {
+impl DrawTypeDrawable for TelemetryModule {
     type Color = Rgb565;
     type Output = ();
 

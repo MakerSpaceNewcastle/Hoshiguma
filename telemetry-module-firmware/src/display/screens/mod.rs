@@ -1,5 +1,6 @@
-mod device;
+mod home;
 mod network;
+mod telemetry_module;
 
 use super::DrawType;
 use crate::display::DrawTypeDrawable;
@@ -10,7 +11,7 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
 pub(super) enum Screen {
     Home,
     Network,
-    Device,
+    Module,
 }
 
 impl Screen {
@@ -18,12 +19,12 @@ impl Screen {
         match self {
             Screen::Home => "Home",
             Screen::Network => "Network",
-            Screen::Device => "Device",
+            Screen::Module => "Telem. Module",
         }
     }
 }
 
-pub(super) const SCREENS: [Screen; 3] = [Screen::Home, Screen::Network, Screen::Device];
+pub(super) const SCREENS: [Screen; 3] = [Screen::Home, Screen::Network, Screen::Module];
 
 #[derive(Default, Format)]
 pub(super) struct ScreenSelector {
@@ -66,12 +67,9 @@ impl DrawTypeDrawable for ScreenSelector {
         debug!("Drawing screen {}", screen);
 
         match screen {
-            Screen::Home => {
-                // TODO
-                Ok(())
-            }
+            Screen::Home => self::home::Home {}.draw(target, draw_type),
             Screen::Network => self::network::Network {}.draw(target, draw_type),
-            Screen::Device => self::device::Device {}.draw(target, draw_type),
+            Screen::Module => self::telemetry_module::TelemetryModule {}.draw(target, draw_type),
         }
     }
 }

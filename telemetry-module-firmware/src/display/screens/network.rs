@@ -22,17 +22,17 @@ impl DrawTypeDrawable for Network {
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 35;
-        let cursor = Point::new(
+        let mut cursor = Point::new(
             INFO_PANE_REGION.top_left.x + 2,
             INFO_PANE_REGION.top_left.y + 11,
         );
 
         // WiFi SSID
-        let cursor = Measurement::new(cursor, value_offset, "SSID", Some(WIFI_SSID))
+        cursor = Measurement::new(cursor, value_offset, "SSID", Some(WIFI_SSID))
             .draw(target, draw_type)?;
 
         // Our IP address
-        let cursor = Measurement::new(
+        cursor = Measurement::new(
             cursor,
             value_offset,
             "IP",
@@ -49,7 +49,7 @@ impl DrawTypeDrawable for Network {
         .draw(target, draw_type)?;
 
         // Gateway IP address
-        let cursor = Measurement::new(
+        cursor = Measurement::new(
             cursor,
             value_offset,
             "Gtwy",
@@ -65,62 +65,26 @@ impl DrawTypeDrawable for Network {
         )
         .draw(target, draw_type)?;
 
-        // DNS IP address 1
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "DNS1",
-            IP_CONFIG
-                .try_get()
-                .map(|config| {
-                    config.dns_servers.get(0).map(|addr| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{}", addr)).unwrap();
-                        s
+        // DNS IP addresses
+        for (name, idx) in [("DNS1", 0), ("DNS2", 1), ("DNS3", 2)] {
+            cursor = Measurement::new(
+                cursor,
+                value_offset,
+                name,
+                IP_CONFIG
+                    .try_get()
+                    .map(|config| {
+                        config.dns_servers.get(idx).map(|addr| {
+                            let mut s = heapless::String::<16>::new();
+                            s.write_fmt(format_args!("{}", addr)).unwrap();
+                            s
+                        })
                     })
-                })
-                .flatten()
-                .as_deref(),
-        )
-        .draw(target, draw_type)?;
-
-        // DNS IP address 2
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "DNS2",
-            IP_CONFIG
-                .try_get()
-                .map(|config| {
-                    config.dns_servers.get(1).map(|addr| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{}", addr)).unwrap();
-                        s
-                    })
-                })
-                .flatten()
-                .as_deref(),
-        )
-        .draw(target, draw_type)?;
-
-        // DNS IP address 3
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "DNS3",
-            IP_CONFIG
-                .try_get()
-                .map(|config| {
-                    config.dns_servers.get(2).map(|addr| {
-                        let mut s = heapless::String::<16>::new();
-                        s.write_fmt(format_args!("{}", addr)).unwrap();
-                        s
-                    })
-                })
-                .flatten()
-                .as_deref(),
-        )
-        .draw(target, draw_type)?;
+                    .flatten()
+                    .as_deref(),
+            )
+            .draw(target, draw_type)?;
+        }
 
         Ok(())
     }
