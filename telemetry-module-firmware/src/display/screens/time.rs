@@ -26,7 +26,7 @@ impl DrawTypeDrawable for Time {
         );
 
         // Time
-        let _cursor = Measurement::new(
+        let cursor = Measurement::new(
             cursor,
             value_offset,
             "Time",
@@ -43,7 +43,7 @@ impl DrawTypeDrawable for Time {
         .draw(target, draw_type)?;
 
         // Seconds since last time sync
-        let cursor = Measurement::new(
+        let _cursor = Measurement::new(
             cursor,
             value_offset,
             "Age",
