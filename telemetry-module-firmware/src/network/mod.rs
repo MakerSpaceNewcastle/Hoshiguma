@@ -14,7 +14,7 @@ use embassy_time::Timer;
 use rand::RngCore;
 use static_cell::StaticCell;
 
-const WIFI_SSID: &str = "Maker Space";
+pub(crate) const WIFI_SSID: &str = env!("WIFI_SSID");
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;

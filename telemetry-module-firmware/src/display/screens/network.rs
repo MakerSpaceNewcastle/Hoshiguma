@@ -1,6 +1,11 @@
-use crate::display::{
-    drawables::{info_background::INFO_PANE_REGION, measurement::Measurement, subtitle::Subtitle},
-    DrawType, DrawTypeDrawable,
+use crate::{
+    display::{
+        drawables::{
+            info_background::INFO_PANE_REGION, measurement::Measurement, subtitle::Subtitle,
+        },
+        DrawType, DrawTypeDrawable,
+    },
+    network::WIFI_SSID,
 };
 use core::fmt::Write;
 use embedded_graphics::{
@@ -25,6 +30,10 @@ impl DrawTypeDrawable for Network {
         );
 
         let cursor = Subtitle::new(cursor, "Local Network").draw(target, draw_type)?;
+
+        // WiFi SSID
+        let cursor = Measurement::new(cursor, value_offset, "SSID", Some(WIFI_SSID))
+            .draw(target, draw_type)?;
 
         // Network connection status
         let cursor = Measurement::new(
