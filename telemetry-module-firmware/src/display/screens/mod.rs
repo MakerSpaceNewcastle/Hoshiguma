@@ -30,7 +30,13 @@ impl Screen {
     }
 }
 
-pub(super) const SCREENS: [Screen; 3] = [Screen::Home, Screen::Network, Screen::Module];
+pub(super) const SCREENS: [Screen; 5] = [
+    Screen::Home,
+    Screen::Telemetry,
+    Screen::Time,
+    Screen::Network,
+    Screen::Module,
+];
 
 #[derive(Default, Format)]
 pub(super) struct ScreenSelector {
@@ -74,7 +80,7 @@ impl DrawTypeDrawable for ScreenSelector {
 
         match screen {
             Screen::Home => self::home::Home {}.draw(target, draw_type),
-            Screen::Telemetry => self::home::Home {}.draw(target, draw_type),
+            Screen::Telemetry => self::telemetry::Telemetry {}.draw(target, draw_type),
             Screen::Time => self::time::Time {}.draw(target, draw_type),
             Screen::Network => self::network::Network {}.draw(target, draw_type),
             Screen::Module => self::telemetry_module::TelemetryModule {}.draw(target, draw_type),
