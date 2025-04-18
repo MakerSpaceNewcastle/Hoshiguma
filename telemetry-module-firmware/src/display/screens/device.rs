@@ -1,5 +1,5 @@
 use crate::display::{
-    drawables::{info_background::INFO_PANE_REGION, measurement::Measurement, subtitle::Subtitle},
+    drawables::{info_background::INFO_PANE_REGION, measurement::Measurement},
     DrawType, DrawTypeDrawable,
 };
 use core::fmt::Write;
@@ -24,8 +24,6 @@ impl DrawTypeDrawable for Device {
             INFO_PANE_REGION.top_left.x + 2,
             INFO_PANE_REGION.top_left.y + 11,
         );
-
-        let cursor = Subtitle::new(cursor, "Telemetry Module").draw(target, draw_type)?;
 
         // Git revision of the telemetry module
         let cursor = Measurement::new(

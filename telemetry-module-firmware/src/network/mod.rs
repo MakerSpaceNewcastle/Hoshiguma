@@ -2,7 +2,7 @@ use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_net::{Config, StackResources};
+use embassy_net::{Config, StackResources, StaticConfigV4};
 use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
@@ -10,11 +10,13 @@ use embassy_rp::{
     peripherals::{DMA_CH0, PIO0},
     pio::{InterruptHandler, Pio},
 };
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Timer;
 use rand::RngCore;
 use static_cell::StaticCell;
 
 pub(crate) const WIFI_SSID: &str = env!("WIFI_SSID");
+pub(crate) static IP_CONFIG: Watch<CriticalSectionRawMutex, StaticConfigV4, 1> = Watch::new();
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
@@ -92,6 +94,7 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         }
     }
 
+    let tx = IP_CONFIG.sender();
     // Get configuration via DHCP
     {
         info!("Waiting for DHCP");
@@ -100,8 +103,8 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         }
         info!("DHCP is now up");
 
-        // TODO
-        let _config = stack.config_v4().unwrap();
+        let config = stack.config_v4().unwrap();
+        tx.send(config);
     }
 
     loop {
