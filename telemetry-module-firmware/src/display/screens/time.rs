@@ -2,7 +2,6 @@ use crate::display::{
     drawables::{info_background::INFO_PANE_REGION, measurement::Measurement},
     DrawType, DrawTypeDrawable,
 };
-use core::fmt::Write;
 use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point},
@@ -19,12 +18,23 @@ impl DrawTypeDrawable for Time {
         D: DrawTarget<Color = Self::Color>,
     {
         let value_offset = 35;
-        let mut cursor = Point::new(
+        let cursor = Point::new(
             INFO_PANE_REGION.top_left.x + 2,
             INFO_PANE_REGION.top_left.y + 11,
         );
 
-        cursor = Measurement::new(cursor, value_offset, "Gtwy", None).draw(target, draw_type)?;
+        // NTP server address
+        // TODO
+        let cursor = Measurement::new(cursor, value_offset, "NTP", None).draw(target, draw_type)?;
+
+        // Seconds since last time sync
+        // TODO
+        let cursor = Measurement::new(cursor, value_offset, "Age", None).draw(target, draw_type)?;
+
+        // Time
+        // TODO
+        let _cursor =
+            Measurement::new(cursor, value_offset, "Time", None).draw(target, draw_type)?;
 
         Ok(())
     }
