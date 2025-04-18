@@ -1,4 +1,4 @@
-use core::time::Duration as CoreDuration;
+use core::{sync::atomic::Ordering, time::Duration as CoreDuration};
 use defmt::{info, warn};
 use embassy_rp::{
     bind_interrupts,
@@ -11,11 +11,14 @@ use hoshiguma_protocol::peripheral_controller::{
     event::Event,
     rpc::{Request, Response},
 };
+use portable_atomic::AtomicU64;
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
-pub(crate) static TELEMETRY_MESSAGES: PubSubChannel<CriticalSectionRawMutex, Event, 64, 2, 1> =
+pub(crate) static TELEMETRY_EVENTS: PubSubChannel<CriticalSectionRawMutex, Event, 64, 2, 1> =
     PubSubChannel::new();
+pub(crate) static TELEMETRY_EVENTS_RECEIVED: AtomicU64 = AtomicU64::new(0);
+pub(crate) static TELEMETRY_RECEIVE_FAILURES: AtomicU64 = AtomicU64::new(0);
 
 bind_interrupts!(struct Irqs {
     UART0_IRQ  => BufferedInterruptHandler<UART0>;
@@ -40,7 +43,7 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
     let transport = EioTransport::<_, 512>::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
 
-    let tx = TELEMETRY_MESSAGES.publisher().unwrap();
+    let events_tx = TELEMETRY_EVENTS.publisher().unwrap();
 
     // Request events every second
     let mut ticker = Ticker::every(Duration::from_millis(1000));
@@ -52,7 +55,8 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
         {
             Ok(Response::GetOldestEvent(Some(event))) => {
                 info!("Got event from controller: {:?}", event);
-                tx.publish(event).await;
+                TELEMETRY_EVENTS_RECEIVED.add(1, Ordering::Relaxed);
+                events_tx.publish(event).await;
 
                 // Immediately request further events
                 ticker.reset();
@@ -63,9 +67,11 @@ pub(super) async fn task(r: crate::TelemetryUartResources) {
             }
             Ok(_) => {
                 warn!("Unexpected RPC response");
+                TELEMETRY_RECEIVE_FAILURES.add(1, Ordering::Relaxed);
             }
             Err(e) => {
                 warn!("RPC error: {}", e);
+                TELEMETRY_RECEIVE_FAILURES.add(1, Ordering::Relaxed);
             }
         }
 

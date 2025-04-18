@@ -25,8 +25,8 @@ impl DrawTypeDrawable for Telemetry {
 
         // Number of events received from peripheral controller
         // TODO
-        let cursor =
-            Measurement::new(cursor, value_offset, "#events rx", Some("0")).draw(target, draw_type)?;
+        let cursor = Measurement::new(cursor, value_offset, "#events rx", Some("0"))
+            .draw(target, draw_type)?;
 
         // Number of receive failures
         // TODO

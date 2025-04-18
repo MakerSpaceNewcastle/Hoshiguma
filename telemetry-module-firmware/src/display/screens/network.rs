@@ -3,7 +3,7 @@ use crate::{
         drawables::{info_background::INFO_PANE_REGION, measurement::Measurement},
         DrawType, DrawTypeDrawable,
     },
-    network::{IP_CONFIG, WIFI_SSID},
+    network::{DHCP_CONFIG, WIFI_SSID},
 };
 use core::fmt::Write;
 use embedded_graphics::{
@@ -31,13 +31,15 @@ impl DrawTypeDrawable for Network {
         cursor = Measurement::new(cursor, value_offset, "SSID", Some(WIFI_SSID))
             .draw(target, draw_type)?;
 
+        let dhcp_config = DHCP_CONFIG.lock(|v| v.borrow().clone());
+
         // Our IP address
         cursor = Measurement::new(
             cursor,
             value_offset,
             "IP",
-            IP_CONFIG
-                .try_get()
+            dhcp_config
+                .clone()
                 .map(|config| {
                     let mut s = heapless::String::<16>::new();
                     s.write_fmt(format_args!("{}", config.address.address()))
@@ -53,8 +55,8 @@ impl DrawTypeDrawable for Network {
             cursor,
             value_offset,
             "Gtwy",
-            IP_CONFIG
-                .try_get()
+            dhcp_config
+                .clone()
                 .map(|config| {
                     let mut s = heapless::String::<16>::new();
                     s.write_fmt(format_args!("{}", config.gateway.unwrap()))
@@ -71,8 +73,8 @@ impl DrawTypeDrawable for Network {
                 cursor,
                 value_offset,
                 name,
-                IP_CONFIG
-                    .try_get()
+                dhcp_config
+                    .clone()
                     .map(|config| {
                         config.dns_servers.get(idx).map(|addr| {
                             let mut s = heapless::String::<16>::new();
