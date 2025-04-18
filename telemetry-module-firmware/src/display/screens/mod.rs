@@ -1,6 +1,8 @@
 mod home;
 mod network;
+mod telemetry;
 mod telemetry_module;
+mod time;
 
 use super::DrawType;
 use crate::display::DrawTypeDrawable;
@@ -10,6 +12,8 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::DrawTarget};
 #[derive(Clone, Format)]
 pub(super) enum Screen {
     Home,
+    Telemetry,
+    Time,
     Network,
     Module,
 }
@@ -18,6 +22,8 @@ impl Screen {
     pub(super) fn name(&self) -> &'static str {
         match self {
             Screen::Home => "Home",
+            Screen::Telemetry => "Telemetry",
+            Screen::Time => "Time",
             Screen::Network => "Network",
             Screen::Module => "Telem. Module",
         }
@@ -68,6 +74,8 @@ impl DrawTypeDrawable for ScreenSelector {
 
         match screen {
             Screen::Home => self::home::Home {}.draw(target, draw_type),
+            Screen::Telemetry => self::home::Home {}.draw(target, draw_type),
+            Screen::Time => self::time::Time {}.draw(target, draw_type),
             Screen::Network => self::network::Network {}.draw(target, draw_type),
             Screen::Module => self::telemetry_module::TelemetryModule {}.draw(target, draw_type),
         }
