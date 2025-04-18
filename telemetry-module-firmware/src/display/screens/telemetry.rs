@@ -31,7 +31,7 @@ impl DrawTypeDrawable for Telemetry {
         let cursor = Measurement::new(
             cursor,
             value_offset,
-            "#events rx",
+            "#Events Rx",
             Some(
                 {
                     let count = TELEMETRY_EVENTS_RECEIVED.load(Ordering::Relaxed);
@@ -48,7 +48,7 @@ impl DrawTypeDrawable for Telemetry {
         let cursor = Measurement::new(
             cursor,
             value_offset,
-            "#rx fail",
+            "#Rx Fail",
             Some(
                 {
                     let count = TELEMETRY_RECEIVE_FAILURES.load(Ordering::Relaxed);
@@ -64,12 +64,12 @@ impl DrawTypeDrawable for Telemetry {
         // Number of messages transmitted
         // TODO
         let cursor =
-            Measurement::new(cursor, value_offset, "#msgs tx", None).draw(target, draw_type)?;
+            Measurement::new(cursor, value_offset, "#Msgs Tx", None).draw(target, draw_type)?;
 
         // Number of transmit failures
         // TODO
         let _cursor =
-            Measurement::new(cursor, value_offset, "#tx fail", None).draw(target, draw_type)?;
+            Measurement::new(cursor, value_offset, "#Tx Fail", None).draw(target, draw_type)?;
 
         Ok(())
     }
