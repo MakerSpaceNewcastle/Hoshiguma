@@ -41,6 +41,9 @@ git-version = "0.3.5"
 embedded-graphics = "0.8.1"
 mipidsi = "0.9.0"
 
+# Telemetry TX
+sntpc = { version = "0.5.2", features = ["defmt", "embassy-socket"], default-features = false }
+
 [profile.release]
 debug = 2
 lto = true

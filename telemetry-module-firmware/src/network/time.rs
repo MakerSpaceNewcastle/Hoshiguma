@@ -1,0 +1,94 @@
+use core::{
+    net::{IpAddr, SocketAddr},
+    sync::atomic::Ordering,
+};
+use defmt::{error, info};
+use embassy_net::{
+    dns::DnsQueryType,
+    udp::{PacketMetadata, UdpSocket},
+    Stack,
+};
+use embassy_time::Instant;
+use portable_atomic::{AtomicI128, AtomicU64};
+use sntpc::{NtpContext, NtpTimestampGenerator};
+
+const NTP_SERVER: &str = "pool.ntp.org";
+
+static US_SINCE_UNIX_EPOCH: AtomicI128 = AtomicI128::new(0);
+static US_SINCE_BOOT: AtomicU64 = AtomicU64::new(0);
+
+pub(super) async fn time_sync(stack: &Stack<'_>) {
+    // Create UDP socket
+    let mut rx_meta = [PacketMetadata::EMPTY; 16];
+    let mut rx_buffer = [0; 4096];
+    let mut tx_meta = [PacketMetadata::EMPTY; 16];
+    let mut tx_buffer = [0; 4096];
+
+    let mut socket = UdpSocket::new(
+        *stack,
+        &mut rx_meta,
+        &mut rx_buffer,
+        &mut tx_meta,
+        &mut tx_buffer,
+    );
+    socket.bind(123).unwrap();
+
+    let context = NtpContext::new(TimestampGen::default());
+
+    let ntp_addrs = stack
+        .dns_query(NTP_SERVER, DnsQueryType::A)
+        .await
+        .expect("Failed to resolve DNS");
+    if ntp_addrs.is_empty() {
+        error!("Failed to resolve DNS");
+        return;
+    }
+
+    let addr: IpAddr = ntp_addrs[0].into();
+    let result = sntpc::get_time(SocketAddr::from((addr, 123)), &socket, context).await;
+
+    match result {
+        Ok(time) => {
+            info!("Time: {:?}", time);
+
+            let now = Instant::now().as_micros();
+            US_SINCE_UNIX_EPOCH.add(time.offset.into(), Ordering::Relaxed);
+            US_SINCE_BOOT.store(now, Ordering::Relaxed);
+
+            info!("Wall time: {:?}", wall_time());
+        }
+        Err(e) => {
+            error!("Error getting time: {:?}", e);
+        }
+    }
+}
+
+pub(crate) fn wall_time() -> core::time::Duration {
+    let since_epoch = US_SINCE_UNIX_EPOCH.load(Ordering::Relaxed) as u64;
+    core::time::Duration::from_micros(since_epoch) + time_sync_age()
+}
+
+pub(crate) fn time_sync_age() -> core::time::Duration {
+    let since_boot = US_SINCE_BOOT.load(Ordering::Relaxed);
+    let us_to_add = Instant::now().as_micros() - since_boot;
+    core::time::Duration::from_micros(us_to_add)
+}
+
+#[derive(Copy, Clone, Default)]
+struct TimestampGen {
+    since_unix_epoch: core::time::Duration,
+}
+
+impl NtpTimestampGenerator for TimestampGen {
+    fn init(&mut self) {
+        self.since_unix_epoch = wall_time();
+    }
+
+    fn timestamp_sec(&self) -> u64 {
+        self.since_unix_epoch.as_secs()
+    }
+
+    fn timestamp_subsec_micros(&self) -> u32 {
+        self.since_unix_epoch.subsec_micros()
+    }
+}

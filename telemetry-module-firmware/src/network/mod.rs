@@ -1,3 +1,5 @@
+pub(crate) mod time;
+
 use core::cell::RefCell;
 use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
@@ -113,6 +115,8 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
 
     loop {
         // TODO
-        Timer::after_millis(500).await;
+        time::time_sync(&stack).await;
+        Timer::after_secs(15).await;
+        info!("Wall time: {:?}", time::wall_time());
     }
 }

@@ -1,3 +1,5 @@
+use core::fmt::Write;
+
 use crate::display::{
     drawables::{info_background::INFO_PANE_REGION, measurement::Measurement},
     DrawType, DrawTypeDrawable,
@@ -23,18 +25,39 @@ impl DrawTypeDrawable for Time {
             INFO_PANE_REGION.top_left.y + 11,
         );
 
-        // NTP server address
-        // TODO
-        let cursor = Measurement::new(cursor, value_offset, "NTP", None).draw(target, draw_type)?;
+        // Time
+        let _cursor = Measurement::new(
+            cursor,
+            value_offset,
+            "Time",
+            Some(
+                {
+                    let time = crate::network::time::wall_time().as_secs();
+                    let mut s = heapless::String::<10>::new();
+                    s.write_fmt(format_args!("{}", time)).unwrap();
+                    s
+                }
+                .as_ref(),
+            ),
+        )
+        .draw(target, draw_type)?;
 
         // Seconds since last time sync
-        // TODO
-        let cursor = Measurement::new(cursor, value_offset, "Age", None).draw(target, draw_type)?;
-
-        // Time
-        // TODO
-        let _cursor =
-            Measurement::new(cursor, value_offset, "Time", None).draw(target, draw_type)?;
+        let cursor = Measurement::new(
+            cursor,
+            value_offset,
+            "Age",
+            Some(
+                {
+                    let age = crate::network::time::time_sync_age().as_secs();
+                    let mut s = heapless::String::<10>::new();
+                    s.write_fmt(format_args!("{}s", age)).unwrap();
+                    s
+                }
+                .as_ref(),
+            ),
+        )
+        .draw(target, draw_type)?;
 
         Ok(())
     }

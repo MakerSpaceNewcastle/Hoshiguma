@@ -922,6 +922,7 @@ dependencies = [
  "panic-probe",
  "portable-atomic",
  "rand",
+ "sntpc",
  "static_cell",
  "teeny-rpc",
 ]
@@ -1512,6 +1513,17 @@ dependencies = [
  "defmt",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "managed",
+]
+
+[[package]]
+name = "sntpc"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78f778a0f82b3cf5d75f858eceee38e84d5292f1d03415e88cc4ec45ca6ba8a2"
+dependencies = [
+ "cfg-if",
+ "defmt",
+ "embassy-net",
 ]
 
 [[package]]
