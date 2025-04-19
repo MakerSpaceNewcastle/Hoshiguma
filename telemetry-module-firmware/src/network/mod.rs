@@ -1,3 +1,4 @@
+mod telemetry_tx;
 pub(crate) mod time;
 
 use core::cell::RefCell;
@@ -14,7 +15,7 @@ use embassy_rp::{
     pio::{InterruptHandler, Pio},
 };
 use embassy_sync::blocking_mutex::CriticalSectionMutex;
-use embassy_time::Timer;
+use embassy_time::{Duration, Ticker, Timer};
 use rand::RngCore;
 use static_cell::StaticCell;
 
@@ -113,10 +114,11 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         });
     }
 
+    let mut time_sync_tick = Ticker::every(Duration::from_secs(30));
+
     loop {
         // TODO
+        time_sync_tick.next().await;
         time::time_sync(&stack).await;
-        Timer::after_secs(15).await;
-        info!("Wall time: {:?}", time::wall_time());
     }
 }

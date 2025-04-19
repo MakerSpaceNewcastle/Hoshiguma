@@ -60,7 +60,7 @@ async fn main(spawner: Spawner) {
     let r = split_resources!(p);
 
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
-    // unwrap!(spawner.spawn(crate::telemetry::task(r.telemetry_uart)));
+    unwrap!(spawner.spawn(crate::telemetry::task(r.telemetry_uart)));
     unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
     unwrap!(spawner.spawn(crate::display::task(r.display)));
     unwrap!(spawner.spawn(crate::network::task(r.wifi, spawner)));

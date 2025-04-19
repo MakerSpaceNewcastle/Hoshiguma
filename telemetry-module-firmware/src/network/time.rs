@@ -35,31 +35,32 @@ pub(super) async fn time_sync(stack: &Stack<'_>) {
 
     let context = NtpContext::new(TimestampGen::default());
 
-    let ntp_addrs = stack
-        .dns_query(NTP_SERVER, DnsQueryType::A)
-        .await
-        .expect("Failed to resolve DNS");
-    if ntp_addrs.is_empty() {
-        error!("Failed to resolve DNS");
-        return;
-    }
+    match stack.dns_query(NTP_SERVER, DnsQueryType::A).await {
+        Ok(ntp_addrs) => {
+            if ntp_addrs.is_empty() {
+                error!("Failed to resolve DNS");
+                return;
+            }
 
-    let addr: IpAddr = ntp_addrs[0].into();
-    let result = sntpc::get_time(SocketAddr::from((addr, 123)), &socket, context).await;
+            let addr: IpAddr = ntp_addrs[0].into();
+            let result = sntpc::get_time(SocketAddr::from((addr, 123)), &socket, context).await;
 
-    match result {
-        Ok(time) => {
-            info!("Time: {:?}", time);
+            match result {
+                Ok(time) => {
+                    info!("{:?}", time);
 
-            let now = Instant::now().as_micros();
-            US_SINCE_UNIX_EPOCH.add(time.offset.into(), Ordering::Relaxed);
-            US_SINCE_BOOT.store(now, Ordering::Relaxed);
+                    let now = Instant::now().as_micros();
+                    US_SINCE_UNIX_EPOCH.add(time.offset.into(), Ordering::Relaxed);
+                    US_SINCE_BOOT.store(now, Ordering::Relaxed);
 
-            info!("Wall time: {:?}", wall_time());
+                    info!("Wall time: {:?}", wall_time());
+                }
+                Err(e) => {
+                    error!("Error getting time: {:?}", e);
+                }
+            }
         }
-        Err(e) => {
-            error!("Error getting time: {:?}", e);
-        }
+        Err(_) => error!("Failed to resolve DNS"),
     }
 }
 
@@ -76,19 +77,19 @@ pub(crate) fn time_sync_age() -> core::time::Duration {
 
 #[derive(Copy, Clone, Default)]
 struct TimestampGen {
-    since_unix_epoch: core::time::Duration,
+    wall_time: core::time::Duration,
 }
 
 impl NtpTimestampGenerator for TimestampGen {
     fn init(&mut self) {
-        self.since_unix_epoch = wall_time();
+        self.wall_time = wall_time();
     }
 
     fn timestamp_sec(&self) -> u64 {
-        self.since_unix_epoch.as_secs()
+        self.wall_time.as_secs()
     }
 
     fn timestamp_subsec_micros(&self) -> u32 {
-        self.since_unix_epoch.subsec_micros()
+        self.wall_time.subsec_micros()
     }
 }
