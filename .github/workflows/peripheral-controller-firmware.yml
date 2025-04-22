@@ -35,12 +35,7 @@ jobs:
         shell: devenv shell bash -- -e {0}
         run: |
           set -x
-
           cd ./peripheral-controller-firmware
-
-          rustup target add thumbv6m-none-eabi
-          rustup show
-
           cargo clippy -- -Dwarnings
           cargo clippy -F trace -- -Dwarnings
           cargo clippy -F panic-probe -- -Dwarnings
@@ -64,12 +59,7 @@ jobs:
         shell: devenv shell bash -- -e {0}
         run: |
           set -x
-
           cd ./peripheral-controller-firmware
-
-          rustup target add thumbv6m-none-eabi
-          rustup show
-
-          cargo build --release --no-default-features
-          cargo build --release --no-default-features -F trace
-          cargo build --release --no-default-features -F panic-probe
+          cargo build --release
+          cargo build --release -F trace
+          cargo build --release -F panic-probe
