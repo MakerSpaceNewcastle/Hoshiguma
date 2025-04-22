@@ -33,9 +33,6 @@ jobs:
 
       - name: Clippy
         shell: devenv shell bash -- -e {0}
-        env:
-          WIFI_PASSWORD: "loool dont steal me"
-          MQTT_PASSWORD: "not real"
         run: |
           set -x
           cd ./telemetry-module-firmware

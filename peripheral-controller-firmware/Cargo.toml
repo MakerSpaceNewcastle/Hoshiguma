@@ -6,7 +6,6 @@ edition = "2021"
 license = "MIT"
 
 [features]
-default = []
 trace = ["embassy-executor/trace", "dep:heapless"]
 panic-probe = ["dep:panic-probe"]
 test-panic-on-core-0 = []
