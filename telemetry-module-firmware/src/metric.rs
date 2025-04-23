@@ -83,10 +83,11 @@ fn write_temperature_sensors(
     let mut any_previous_fields = false;
 
     for (name, value) in readings {
-        if any_previous_fields {
-            s.write_char(',')?;
-        }
         if let Ok(value) = value {
+            if any_previous_fields {
+                s.write_char(',')?;
+            }
+
             s.write_fmt(format_args!("{}={}", name, value))?;
             any_previous_fields = true;
         }
