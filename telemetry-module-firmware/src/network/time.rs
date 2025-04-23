@@ -9,32 +9,16 @@ use embassy_net::{
     udp::{PacketMetadata, UdpSocket},
     Stack,
 };
-use embassy_time::{Instant, Timer};
+use embassy_time::Instant;
 use portable_atomic::{AtomicI128, AtomicU64};
 use sntpc::{NtpContext, NtpTimestampGenerator};
 
 static US_SINCE_UNIX_EPOCH: AtomicI128 = AtomicI128::new(0);
 static US_SINCE_BOOT: AtomicU64 = AtomicU64::new(0);
 
-#[embassy_executor::task]
-pub(super) async fn task(stack: Stack<'static>) {
-    #[cfg(feature = "trace")]
-    crate::trace::name_task("network time sync").await;
-
-    loop {
-        time_sync(stack).await;
-
-        if wall_time().is_some() {
-            Timer::after_secs(120).await;
-        } else {
-            Timer::after_secs(5).await;
-        }
-    }
-}
-
 const NTP_SERVER: &str = "time.cloudflare.com";
 
-async fn time_sync(stack: Stack<'_>) {
+pub(super) async fn time_sync(stack: Stack<'_>) {
     info!("Syncing time now");
 
     // Create UDP socket

@@ -1,12 +1,17 @@
 pub(crate) mod telemetry_tx;
 pub(crate) mod time;
 
-use core::cell::RefCell;
+use core::{cell::RefCell, sync::atomic::Ordering};
 use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_net::{Config, StackResources, StaticConfigV4};
+use embassy_futures::select::{select3, Either3};
+use embassy_net::{
+    dns::DnsSocket,
+    tcp::client::{TcpClient, TcpClientState},
+    Config, StackResources, StaticConfigV4,
+};
 use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
@@ -14,10 +19,14 @@ use embassy_rp::{
     peripherals::{DMA_CH0, PIO0},
     pio::{InterruptHandler, Pio},
 };
-use embassy_sync::blocking_mutex::CriticalSectionMutex;
-use embassy_time::Timer;
+use embassy_sync::{blocking_mutex::CriticalSectionMutex, pubsub::WaitResult};
+use embassy_time::{Duration, Ticker, Timer};
 use rand::RngCore;
+use reqwless::client::{HttpClient, TlsConfig, TlsVerify};
 use static_cell::StaticCell;
+use telemetry_tx::{
+    MetricBuffer, METRIC_TX, TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER,
+};
 
 pub(crate) const WIFI_SSID: &str = env!("WIFI_SSID");
 
@@ -123,11 +132,78 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
         });
     }
 
-    unwrap!(spawner.spawn(time::task(stack)));
-    unwrap!(spawner.spawn(telemetry_tx::task(stack)));
+    let mut rng = RoscRng;
+    let seed = rng.next_u64();
+
+    let mut rx_buffer = [0; 8192];
+    let mut tls_read_buffer = [0; 16640];
+    let mut tls_write_buffer = [0; 16640];
+
+    let client_state = TcpClientState::<1, 1024, 1024>::new();
+    let tcp_client = TcpClient::new(stack, &client_state);
+    let dns_client = DnsSocket::new(stack);
+    let tls_config = TlsConfig::new(
+        seed,
+        &mut tls_read_buffer,
+        &mut tls_write_buffer,
+        TlsVerify::None,
+    );
+
+    let mut http_client = HttpClient::new_with_tls(&tcp_client, &dns_client, tls_config);
+
+    let mut metric_rx = METRIC_TX.subscriber().unwrap();
+    let mut purge_tick = Ticker::every(Duration::from_secs(2));
+    let mut time_sync_tick = Ticker::every(Duration::from_secs(120));
+
+    let mut metric_buffer = MetricBuffer::default();
+
+    // Initial time sync
+    'initial_time_sync: for attempt in 0..3 {
+        info!("Initial time sync, attempt {}", attempt + 1);
+        time::time_sync(stack).await;
+        if time::wall_time().is_some() {
+            break 'initial_time_sync;
+        }
+    }
 
     loop {
-        // Do nothing now
-        Timer::after_secs(300).await;
+        match select3(
+            metric_rx.next_message(),
+            purge_tick.next(),
+            time_sync_tick.next(),
+        )
+        .await
+        {
+            Either3::First(WaitResult::Message(metric)) => {
+                // Add the metric to the buffer
+                match metric_buffer.push(metric) {
+                    Ok(_) => {
+                        TELEMETRY_TX_BUFFER_SUBMISSIONS.add(1, Ordering::Relaxed);
+                    }
+                    Err(_) => {
+                        warn!("Failed to push metric to buffer");
+                        TELEMETRY_TX_FAIL_BUFFER.add(1, Ordering::Relaxed);
+                    }
+                }
+
+                // If the buffer is nearing capacity, then send now
+                if metric_buffer.send_required() {
+                    info!("Tx reason: buffer nearly full");
+                    metric_buffer.tx(&mut http_client, &mut rx_buffer).await;
+                }
+            }
+            Either3::First(WaitResult::Lagged(_)) => unreachable!(),
+            Either3::Second(_) => {
+                info!("Tx reason: periodic purge");
+                metric_buffer.tx(&mut http_client, &mut rx_buffer).await;
+
+                purge_tick.reset();
+            }
+            Either3::Third(_) => {
+                time::time_sync(stack).await;
+
+                time_sync_tick.reset();
+            }
+        }
     }
 }
