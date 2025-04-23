@@ -6,7 +6,7 @@ use cyw43::{JoinOptions, PowerManagementMode, State};
 use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::{info, unwrap, warn};
 use embassy_executor::Spawner;
-use embassy_futures::select::{select3, Either3};
+use embassy_futures::select::{select, Either};
 use embassy_net::{
     dns::DnsSocket,
     tcp::client::{TcpClient, TcpClientState},
@@ -20,7 +20,7 @@ use embassy_rp::{
     pio::{InterruptHandler, Pio},
 };
 use embassy_sync::{blocking_mutex::CriticalSectionMutex, pubsub::WaitResult};
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::Timer;
 use rand::RngCore;
 use reqwless::client::{HttpClient, TlsConfig, TlsVerify};
 use static_cell::StaticCell;
@@ -152,29 +152,27 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
     let mut http_client = HttpClient::new_with_tls(&tcp_client, &dns_client, tls_config);
 
     let mut metric_rx = METRIC_TX.subscriber().unwrap();
-    let mut purge_tick = Ticker::every(Duration::from_secs(2));
-    let mut time_sync_tick = Ticker::every(Duration::from_secs(120));
 
     let mut metric_buffer = MetricBuffer::default();
 
     // Initial time sync
-    'initial_time_sync: for attempt in 0..3 {
-        info!("Initial time sync, attempt {}", attempt + 1);
+    let mut attempt = 0;
+    'initial_time_sync: loop {
+        attempt += 1;
+        info!("Initial time sync, attempt {}", attempt);
+
         time::time_sync(stack).await;
+
         if time::wall_time().is_some() {
             break 'initial_time_sync;
+        } else {
+            Timer::after_secs(1).await;
         }
     }
 
     loop {
-        match select3(
-            metric_rx.next_message(),
-            purge_tick.next(),
-            time_sync_tick.next(),
-        )
-        .await
-        {
-            Either3::First(WaitResult::Message(metric)) => {
+        match select(metric_rx.next_message(), Timer::after_secs(2)).await {
+            Either::First(WaitResult::Message(metric)) => {
                 // Add the metric to the buffer
                 match metric_buffer.push(metric) {
                     Ok(_) => {
@@ -192,17 +190,10 @@ pub(super) async fn task(r: crate::WifiResources, spawner: Spawner) {
                     metric_buffer.tx(&mut http_client, &mut rx_buffer).await;
                 }
             }
-            Either3::First(WaitResult::Lagged(_)) => unreachable!(),
-            Either3::Second(_) => {
+            Either::First(WaitResult::Lagged(_)) => unreachable!(),
+            Either::Second(_) => {
                 info!("Tx reason: periodic purge");
                 metric_buffer.tx(&mut http_client, &mut rx_buffer).await;
-
-                purge_tick.reset();
-            }
-            Either3::Third(_) => {
-                time::time_sync(stack).await;
-
-                time_sync_tick.reset();
             }
         }
     }
