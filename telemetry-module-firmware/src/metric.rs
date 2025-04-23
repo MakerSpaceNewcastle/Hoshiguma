@@ -142,7 +142,7 @@ impl Metric {
             }
             MetricKind::TelemetryModuleTime(v) => {
                 s.write_fmt(format_args!(
-                    "telemetry_module.time.wall,unit=ns unix_epoch=\"{}\",sync_age=\"{}\"{}",
+                    "telemetry_module.time.wall,unit=ns unix_epoch={},sync_age={}{}",
                     v.unix_epoch_nanoseconds, v.sync_age_nanoseconds, timestamp
                 ))?;
             }
