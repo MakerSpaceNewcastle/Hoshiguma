@@ -88,7 +88,10 @@ struct TimestampGen {
 
 impl NtpTimestampGenerator for TimestampGen {
     fn init(&mut self) {
-        self.wall_time = wall_time().unwrap_or(Duration::ZERO);
+        // Use the last synchronised timestamp (which will now be quite old), then the estimated
+        // difference can simply be added to this to make `wall_time()` return the actual wall time
+        // at time of call.
+        self.wall_time = Duration::from_micros(US_SINCE_UNIX_EPOCH.load(Ordering::Relaxed) as u64);
     }
 
     fn timestamp_sec(&self) -> u64 {
