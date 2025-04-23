@@ -74,6 +74,12 @@ impl MetricBuffer {
                 } else {
                     warn!("Metrics submission failed: status={}", response.status);
                     TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+
+                    if response.status == StatusCode(400) {
+                        warn!("Telegraf reports bad request, also clearing the buffer as this is probably a line format serialization issue");
+                        self.body.clear();
+                    }
+
                     return;
                 }
             }
