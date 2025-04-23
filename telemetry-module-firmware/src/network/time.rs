@@ -32,7 +32,7 @@ pub(super) async fn task(stack: Stack<'static>) {
     }
 }
 
-const NTP_SERVER: &str = "pool.ntp.org";
+const NTP_SERVER: &str = "time.cloudflare.com";
 
 async fn time_sync(stack: Stack<'_>) {
     info!("Syncing time now");
