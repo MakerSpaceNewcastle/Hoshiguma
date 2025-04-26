@@ -163,7 +163,7 @@ pub(crate) async fn demand_task() {
     let mut demand = ObservedValue::new(CoolingDemand::Idle);
     let mut last_state_change = None;
 
-    const UPPER_TEMPERATURE: f32 = 18.0;
+    const UPPER_TEMPERATURE: f32 = 17.5;
     const LOWER_TEMPERATURE: f32 = 17.0;
 
     loop {
