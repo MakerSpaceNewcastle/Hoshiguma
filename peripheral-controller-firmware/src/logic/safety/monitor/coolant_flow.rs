@@ -14,7 +14,7 @@ pub(crate) async fn task() {
 
     let mut severity = ObservedSeverity::default();
 
-    const WARN: f64 = 1.5;
+    const WARN: f64 = 1.25;
     const CRITICAL: f64 = 1.0;
 
     loop {
