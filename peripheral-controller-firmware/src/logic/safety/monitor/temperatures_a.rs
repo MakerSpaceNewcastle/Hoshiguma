@@ -66,11 +66,11 @@ pub(crate) async fn task() {
         }
 
         // Check coolant flow temperature
-        if let Ok(new_severity) = temperature_to_state(25.0, 40.0, state.coolant_flow) {
+        if let Ok(new_severity) = temperature_to_state(25.0, 35.0, state.coolant_flow) {
             coolant_flow_severity
                 .update_and_async(new_severity, |severity| async {
                     status_tx
-                        .publish((MonitorKind::CoolantFlowOvertemperatureA, severity))
+                        .publish((MonitorKind::CoolantFlowOvertemperature, severity))
                         .await;
                 })
                 .await;

@@ -23,8 +23,8 @@ use hoshiguma_protocol::{
     cooler::{
         rpc::{Request, Response},
         types::{
-            CompressorState, CoolantFlow, CoolantPumpState, HeaderTankCoolantLevelReading,
-            HeatExchangeFluidLevel, RadiatorFanState, StirrerState, Temperatures,
+            CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel,
+            RadiatorFanState, Temperatures,
         },
     },
     peripheral_controller::{
@@ -43,7 +43,6 @@ use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 pub(crate) enum CoolerControlCommand {
     RadiatorFan(RadiatorFanState),
     Compressor(CompressorState),
-    Stirrer(StirrerState),
     CoolantPump(CoolantPumpState),
 }
 
@@ -52,7 +51,6 @@ impl From<CoolerControlCommand> for Request {
         match cmd {
             CoolerControlCommand::RadiatorFan(radiator_fan) => Self::SetRadiatorFan(radiator_fan),
             CoolerControlCommand::Compressor(compressor) => Self::SetCompressor(compressor),
-            CoolerControlCommand::Stirrer(stirrer) => Self::SetStirrer(stirrer),
             CoolerControlCommand::CoolantPump(coolant_pump) => Self::SetCoolantPump(coolant_pump),
         }
     }
@@ -71,15 +69,9 @@ pub(crate) static COOLANT_FLOW_READ: Watch<CriticalSectionRawMutex, CoolantFlow,
 pub(crate) static COOLER_TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 2> =
     Watch::new();
 
-pub(crate) static HEADER_TANK_COOLANT_LEVEL_CHANGED: Watch<
+pub(crate) static COOLANT_RESEVOIR_LEVEL_CHANGED: Watch<
     CriticalSectionRawMutex,
-    HeaderTankCoolantLevelReading,
-    1,
-> = Watch::new();
-
-pub(crate) static HEAT_EXCHANGER_FLUID_LEVEL_CHANGED: Watch<
-    CriticalSectionRawMutex,
-    HeatExchangeFluidLevel,
+    CoolantReservoirLevel,
     1,
 > = Watch::new();
 
@@ -118,14 +110,11 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     let mut coolant_flow = ObservedValue::default();
     let mut temperatures = ObservedValue::default();
-    let mut heat_exchanger_fluid_level = ObservedValue::default();
-    let mut header_tank_level = ObservedValue::default();
+    let mut coolant_reservoir_level = ObservedValue::default();
     let coolant_flow_tx = COOLANT_FLOW_READ.sender();
     let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
-    let heat_exchanger_fluid_level_tx = HEAT_EXCHANGER_FLUID_LEVEL_CHANGED.sender();
-    let header_tank_level_tx = HEADER_TANK_COOLANT_LEVEL_CHANGED.sender();
+    let coolant_reservoir_level_tx = COOLANT_RESEVOIR_LEVEL_CHANGED.sender();
 
-    let mut stirrer = ObservedValue::default();
     let mut coolant_pump = ObservedValue::default();
     let mut compressor = ObservedValue::default();
     let mut radiator_fan = ObservedValue::default();
@@ -167,32 +156,13 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                             })
                             .await;
 
-                        heat_exchanger_fluid_level
-                            .update_and_async(state.heat_exchange_fluid_level, |value| async {
-                                heat_exchanger_fluid_level_tx.send(value.clone());
+                        coolant_reservoir_level
+                            .update_and_async(state.coolant_reservoir_level, |value| async {
+                                coolant_reservoir_level_tx.send(value.clone());
                                 queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::HeatExchangerFluidLevel(value),
+                                    SuperObservationEvent::CoolantReservoirLevel(value),
                                 ))
                                 .await;
-                            })
-                            .await;
-
-                        header_tank_level
-                            .update_and_async(state.coolant_header_tank_level, |value| async {
-                                header_tank_level_tx.send(value.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::CoolantHeaderTankLevel(value),
-                                ))
-                                .await;
-                            })
-                            .await;
-
-                        stirrer
-                            .update_and_async(state.stirrer, |value| async {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolerStirrer(value),
-                                ))
-                                .await
                             })
                             .await;
 
@@ -345,11 +315,11 @@ impl TemperaturesExt for Temperatures {
     fn any_failed_sensors(&self) -> bool {
         let sensors = [
             &self.onboard,
-            &self.coolant_flow,
-            &self.coolant_mid,
-            &self.coolant_return,
-            &self.heat_exchange_fluid,
-            &self.heat_exchanger_loop,
+            &self.internal_ambient,
+            &self.reservoir_evaporator_coil,
+            &self.reservoir_left_side,
+            &self.reservoir_right_side,
+            &self.coolant_pump_motor,
         ];
 
         sensors.iter().any(|i| i.is_err())

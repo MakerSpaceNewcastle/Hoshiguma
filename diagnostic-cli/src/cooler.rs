@@ -2,7 +2,7 @@ use crate::Runner;
 use clap::{Parser, Subcommand};
 use hoshiguma_protocol::cooler::{
     rpc::{Request, Response},
-    types::{CompressorState, CoolantPumpState, RadiatorFanState, StirrerState},
+    types::{CompressorState, CoolantPumpState, RadiatorFanState},
 };
 use log::{info, warn};
 use std::time::Duration;
@@ -33,8 +33,6 @@ enum Command {
     SetRadiatorFanOn,
     SetCompressorOff,
     SetCompressorOn,
-    SetStirrerOff,
-    SetStirrerOn,
     SetCoolantPumpOff,
     SetCoolantPumpOn,
 }
@@ -60,8 +58,6 @@ impl Runner for Cli {
                 Command::SetRadiatorFanOn => Request::SetRadiatorFan(RadiatorFanState::Run),
                 Command::SetCompressorOff => Request::SetCompressor(CompressorState::Idle),
                 Command::SetCompressorOn => Request::SetCompressor(CompressorState::Run),
-                Command::SetStirrerOff => Request::SetStirrer(StirrerState::Idle),
-                Command::SetStirrerOn => Request::SetStirrer(StirrerState::Run),
                 Command::SetCoolantPumpOff => Request::SetCoolantPump(CoolantPumpState::Idle),
                 Command::SetCoolantPumpOn => Request::SetCoolantPump(CoolantPumpState::Run),
             };

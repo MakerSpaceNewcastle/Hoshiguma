@@ -10,9 +10,8 @@ use defmt::{info, unwrap};
 use defmt_rtt as _;
 use devices::{
     compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
-    header_tank_level_sensor::HeaderTankLevelSensor,
-    heat_exchanger_level_sensor::HeatExchangerLevelSensor, radiator_fan::RadiatorFan,
-    stirrer::Stirrer, temperature_sensors::TemperatureSensors,
+    coolant_reservoir_level_sensor::CoolantReservoirLevelSensor, radiator_fan::RadiatorFan,
+    temperature_sensors::TemperatureSensors,
 };
 use embassy_executor::Spawner;
 use embassy_rp::{
@@ -39,24 +38,17 @@ assign_resources! {
         pwm: PWM_SLICE7,
         pin: IN_0,
     },
-    heat_exchanger_level: HeatExchangerLevelSensorResources {
+    coolant_reservoir_level: CoolantReservoirLevelSensorResources {
         low: IN_1,
-    },
-    header_tank_level: HeaderTankLevelSensorResources {
-        empty: IN_3,
-        low : IN_2,
     },
     compressor: CompressorResources {
         relay: RELAY_0,
     },
-    stirrer: StirrerResources {
+    coolant_pump: CoolantPumpResources {
         relay: RELAY_1,
     },
     radiator_fan: RadiatorFanResources {
         relay: RELAY_2,
-    },
-    coolant_pump: CoolantPumpResources {
-        relay: RELAY_3,
     },
     communication: ControlCommunicationResources {
         uart: UART0,
@@ -94,33 +86,34 @@ async fn main(spawner: Spawner) {
     info!("{}", system_information());
 
     // Unused IO
+    let _in2 = Input::new(p.IN_2, Pull::Down);
+    let _in3 = Input::new(p.IN_3, Pull::Down);
+    let _in4 = Input::new(p.IN_4, Pull::Down);
     let _in5 = Input::new(p.IN_5, Pull::Down);
     let _in6 = Input::new(p.IN_6, Pull::Down);
     let _in7 = Input::new(p.IN_7, Pull::Down);
+    let _relay3 = Output::new(p.RELAY_3, Level::Low);
     let _relay4 = Output::new(p.RELAY_4, Level::Low);
     let _relay5 = Output::new(p.RELAY_5, Level::Low);
     let _relay6 = Output::new(p.RELAY_6, Level::Low);
     let _relay7 = Output::new(p.RELAY_7, Level::Low);
 
     // Outputs
-    let stirrer = Stirrer::new(r.stirrer);
     let coolant_pump = CoolantPump::new(r.coolant_pump);
     let compressor = Compressor::new(r.compressor);
     let radiator_fan = RadiatorFan::new(r.radiator_fan);
 
     // Inputs
-    let header_tank_level = HeaderTankLevelSensor::new(r.header_tank_level);
-    let heat_exchanger_level = HeatExchangerLevelSensor::new(r.heat_exchanger_level);
+    let coolant_reservoir_level_sensor =
+        CoolantReservoirLevelSensor::new(r.coolant_reservoir_level);
     let coolant_flow_sensor = CoolantFlowSensor::new(&spawner, r.flow_sensor);
     let temperature_sensors = TemperatureSensors::new(&spawner, r.onewire);
 
     let machine = Machine {
-        stirrer,
         coolant_pump,
         compressor,
         radiator_fan,
-        header_tank_level,
-        heat_exchanger_level,
+        coolant_reservoir_level_sensor,
         coolant_flow_sensor,
         temperature_sensors,
     };

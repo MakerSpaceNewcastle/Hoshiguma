@@ -1,4 +1,4 @@
-use super::types::{CompressorState, CoolantPumpState, RadiatorFanState, State, StirrerState};
+use super::types::{CompressorState, CoolantPumpState, RadiatorFanState, State};
 use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +12,6 @@ pub enum Request {
 
     SetRadiatorFan(RadiatorFanState),
     SetCompressor(CompressorState),
-    SetStirrer(StirrerState),
     SetCoolantPump(CoolantPumpState),
 }
 
@@ -26,6 +25,5 @@ pub enum Response {
 
     SetRadiatorFan,
     SetCompressor,
-    SetStirrer,
     SetCoolantPump,
 }

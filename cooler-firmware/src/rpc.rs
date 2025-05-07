@@ -66,10 +66,6 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
                         machine.compressor.set(setting);
                         Response::SetCompressor
                     }
-                    Request::SetStirrer(setting) => {
-                        machine.stirrer.set(setting);
-                        Response::SetStirrer
-                    }
                     Request::SetCoolantPump(setting) => {
                         machine.coolant_pump.set(setting);
                         Response::SetCoolantPump

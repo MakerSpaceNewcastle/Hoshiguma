@@ -13,8 +13,7 @@ pub(crate) async fn task() {
 
     let mut sensor_severity = ObservedSeverity::default();
     let mut electronics_severity = ObservedSeverity::default();
-    let mut coolant_flow_severity = ObservedSeverity::default();
-    let mut heat_exchanger_severity = ObservedSeverity::default();
+    let mut reservoir_severity = ObservedSeverity::default();
 
     let mut sensor_failure_counter = 0;
 
@@ -48,10 +47,18 @@ pub(crate) async fn task() {
             })
             .await;
 
-        // Check electronics temperature
-        if let Ok(new_severity) = temperature_to_state(30.0, 35.0, state.onboard) {
+        // Check electronics temperatures
+        if let Some(new_severity) = [
+            temperature_to_state(30.0, 35.0, state.onboard),
+            temperature_to_state(35.0, 40.0, state.internal_ambient),
+            temperature_to_state(70.0, 80.0, state.coolant_pump_motor),
+        ]
+        .iter()
+        .flatten()
+        .max()
+        {
             electronics_severity
-                .update_and_async(new_severity, |severity| async {
+                .update_and_async(new_severity.clone(), |severity| async {
                     status_tx
                         .publish((MonitorKind::CoolerElectronicsOvertemperature, severity))
                         .await;
@@ -59,23 +66,20 @@ pub(crate) async fn task() {
                 .await;
         }
 
-        // Check coolant flow temperature
-        if let Ok(new_severity) = temperature_to_state(25.0, 40.0, state.coolant_flow) {
-            coolant_flow_severity
-                .update_and_async(new_severity, |severity| async {
+        // Check coolant reservoir temperatures
+        if let Some(new_severity) = [
+            temperature_to_state(20.0, 25.0, state.reservoir_evaporator_coil),
+            temperature_to_state(20.0, 25.0, state.reservoir_left_side),
+            temperature_to_state(20.0, 25.0, state.reservoir_right_side),
+        ]
+        .iter()
+        .flatten()
+        .max()
+        {
+            reservoir_severity
+                .update_and_async(new_severity.clone(), |severity| async {
                     status_tx
-                        .publish((MonitorKind::CoolantFlowOvertemperatureB, severity))
-                        .await;
-                })
-                .await;
-        }
-
-        // Check heat exchanger temperature
-        if let Ok(new_severity) = temperature_to_state(20.0, 25.0, state.heat_exchange_fluid) {
-            heat_exchanger_severity
-                .update_and_async(new_severity, |severity| async {
-                    status_tx
-                        .publish((MonitorKind::HeatExchangerOvertemperature, severity))
+                        .publish((MonitorKind::CoolantReservoirOvertemperature, severity))
                         .await;
                 })
                 .await;
