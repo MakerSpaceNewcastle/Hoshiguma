@@ -5,8 +5,8 @@ use super::types::{
 };
 use crate::{
     cooler::types::{
-        CompressorState, CoolantFlow, CoolantPumpState, HeaderTankCoolantLevelReading,
-        HeatExchangeFluidLevel, RadiatorFanState, StirrerState, Temperatures as CoolerTemperatures,
+        CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel, RadiatorFanState,
+        Temperatures as CoolerTemperatures,
     },
     types::SystemInformation,
 };
@@ -50,8 +50,7 @@ pub enum ObservationEvent {
     // Forwarded from cooler
     TemperaturesB(CoolerTemperatures),
     CoolantFlow(CoolantFlow),
-    HeatExchangerFluidLevel(HeatExchangeFluidLevel),
-    CoolantHeaderTankLevel(HeaderTankCoolantLevelReading),
+    CoolantReservoirLevel(CoolantReservoirLevel),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -65,7 +64,6 @@ pub enum ControlEvent {
     StatusLamp(StatusLamp),
 
     // Forwarded from cooler
-    CoolerStirrer(StirrerState),
     CoolerCompressor(CompressorState),
     CoolerRadiatorFan(RadiatorFanState),
     CoolantPump(CoolantPumpState),

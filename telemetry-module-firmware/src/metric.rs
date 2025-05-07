@@ -190,26 +190,16 @@ impl Metric {
                             MonitorKind::CoolerElectronicsOvertemperature,
                         ),
                         (
-                            "cool_head_tank_level_sensor",
-                            MonitorKind::CoolantHeaderTankLevelSensorFault,
-                        ),
-                        ("cool_head_tank_empty", MonitorKind::CoolantHeaderTankEmpty),
-                        (
-                            "cool_head_tank_overfill",
-                            MonitorKind::CoolantHeaderTankOverfilled,
-                        ),
-                        (
-                            "heat_exchange_tank_level",
-                            MonitorKind::HeatExchangerFluidLow,
+                            "coolant_reservoir_level",
+                            MonitorKind::CoolantReservoirLevelLow,
                         ),
                         ("cool_flow_rate", MonitorKind::CoolantFlowInsufficient),
                         ("temp_sens_a", MonitorKind::TemperatureSensorFaultA),
                         ("temp_sens_b", MonitorKind::TemperatureSensorFaultB),
-                        ("cool_flow_temp_a", MonitorKind::CoolantFlowOvertemperatureA),
-                        ("cool_flow_temp_b", MonitorKind::CoolantFlowOvertemperatureB),
+                        ("cool_flow_temp", MonitorKind::CoolantFlowOvertemperature),
                         (
-                            "heat_exchange_temp",
-                            MonitorKind::HeatExchangerOvertemperature,
+                            "coolant_reservoir_temp",
+                            MonitorKind::CoolantReservoirOvertemperature,
                         ),
                     ]
                     .into_iter()
@@ -283,11 +273,11 @@ impl Metric {
                         "cooler",
                         &[
                             ("onboard", v.onboard),
-                            ("coolant_flow", v.coolant_flow),
-                            ("coolant_mid", v.coolant_mid),
-                            ("coolant_return", v.coolant_return),
-                            ("heat_exchange_fluid", v.heat_exchange_fluid),
-                            ("heat_exchanger_loop", v.heat_exchanger_loop),
+                            ("internal_ambient", v.internal_ambient),
+                            ("reservoir_evaporator_coil", v.reservoir_evaporator_coil),
+                            ("reservoir_left_side", v.reservoir_left_side),
+                            ("reservoir_right_side", v.reservoir_right_side),
+                            ("coolant_pump_motor", v.coolant_pump_motor),
                         ],
                         timestamp,
                     )?;
@@ -301,28 +291,14 @@ impl Metric {
                         timestamp,
                     )?;
                 }
-                EventKind::Observation(ObservationEvent::HeatExchangerFluidLevel(v)) => {
+                EventKind::Observation(ObservationEvent::CoolantReservoirLevel(v)) => {
                     write_measurement_str_debug(
                         &mut s,
-                        "observation.heat_exchanger_fluid_level",
+                        "observation.coolant_reservoir_fluid_level",
                         v,
                         timestamp,
                     )?;
                 }
-                EventKind::Observation(ObservationEvent::CoolantHeaderTankLevel(v)) => match v {
-                    Ok(v) => {
-                        s.write_fmt(format_args!(
-                            "machine_observation coolant_header_tank_level=\"{:?}\"{}",
-                            v, timestamp
-                        ))?;
-                    }
-                    Err(_) => {
-                        s.write_fmt(format_args!(
-                            "machine_observation coolant_header_tank_level=\"Error\"{}",
-                            timestamp
-                        ))?;
-                    }
-                },
                 EventKind::Control(ControlEvent::AirAssistPump(v)) => {
                     write_measurement_str_debug(&mut s, "control.air_assist_pump", v, timestamp)?;
                 }
@@ -345,9 +321,6 @@ impl Metric {
                         "control.status red=\"{}\",amber=\"{}\",green=\"{}\"{}",
                         v.red, v.amber, v.green, timestamp
                     ))?;
-                }
-                EventKind::Control(ControlEvent::CoolerStirrer(v)) => {
-                    write_measurement_str_debug(&mut s, "control.cooler_stirrer", v, timestamp)?;
                 }
                 EventKind::Control(ControlEvent::CoolerCompressor(v)) => {
                     write_measurement_str_debug(&mut s, "control.cooler_compressor", v, timestamp)?;

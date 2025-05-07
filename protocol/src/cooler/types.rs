@@ -5,13 +5,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct State {
-    pub stirrer: StirrerState,
     pub coolant_pump: CoolantPumpState,
     pub compressor: CompressorState,
     pub radiator_fan: RadiatorFanState,
 
-    pub coolant_header_tank_level: HeaderTankCoolantLevelReading,
-    pub heat_exchange_fluid_level: HeatExchangeFluidLevel,
+    pub coolant_reservoir_level: CoolantReservoirLevel,
     pub coolant_flow_rate: CoolantFlow,
     pub temperatures: Temperatures,
 }
@@ -20,13 +18,21 @@ pub struct State {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct Temperatures {
     pub onboard: TemperatureReading,
+    pub internal_ambient: TemperatureReading,
 
-    pub coolant_flow: TemperatureReading,
-    pub coolant_mid: TemperatureReading,
-    pub coolant_return: TemperatureReading,
+    pub reservoir_evaporator_coil: TemperatureReading,
 
-    pub heat_exchange_fluid: TemperatureReading,
-    pub heat_exchanger_loop: TemperatureReading,
+    pub reservoir_left_side: TemperatureReading,
+    pub reservoir_right_side: TemperatureReading,
+
+    pub coolant_pump_motor: TemperatureReading,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum CoolantPumpState {
+    Idle,
+    Run,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -45,33 +51,9 @@ pub enum RadiatorFanState {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum StirrerState {
-    Idle,
-    Run,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum CoolantPumpState {
-    Idle,
-    Run,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum HeatExchangeFluidLevel {
+pub enum CoolantReservoirLevel {
     Normal,
     Low,
-}
-
-pub type HeaderTankCoolantLevelReading = Result<HeaderTankCoolantLevel, ()>;
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum HeaderTankCoolantLevel {
-    Empty,
-    Normal,
-    Full,
 }
 
 /// The flow of coolant in litres per minute.

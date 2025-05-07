@@ -12,7 +12,7 @@ use embassy_futures::select::{select3, Either3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use embassy_time::{Duration, Instant};
 use hoshiguma_protocol::{
-    cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState, StirrerState},
+    cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
     peripheral_controller::{
         event::EventKind,
         types::{CoolingDemand, CoolingEnabled, MachinePower, MonitorKind},
@@ -126,12 +126,6 @@ async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const P
         CoolingEnabled::Enable => CoolantPumpState::Run,
     }))
     .await;
-
-    tx.publish(CoolerControlCommand::Stirrer(match enabled {
-        CoolingEnabled::Inhibit => StirrerState::Idle,
-        CoolingEnabled::Enable => StirrerState::Run,
-    }))
-    .await;
 }
 
 async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
@@ -169,18 +163,18 @@ pub(crate) async fn demand_task() {
     loop {
         let temperatures = temperatures_rx.changed().await;
 
-        if let Ok(heat_exchange_temperature) = temperatures.heat_exchange_fluid {
+        if let Ok(res_flow_loop_temperature) = temperatures.reservoir_left_side {
             // Get the new demand based on temperature alone, with hysteresis
-            let new_demand = if heat_exchange_temperature > UPPER_TEMPERATURE {
+            let new_demand = if res_flow_loop_temperature > UPPER_TEMPERATURE {
                 Some(CoolingDemand::Demand)
-            } else if heat_exchange_temperature < LOWER_TEMPERATURE {
+            } else if res_flow_loop_temperature < LOWER_TEMPERATURE {
                 Some(CoolingDemand::Idle)
             } else {
                 None
             };
             info!(
-                "HEx temperature {} calls for cooling demand {}",
-                heat_exchange_temperature, new_demand
+                "Reservoir flow temperature {} calls for cooling demand {}",
+                res_flow_loop_temperature, new_demand
             );
 
             // Determine if the state should be allowed to change now based on elapsed time since

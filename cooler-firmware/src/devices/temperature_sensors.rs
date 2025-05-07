@@ -12,11 +12,11 @@ use one_wire_bus::{Address, OneWire};
 static READING: Mutex<CriticalSectionRawMutex, RefCell<Temperatures>> =
     Mutex::new(RefCell::new(Temperatures {
         onboard: Err(()),
-        coolant_flow: Err(()),
-        coolant_mid: Err(()),
-        coolant_return: Err(()),
-        heat_exchange_fluid: Err(()),
-        heat_exchanger_loop: Err(()),
+        internal_ambient: Err(()),
+        reservoir_evaporator_coil: Err(()),
+        reservoir_left_side: Err(()),
+        reservoir_right_side: Err(()),
+        coolant_pump_motor: Err(()),
     }));
 
 #[embassy_executor::task]
@@ -35,13 +35,11 @@ async fn task(r: OnewireResources) {
     let mut ticker = Ticker::every(Duration::from_secs(10));
 
     let onboard_sensor = Ds18b20::new::<()>(Address(7949810265475014952)).unwrap();
-
-    let heat_exchange_fluid_sensor = Ds18b20::new::<()>(Address(8217700785146991144)).unwrap();
-
-    let coolant_flow_sensor = Ds18b20::new::<()>(Address(2766436500490182952)).unwrap();
-    let heat_exchanger_loop_sensor = Ds18b20::new::<()>(Address(16939228239646449960)).unwrap();
-    let coolant_mid_sensor = Ds18b20::new::<()>(Address(9708086592746578216)).unwrap();
-    let coolant_return_sensor = Ds18b20::new::<()>(Address(2989910039812399400)).unwrap();
+    let internal_ambient_sensor = Ds18b20::new::<()>(Address(6676982032140362024)).unwrap();
+    let reservoir_evaporator_coil = Ds18b20::new::<()>(Address(14339461214714576936)).unwrap();
+    let reservoir_left_side = Ds18b20::new::<()>(Address(9079256849946264616)).unwrap();
+    let reservoir_right_side = Ds18b20::new::<()>(Address(9943947978400069416)).unwrap();
+    let coolant_pump_motor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
 
     loop {
         ticker.next().await;
@@ -59,11 +57,11 @@ async fn task(r: OnewireResources) {
 
         let readings = Temperatures {
             onboard: read_sensor(&onboard_sensor),
-            coolant_flow: read_sensor(&coolant_flow_sensor),
-            coolant_mid: read_sensor(&coolant_mid_sensor),
-            coolant_return: read_sensor(&coolant_return_sensor),
-            heat_exchange_fluid: read_sensor(&heat_exchange_fluid_sensor),
-            heat_exchanger_loop: read_sensor(&heat_exchanger_loop_sensor),
+            internal_ambient: read_sensor(&internal_ambient_sensor),
+            reservoir_evaporator_coil: read_sensor(&reservoir_evaporator_coil),
+            reservoir_left_side: read_sensor(&reservoir_left_side),
+            reservoir_right_side: read_sensor(&reservoir_right_side),
+            coolant_pump_motor: read_sensor(&coolant_pump_motor),
         };
 
         info!("{}", readings);

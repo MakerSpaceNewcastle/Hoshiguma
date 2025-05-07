@@ -27,16 +27,12 @@ enum Parameter {
     MonitorCoolerCommunicationFault,
     MonitorMachineElectronicsOvertemperature,
     MonitorCoolerElectronicsOvertemperature,
-    MonitorCoolantHeaderTankLevelSensorFault,
-    MonitorCoolantHeaderTankEmpty,
-    MonitorCoolantHeaderTankOverfilled,
-    MonitorHeatExchangerFluidLow,
+    MonitorCoolantReservoirLevelLow,
     MonitorCoolantFlowInsufficient,
     MonitorTemperatureSensorFaultA,
     MonitorTemperatureSensorFaultB,
-    MonitorCoolantFlowOvertemperatureA,
-    MonitorCoolantFlowOvertemperatureB,
-    MonitorHeatExchangerOvertemperature,
+    MonitorCoolantFlowOvertemperature,
+    MonitorCoolantReservoirOvertemperature,
 
     MachineOperationLockout,
 
@@ -49,26 +45,24 @@ enum Parameter {
     ObservationFumeExtractionMode,
     ObservationAirAssistDemand,
     ObservationCoolantFlow,
-    ObservationHeatExchangerFluidLevel,
-    ObservationCoolantHeaderTankLevel,
+    ObservationCoolantReservoirLevel,
     ObservationTemperatureAOnboard,
     ObservationTemperatureAElectronicsBay,
     ObservationTemperatureALaserChamber,
     ObservationTemperatureACoolantFlow,
     ObservationTemperatureACoolantReturn,
     ObservationTemperatureBOnboard,
-    ObservationTemperatureBCoolantFlow,
-    ObservationTemperatureBCoolantMid,
-    ObservationTemperatureBCoolantReturn,
-    ObservationTemperatureBHeatExchangeFluid,
-    ObservationTemperatureBHeatExchangerLoop,
+    ObservationTemperatureBInternalAmbient,
+    ObservationTemperatureBReservoirEvaporatorCoil,
+    ObservationTemperatureBReservoirLeftSide,
+    ObservationTemperatureBReservoirRightSide,
+    ObservationTemperatureBCoolantPumpMotor,
 
     ControlAirAssistPump,
     ControlFumeExtractionFan,
     ControlLaserEnable,
     ControlMachineEnable,
     ControlStatusLamp,
-    ControlCoolerStirrer,
     ControlCoolerCompressor,
     ControlCoolerRadiatorFan,
     ControlCoolantPump,
@@ -99,7 +93,7 @@ struct App {
 impl Default for App {
     fn default() -> App {
         let items = Parameter::iter()
-            .map(|p| TableParameter::new(p))
+            .map(TableParameter::new)
             .collect::<Vec<_>>();
 
         let mut table_state = TableState::default();
@@ -119,13 +113,10 @@ impl App {
     }
 
     fn update_parameter(&mut self, parameter: Parameter, value: String) {
-        self.items
-            .iter_mut()
-            .find(|item| item.name == parameter)
-            .map(|item| {
-                item.value = Some(value);
-                item.updated = Utc::now();
-            });
+        if let Some(item) = self.items.iter_mut().find(|item| item.name == parameter) {
+            item.value = Some(value);
+            item.updated = Utc::now();
+        }
     }
 }
 
@@ -173,20 +164,8 @@ fn event_to_values(event: EventKind) -> Vec<(Parameter, String)> {
                 MonitorKind::CoolerElectronicsOvertemperature,
             ),
             (
-                Parameter::MonitorCoolantHeaderTankLevelSensorFault,
-                MonitorKind::CoolantHeaderTankLevelSensorFault,
-            ),
-            (
-                Parameter::MonitorCoolantHeaderTankEmpty,
-                MonitorKind::CoolantHeaderTankEmpty,
-            ),
-            (
-                Parameter::MonitorCoolantHeaderTankOverfilled,
-                MonitorKind::CoolantHeaderTankOverfilled,
-            ),
-            (
-                Parameter::MonitorHeatExchangerFluidLow,
-                MonitorKind::HeatExchangerFluidLow,
+                Parameter::MonitorCoolantReservoirLevelLow,
+                MonitorKind::CoolantReservoirLevelLow,
             ),
             (
                 Parameter::MonitorCoolantFlowInsufficient,
@@ -201,16 +180,12 @@ fn event_to_values(event: EventKind) -> Vec<(Parameter, String)> {
                 MonitorKind::TemperatureSensorFaultB,
             ),
             (
-                Parameter::MonitorCoolantFlowOvertemperatureA,
-                MonitorKind::CoolantFlowOvertemperatureA,
+                Parameter::MonitorCoolantFlowOvertemperature,
+                MonitorKind::CoolantFlowOvertemperature,
             ),
             (
-                Parameter::MonitorCoolantFlowOvertemperatureB,
-                MonitorKind::CoolantFlowOvertemperatureB,
-            ),
-            (
-                Parameter::MonitorHeatExchangerOvertemperature,
-                MonitorKind::HeatExchangerOvertemperature,
+                Parameter::MonitorCoolantReservoirOvertemperature,
+                MonitorKind::CoolantReservoirOvertemperature,
             ),
         ]
         .into_iter()
@@ -247,12 +222,8 @@ fn event_to_values(event: EventKind) -> Vec<(Parameter, String)> {
         EventKind::Observation(ObservationEvent::CoolantFlow(value)) => {
             vec![(Parameter::ObservationCoolantFlow, format!("{:?}", value))]
         }
-        EventKind::Observation(ObservationEvent::HeatExchangerFluidLevel(value)) => vec![(
-            Parameter::ObservationHeatExchangerFluidLevel,
-            format!("{:?}", value),
-        )],
-        EventKind::Observation(ObservationEvent::CoolantHeaderTankLevel(value)) => vec![(
-            Parameter::ObservationCoolantHeaderTankLevel,
+        EventKind::Observation(ObservationEvent::CoolantReservoirLevel(value)) => vec![(
+            Parameter::ObservationCoolantReservoirLevel,
             format!("{:?}", value),
         )],
         EventKind::Observation(ObservationEvent::TemperaturesA(value)) => vec![
@@ -283,24 +254,24 @@ fn event_to_values(event: EventKind) -> Vec<(Parameter, String)> {
                 format!("{:?}", value.onboard),
             ),
             (
-                Parameter::ObservationTemperatureBCoolantFlow,
-                format!("{:?}", value.coolant_flow),
+                Parameter::ObservationTemperatureBInternalAmbient,
+                format!("{:?}", value.internal_ambient),
             ),
             (
-                Parameter::ObservationTemperatureBCoolantMid,
-                format!("{:?}", value.coolant_mid),
+                Parameter::ObservationTemperatureBReservoirEvaporatorCoil,
+                format!("{:?}", value.reservoir_evaporator_coil),
             ),
             (
-                Parameter::ObservationTemperatureBCoolantReturn,
-                format!("{:?}", value.coolant_return),
+                Parameter::ObservationTemperatureBReservoirLeftSide,
+                format!("{:?}", value.reservoir_left_side),
             ),
             (
-                Parameter::ObservationTemperatureBHeatExchangeFluid,
-                format!("{:?}", value.heat_exchange_fluid),
+                Parameter::ObservationTemperatureBReservoirRightSide,
+                format!("{:?}", value.reservoir_right_side),
             ),
             (
-                Parameter::ObservationTemperatureBHeatExchangerLoop,
-                format!("{:?}", value.heat_exchanger_loop),
+                Parameter::ObservationTemperatureBCoolantPumpMotor,
+                format!("{:?}", value.coolant_pump_motor),
             ),
         ],
         EventKind::Control(ControlEvent::AirAssistPump(value)) => {
@@ -317,9 +288,6 @@ fn event_to_values(event: EventKind) -> Vec<(Parameter, String)> {
         }
         EventKind::Control(ControlEvent::StatusLamp(value)) => {
             vec![(Parameter::ControlStatusLamp, format!("{:?}", value))]
-        }
-        EventKind::Control(ControlEvent::CoolerStirrer(value)) => {
-            vec![(Parameter::ControlCoolerStirrer, format!("{:?}", value))]
         }
         EventKind::Control(ControlEvent::CoolerCompressor(value)) => {
             vec![(Parameter::ControlCoolerCompressor, format!("{:?}", value))]
