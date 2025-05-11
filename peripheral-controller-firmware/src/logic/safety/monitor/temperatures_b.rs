@@ -49,7 +49,7 @@ pub(crate) async fn task() {
 
         // Check electronics temperatures
         if let Some(new_severity) = [
-            temperature_to_state(30.0, 35.0, state.onboard),
+            temperature_to_state(35.0, 40.0, state.onboard),
             temperature_to_state(35.0, 40.0, state.internal_ambient),
             temperature_to_state(70.0, 80.0, state.coolant_pump_motor),
         ]
