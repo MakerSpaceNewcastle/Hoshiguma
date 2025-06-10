@@ -43,6 +43,8 @@ impl Runner for Device {
 async fn main() {
     let cli = Cli::parse();
 
+    env_logger::init();
+
     let transport = SerialTransport::new(&cli.port, cli.baud).unwrap();
 
     if cli.device.run(transport).await.is_err() {
