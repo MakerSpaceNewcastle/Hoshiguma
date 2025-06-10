@@ -1,5 +1,3 @@
-mod dashboard;
-
 use crate::Runner;
 use clap::{Parser, Subcommand};
 use hoshiguma_protocol::peripheral_controller::rpc::{Request, Response};
@@ -23,7 +21,6 @@ pub(super) struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    Dashboard,
     EventStream,
 
     Ping,
@@ -40,13 +37,7 @@ impl Runner for Cli {
         let timeout = Duration::from_millis(self.timeout);
 
         match &self.command {
-            Command::Dashboard => {
-                dashboard::run(client).await.unwrap();
-                Ok(())
-            }
             Command::EventStream => {
-                env_logger::init();
-
                 let mut ticker =
                     tokio::time::interval(Duration::from_millis(self.repeat.unwrap_or(50)));
 
@@ -62,8 +53,6 @@ impl Runner for Cli {
                 }
             }
             command => {
-                env_logger::init();
-
                 let mut ticker = tokio::time::interval(match self.repeat {
                     Some(ms) => Duration::from_millis(ms),
                     None => Duration::MAX,
@@ -71,7 +60,6 @@ impl Runner for Cli {
 
                 loop {
                     let request = match command {
-                        Command::Dashboard => unreachable!(),
                         Command::EventStream => unreachable!(),
                         Command::Ping => Request::Ping(42),
                         Command::GetSystemInformation => Request::GetSystemInformation,
