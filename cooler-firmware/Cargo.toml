@@ -26,7 +26,7 @@ panic-probe = { version = "0.3.2", features = ["print-defmt"], optional = true }
 
 embassy-sync = { git = "https://github.com/embassy-rs/embassy/" }
 embassy-futures = "0.1.1"
-portable-atomic = { version = "1.9.0", features = ["critical-section"] }
+portable-atomic = { version = "1.11.1", features = ["critical-section"] }
 static_cell = "2.1.0"
 
 one-wire-bus = "0.1.1"
