@@ -33,7 +33,7 @@ panic-probe = { version = "0.3.2", features = ["print-defmt"] }
 embassy-sync = "0.6.0"
 embassy-futures = "0.1.1"
 portable-atomic = { version = "1.9.0", features = ["critical-section"] }
-static_cell = "2.1.0"
+static_cell = "2.1.1"
 
 heapless = { git = "https://github.com/rust-embedded/heapless", rev = "4e31d3e604a15739d064ae729eb8fb8b5bda3b46", features = ["defmt-03"] }
 
