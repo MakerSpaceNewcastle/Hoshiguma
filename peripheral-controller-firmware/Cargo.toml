@@ -23,7 +23,7 @@ embassy-time = { version = "0.4.0", features = ["defmt"] }
 
 defmt = "0.3.8"
 defmt-rtt = "0.4.1"
-panic-probe = { version = "0.3.2", features = ["print-defmt"], optional = true }
+panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 
 embassy-sync = { git = "https://github.com/embassy-rs/embassy/", features = ["defmt"] }
 embassy-futures = "0.1.1"
