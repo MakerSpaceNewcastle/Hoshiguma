@@ -2,6 +2,31 @@ version: 2
 
 updates:
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: "."
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+
+  - package-ecosystem: cargo
+    directory: "cooler-firmware"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: cargo
+    directory: "diagnostic-cli"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: cargo
+    directory: "peripheral-controller-firmware"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: cargo
+    directory: "protocol"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: cargo
+    directory: "telemetry-module-firmware"
+    schedule:
+      interval: "monthly"
