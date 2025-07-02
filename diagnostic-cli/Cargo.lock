@@ -725,7 +725,8 @@ dependencies = [
 [[package]]
 name = "teeny-rpc"
 version = "0.1.0"
-source = "git+https://github.com/DanNixon/teeny-rpc#d4c540ab2e5a6f94ad6aa54c1528b2b79b49974c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b84256179245dcb67299cc07e2d6050c035601ced62f9e051b7914d7c7f280a"
 dependencies = [
  "log",
  "postcard",
