@@ -29,7 +29,7 @@ embassy-sync = { git = "https://github.com/embassy-rs/embassy/", features = ["de
 embassy-futures = "0.1.1"
 embassy-time-driver = "0.2.0"
 portable-atomic = { version = "1.9.0", features = ["critical-section"] }
-static_cell = "2.1.0"
+static_cell = "2.1.1"
 
 one-wire-bus = "0.1.1"
 ds18b20 = "0.1.1"
