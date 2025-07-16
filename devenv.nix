@@ -1,10 +1,4 @@
-{
-  pkgs,
-  inputs,
-  ...
-}: let
-  pkgs-unstable = import inputs.nixpkgs-unstable {system = pkgs.stdenv.system;};
-in {
+{pkgs, ...}: {
   packages = with pkgs; [
     # Code formatting tools
     treefmt
@@ -14,7 +8,7 @@ in {
 
     # Rust toolchain
     rustup
-    pkgs-unstable.probe-rs
+    probe-rs
 
     # Peripheral controller telemetry receiver
     pkg-config
