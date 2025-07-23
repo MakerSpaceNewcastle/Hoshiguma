@@ -14,17 +14,18 @@ use devices::{
     temperature_sensors::TemperatureSensors,
 };
 use embassy_executor::Spawner;
-use embassy_rp::{
-    gpio::{Input, Level, Output, Pull},
-    watchdog::Watchdog,
-};
 use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use pico_plc_bsp::peripherals::{self, PicoPlc};
-use portable_atomic as _;
+use pico_plc_bsp::{
+    embassy_rp::{
+        gpio::{Input, Level, Output, Pull},
+        watchdog::Watchdog,
+    },
+    peripherals::{self, Peri, PicoPlc},
+};
 
 assign_resources! {
     status: StatusResources {
@@ -155,7 +156,7 @@ fn system_information() -> SystemInformation {
 }
 
 fn boot_reason() -> BootReason {
-    let reason = embassy_rp::pac::WATCHDOG.reason().read();
+    let reason = pico_plc_bsp::embassy_rp::pac::WATCHDOG.reason().read();
 
     if reason.force() {
         BootReason::WatchdogForced

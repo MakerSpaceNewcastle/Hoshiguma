@@ -2,15 +2,15 @@ use crate::{machine::Machine, ControlCommunicationResources};
 use core::time::Duration as CoreDuration;
 use defmt::warn;
 use embassy_futures::select::{select, Either};
-use embassy_rp::{
-    bind_interrupts,
-    peripherals::UART0,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
-};
 use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::cooler::{
     rpc::{Request, Response},
     SERIAL_BAUD,
+};
+use pico_plc_bsp::embassy_rp::{
+    bind_interrupts,
+    peripherals::UART0,
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{server::Server, transport::embedded::EioTransport};
@@ -33,7 +33,7 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
     config.baudrate = SERIAL_BAUD;
 
     let uart = BufferedUart::new(
-        r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config,
+        r.uart, r.tx_pin, r.rx_pin, Irqs, tx_buffer, rx_buffer, config,
     );
 
     let transport = EioTransport::<_, 512>::new(uart);

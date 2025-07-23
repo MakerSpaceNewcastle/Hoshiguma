@@ -1,6 +1,6 @@
 use crate::CoolantReservoirLevelSensorResources;
-use embassy_rp::gpio::{Input, Level, Pull};
 use hoshiguma_protocol::cooler::types::CoolantReservoirLevel;
+use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) struct CoolantReservoirLevelSensor {
     low: Input<'static>,
