@@ -2,11 +2,6 @@ use crate::TelemetryResources;
 use core::time::Duration as CoreDuration;
 use defmt::warn;
 use embassy_futures::select::{select, Either};
-use embassy_rp::{
-    bind_interrupts,
-    peripherals::UART0,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
-};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Instant;
 use hoshiguma_protocol::{
@@ -15,6 +10,11 @@ use hoshiguma_protocol::{
         event::{Event, EventKind},
         rpc::{Request, Response},
     },
+};
+use pico_plc_bsp::embassy_rp::{
+    bind_interrupts,
+    peripherals::UART0,
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{server::Server, transport::embedded::EioTransport};
@@ -40,7 +40,7 @@ pub(super) async fn task(r: TelemetryResources) {
     config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
 
     let uart = BufferedUart::new(
-        r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buffer, rx_buffer, config,
+        r.uart, r.tx_pin, r.rx_pin, Irqs, tx_buffer, rx_buffer, config,
     );
 
     // Setup RPC server

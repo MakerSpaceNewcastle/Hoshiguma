@@ -1,13 +1,13 @@
 use crate::{
     polled_input::PolledInput, telemetry::queue_telemetry_event, AirAssistDemandDetectResources,
 };
-use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
 use hoshiguma_protocol::peripheral_controller::{
     event::{EventKind, ObservationEvent},
     types::AirAssistDemand,
 };
+use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirAssistDemand, 2> =
     Watch::new();

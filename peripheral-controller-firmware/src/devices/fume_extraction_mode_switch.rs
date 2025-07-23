@@ -1,13 +1,13 @@
 use crate::{
     polled_input::PolledInput, telemetry::queue_telemetry_event, FumeExtractionModeSwitchResources,
 };
-use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
 use hoshiguma_protocol::peripheral_controller::{
     event::{EventKind, ObservationEvent},
     types::FumeExtractionMode,
 };
+use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static FUME_EXTRACTION_MODE_CHANGED: Watch<
     CriticalSectionRawMutex,

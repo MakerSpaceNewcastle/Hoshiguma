@@ -15,16 +15,18 @@ use core::sync::atomic::Ordering;
 use defmt::{info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
-use embassy_rp::{
-    gpio::{Input, Level, Output, Pull},
-    multicore::{spawn_core1, Stack},
-    watchdog::Watchdog,
-};
 use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use pico_plc_bsp::peripherals::{self, PicoPlc};
+use pico_plc_bsp::{
+    embassy_rp::{
+        gpio::{Input, Level, Output, Pull},
+        multicore::{spawn_core1, Stack},
+        watchdog::Watchdog,
+    },
+    peripherals::{self, Peri, PicoPlc},
+};
 use portable_atomic::AtomicBool;
 use static_cell::StaticCell;
 
@@ -295,7 +297,7 @@ fn system_information() -> SystemInformation {
 }
 
 fn boot_reason() -> BootReason {
-    let reason = embassy_rp::pac::WATCHDOG.reason().read();
+    let reason = pico_plc_bsp::embassy_rp::pac::WATCHDOG.reason().read();
 
     if reason.force() {
         BootReason::WatchdogForced

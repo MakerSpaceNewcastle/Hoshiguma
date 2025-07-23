@@ -1,6 +1,6 @@
 use defmt::info;
-use embassy_rp::gpio::{Input, Level};
 use embassy_time::{Duration, Ticker};
+use pico_plc_bsp::embassy_rp::gpio::{Input, Level};
 
 pub(crate) struct PolledInput {
     pin: Input<'static>,

@@ -1,11 +1,11 @@
 use crate::{telemetry::queue_telemetry_event, StatusLampResources};
 use defmt::unwrap;
-use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_protocol::peripheral_controller::{
     event::{ControlEvent, EventKind},
     types::StatusLamp,
 };
+use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct StatusLampOutput {
     red: Output<'static>,
