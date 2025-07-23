@@ -2,13 +2,13 @@ use crate::FlowSensorResources;
 use core::cell::RefCell;
 use defmt::{info, unwrap};
 use embassy_executor::Spawner;
-use embassy_rp::{
-    gpio::Pull,
-    pwm::{Config as PwmConfig, InputMode, Pwm},
-};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Ticker};
 use hoshiguma_protocol::cooler::types::CoolantFlow;
+use pico_plc_bsp::embassy_rp::{
+    gpio::Pull,
+    pwm::{Config as PwmConfig, InputMode, Pwm},
+};
 
 static READING: Mutex<CriticalSectionRawMutex, RefCell<CoolantFlow>> =
     Mutex::new(RefCell::new(CoolantFlow::ZERO));
