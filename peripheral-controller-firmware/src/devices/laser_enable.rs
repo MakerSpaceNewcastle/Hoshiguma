@@ -1,10 +1,10 @@
 use crate::{telemetry::queue_telemetry_event, LaserEnableResources};
-use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_protocol::peripheral_controller::{
     event::{ControlEvent, EventKind},
     types::LaserEnable,
 };
+use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct LaserEnableOutput {
     relay: Output<'static>,

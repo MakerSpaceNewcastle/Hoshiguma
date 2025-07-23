@@ -8,11 +8,6 @@ use crate::{
 use core::time::Duration as CoreDuration;
 use defmt::{debug, unwrap, warn, Format};
 use embassy_futures::select::{select3, Either3};
-use embassy_rp::{
-    bind_interrupts,
-    peripherals::UART1,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
-};
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     pubsub::{PubSubChannel, Publisher, WaitResult},
@@ -35,6 +30,11 @@ use hoshiguma_protocol::{
         types::MonitorKind,
     },
     types::Severity,
+};
+use pico_plc_bsp::embassy_rp::{
+    bind_interrupts,
+    peripherals::UART1,
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
@@ -95,7 +95,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let mut config = UartConfig::default();
     config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
 
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
+    let uart = BufferedUart::new(r.uart, r.tx_pin, r.rx_pin, Irqs, tx_buf, rx_buf, config);
 
     // Setup RPC client
     let transport = EioTransport::<_, 512>::new(uart);

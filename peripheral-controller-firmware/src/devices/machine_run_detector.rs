@@ -1,13 +1,13 @@
 use crate::{
     polled_input::PolledInput, telemetry::queue_telemetry_event, MachineRunDetectResources,
 };
-use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
 use hoshiguma_protocol::peripheral_controller::{
     event::{EventKind, ObservationEvent},
     types::MachineRun,
 };
+use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static MACHINE_RUNNING_CHANGED: Watch<CriticalSectionRawMutex, MachineRun, 4> =
     Watch::new();
