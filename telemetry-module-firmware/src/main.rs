@@ -18,6 +18,7 @@ use embassy_rp::{
     gpio::{Level, Output},
     peripherals,
     watchdog::Watchdog,
+    Peri,
 };
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Instant, Timer};
