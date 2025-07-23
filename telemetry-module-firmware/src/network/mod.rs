@@ -21,7 +21,6 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::CriticalSectionMutex, pubsub::WaitResult};
 use embassy_time::Timer;
-use rand::RngCore;
 use reqwless::client::{HttpClient, TlsConfig, TlsVerify};
 use static_cell::StaticCell;
 use telemetry_tx::{

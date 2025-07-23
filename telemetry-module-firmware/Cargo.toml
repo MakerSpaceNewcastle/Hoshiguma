@@ -2,7 +2,7 @@
 name = "hoshiguma-telemetry-module"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 [features]
@@ -11,26 +11,25 @@ test-panic-on-core-0 = []
 
 [dependencies]
 cortex-m-rt = "0.7.3"
-embassy-rp = { version = "0.4.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
-assign-resources = "0.4.1"
+embassy-rp = { version = "0.6.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+assign-resources = "0.5.0"
 
 # Wifi
-cyw43 = { version = "0.3.0", features = ["defmt", "firmware-logs"] }
-cyw43-pio = { version = "0.4.0", features = ["defmt"] }
+cyw43 = { version = "0.4.0", features = ["defmt", "firmware-logs"] }
+cyw43-pio = { version = "0.5.1", features = ["defmt"] }
 embassy-net = { version = "0.7.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
-rand = { version = "0.8.5", default-features = false }
 
 embassy-executor = { version = "0.7.0", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
 embassy-time = { version = "0.4.0", features = ["defmt"] }
 
-embassy-embedded-hal = { version = "0.3.0", features = ["defmt"] }
+embassy-embedded-hal = { version = "0.3.1", features = ["defmt"] }
 embedded-nal-async = "0.8.0"
 
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
 
-embassy-sync = "0.6.0"
+embassy-sync = "0.7.0"
 embassy-futures = "0.1.1"
 portable-atomic = { version = "1.9.0", features = ["critical-section"] }
 static_cell = "2.1.0"

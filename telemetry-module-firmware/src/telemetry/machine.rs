@@ -38,7 +38,7 @@ pub(crate) async fn task(r: crate::TelemetryUartResources) {
     let mut config = UartConfig::default();
     config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
 
-    let uart = BufferedUart::new(r.uart, Irqs, r.tx_pin, r.rx_pin, tx_buf, rx_buf, config);
+    let uart = BufferedUart::new(r.uart, r.tx_pin, r.rx_pin, Irqs, tx_buf, rx_buf, config);
 
     // Setup RPC client
     let transport = EioTransport::<_, 512>::new(uart);
