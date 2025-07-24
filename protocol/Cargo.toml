@@ -2,7 +2,7 @@
 name = "hoshiguma-protocol"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 [features]
@@ -19,12 +19,10 @@ no-std = [
 ]
 
 [dependencies]
+defmt = { version = "1.0.1", optional = true }
 serde = { version = "1.0.210", default-features = false, features = ["derive"] }
 strum = { version = "0.27.1", default-features = false, features = ["derive"] }
 heapless = { git = "https://github.com/rust-embedded/heapless", rev = "4e31d3e604a15739d064ae729eb8fb8b5bda3b46", features = ["serde"] }
-
-# no-std dependencies
-defmt = { version = "1.0.1", optional = true }
 
 [lints.rust]
 unused_crate_dependencies = "deny"
