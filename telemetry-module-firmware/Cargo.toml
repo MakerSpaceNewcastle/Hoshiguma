@@ -47,7 +47,7 @@ mipidsi = "0.9.0"
 
 # Telemetry TX
 reqwless = { version = "0.13.0", features = ["defmt", "alloc"] }
-sntpc = { version = "0.5.2", features = ["defmt", "embassy-socket"], default-features = false }
+sntpc = { version = "0.6.0", features = ["defmt", "embassy-socket"], default-features = false }
 
 [patch.crates-io]
 embassy-executor    = { git = "https://github.com/embassy-rs/embassy", rev = "cee3b49344f47284cd2554c169aa3592929006da" }
