@@ -43,9 +43,9 @@ impl Runner for Cli {
 
                 loop {
                     match client.call(Request::GetOldestEvent, timeout).await {
-                        Ok(Response::GetOldestEvent(Some(event))) => info!("{:#?}", event),
+                        Ok(Response::GetOldestEvent(Some(event))) => info!("{event:#?}"),
                         Ok(Response::GetOldestEvent(None)) => {}
-                        Ok(response) => warn!("Unexpected response {:?}", response),
+                        Ok(response) => warn!("Unexpected response {response:?}"),
                         Err(e) => warn!("Command failed: {e}"),
                     }
 
@@ -69,7 +69,7 @@ impl Runner for Cli {
                     };
 
                     match client.call(request, timeout).await {
-                        Ok(response) => info!("Response: {:#?}", response),
+                        Ok(response) => info!("Response: {response:#?}"),
                         Err(e) => warn!("Command failed: {e}"),
                     }
 

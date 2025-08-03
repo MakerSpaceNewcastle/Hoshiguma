@@ -61,7 +61,7 @@ impl Runner for Cli {
             };
 
             match client.call(request, timeout).await {
-                Ok(response) => info!("Response: {:#?}", response),
+                Ok(response) => info!("Response: {response:#?}"),
                 Err(e) => warn!("Command failed: {e}"),
             }
 
