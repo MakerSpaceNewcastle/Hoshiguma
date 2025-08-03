@@ -49,7 +49,7 @@ impl DrawTypeDrawable for Time {
                 {
                     let age = crate::network::time::time_sync_age().as_secs();
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}s", age)).unwrap();
+                    s.write_fmt(format_args!("{age}s")).unwrap();
                     s
                 }
                 .as_ref(),

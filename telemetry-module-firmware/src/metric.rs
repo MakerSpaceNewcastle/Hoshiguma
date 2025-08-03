@@ -50,10 +50,7 @@ fn write_measurement_str_debug(
     value: impl core::fmt::Debug,
     timestamp: TimestampString,
 ) -> Result<(), core::fmt::Error> {
-    s.write_fmt(format_args!(
-        "{} value=\"{:?}\"{}",
-        measurement, value, timestamp
-    ))
+    s.write_fmt(format_args!("{measurement} value=\"{value:?}\"{timestamp}"))
 }
 
 fn write_measurement_numerical(
@@ -64,8 +61,7 @@ fn write_measurement_numerical(
     timestamp: TimestampString,
 ) -> Result<(), core::fmt::Error> {
     s.write_fmt(format_args!(
-        "{},unit={} value={}{}",
-        measurement, unit, value, timestamp
+        "{measurement},unit={unit} value={value}{timestamp}"
     ))
 }
 
@@ -76,8 +72,7 @@ fn write_temperature_sensors(
     timestamp: TimestampString,
 ) -> Result<(), core::fmt::Error> {
     s.write_fmt(format_args!(
-        "observation.temperature,unit=C,source={} ",
-        source
+        "observation.temperature,unit=C,source={source} "
     ))?;
 
     let mut any_previous_fields = false;
@@ -88,7 +83,7 @@ fn write_temperature_sensors(
                 s.write_char(',')?;
             }
 
-            s.write_fmt(format_args!("{}={}", name, value))?;
+            s.write_fmt(format_args!("{name}={value}"))?;
             any_previous_fields = true;
         }
     }
@@ -209,7 +204,7 @@ impl Metric {
                         if i > 0 {
                             s.write_char(',')?;
                         }
-                        s.write_fmt(format_args!("{}=\"{:?}\"", name, value))?;
+                        s.write_fmt(format_args!("{name}=\"{value:?}\""))?;
                     }
 
                     s.write_str(&timestamp)?;

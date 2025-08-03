@@ -40,7 +40,7 @@ impl DrawTypeDrawable for Telemetry {
                 {
                     let count = TELEMETRY_RX_SUCCESS.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", count)).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
                 }
                 .as_ref(),
@@ -57,7 +57,7 @@ impl DrawTypeDrawable for Telemetry {
                 {
                     let count = TELEMETRY_RX_FAIL.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", count)).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
                 }
                 .as_ref(),
@@ -74,7 +74,7 @@ impl DrawTypeDrawable for Telemetry {
                 {
                     let count = TELEMETRY_TX_BUFFER_SUBMISSIONS.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", count)).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
                 }
                 .as_ref(),
@@ -91,7 +91,7 @@ impl DrawTypeDrawable for Telemetry {
                 {
                     let count = TELEMETRY_TX_SUCCESS.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", count)).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
                 }
                 .as_ref(),
@@ -108,7 +108,7 @@ impl DrawTypeDrawable for Telemetry {
                 {
                     let count = TELEMETRY_TX_FAIL_BUFFER.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", count)).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
                 }
                 .as_ref(),
@@ -125,7 +125,7 @@ impl DrawTypeDrawable for Telemetry {
                 {
                     let count = TELEMETRY_TX_FAIL_NETWORK.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", count)).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
                 }
                 .as_ref(),
