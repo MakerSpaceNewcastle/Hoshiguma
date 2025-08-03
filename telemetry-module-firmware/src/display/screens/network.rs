@@ -78,7 +78,7 @@ impl DrawTypeDrawable for Network {
                     .and_then(|config| {
                         config.dns_servers.get(idx).map(|addr| {
                             let mut s = heapless::String::<16>::new();
-                            s.write_fmt(format_args!("{}", addr)).unwrap();
+                            s.write_fmt(format_args!("{addr}")).unwrap();
                             s
                         })
                     })
