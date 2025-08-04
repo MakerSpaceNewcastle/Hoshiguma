@@ -16,14 +16,14 @@ cortex-m-rt = "0.7.3"
 pico-plc-bsp = { git = "https://github.com/DanNixon/pico-plc", features = ["rp2040"] }
 assign-resources = "0.5.0"
 
-embassy-executor = { version = "0.7.0", features = ["task-arena-size-98304", "arch-cortex-m", "executor-thread", "defmt"] }
+embassy-executor = { version = "0.8.0", features = ["arch-cortex-m", "executor-thread", "defmt"] }
 embassy-time = { version = "0.4.0", features = ["defmt"] }
 
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 
-embassy-sync = { git = "https://github.com/embassy-rs/embassy/" }
+embassy-sync = "0.7.0"
 embassy-futures = "0.1.1"
 static_cell = "2.1.0"
 
