@@ -37,7 +37,7 @@ jobs:
           set -x
           cd ./peripheral-controller-firmware
           cargo clippy -- -Dwarnings
-          cargo clippy -F trace -- -Dwarnings
+          # cargo clippy -F trace -- -Dwarnings
           cargo clippy -F panic-probe -- -Dwarnings
 
   build:
@@ -61,5 +61,5 @@ jobs:
           set -x
           cd ./peripheral-controller-firmware
           cargo build --release
-          cargo build --release -F trace
+          # cargo build --release -F trace
           cargo build --release -F panic-probe

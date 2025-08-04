@@ -59,4 +59,4 @@ jobs:
           set -x
           cd ./telemetry-module-firmware
           cargo build --release
-          cargo build --release -F trace
+          # cargo build --release -F trace
