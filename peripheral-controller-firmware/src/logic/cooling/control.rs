@@ -125,18 +125,18 @@ async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const P
         CoolingEnabled::Enable => CoolantPumpState::Run,
     }))
     .await;
+
+    tx.publish(CoolerControlCommand::RadiatorFan(match enabled {
+        CoolingEnabled::Inhibit => RadiatorFanState::Idle,
+        CoolingEnabled::Enable => RadiatorFanState::Run,
+    }))
+    .await;
 }
 
 async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
     demand: CoolingDemand,
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
-    tx.publish(CoolerControlCommand::RadiatorFan(match demand {
-        CoolingDemand::Idle => RadiatorFanState::Idle,
-        CoolingDemand::Demand => RadiatorFanState::Run,
-    }))
-    .await;
-
     tx.publish(CoolerControlCommand::Compressor(match demand {
         CoolingDemand::Idle => CompressorState::Idle,
         CoolingDemand::Demand => CompressorState::Run,
