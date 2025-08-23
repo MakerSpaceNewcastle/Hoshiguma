@@ -1,5 +1,5 @@
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
+    mono_font::{ascii::FONT_10X20, MonoTextStyle},
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point, Primitive, WebColors},
     primitives::{Line, PrimitiveStyleBuilder, StrokeAlignment},
@@ -19,7 +19,7 @@ impl Drawable for BootScreen {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let text_style = MonoTextStyle::new(&FONT_6X10, Rgb565::CSS_BLACK);
+        let text_style = MonoTextStyle::new(&FONT_10X20, Rgb565::CSS_BLACK);
 
         let line_style = PrimitiveStyleBuilder::new()
             .stroke_color(Rgb565::CSS_YELLOW)

@@ -1,4 +1,4 @@
-use crate::network::telemetry_tx::BUFFER_FREE_SPACE_THRESHOLD;
+use crate::network::{telemetry_tx::BUFFER_FREE_SPACE_THRESHOLD, LinkState};
 use core::{fmt::Write, time::Duration};
 use defmt::Format;
 use heapless::String;
@@ -10,15 +10,16 @@ use hoshiguma_protocol::{
     types::{SystemInformation, TemperatureReading},
 };
 
-#[derive(Clone, Format)]
+#[derive(Clone)]
 pub(crate) struct Metric {
     timestamp: Option<Duration>,
     value: MetricKind,
 }
 
-#[derive(Clone, Format)]
+#[derive(Clone)]
 pub(crate) enum MetricKind {
     TelemetryModuleSystemInformation(SystemInformation),
+    TelemetryModuleNetworkState(LinkState),
     TelemetryModuleTime(TimeMetrics),
     TelemetryModuleStatistics(Statistics),
     PeripheralControllerEvent(EventKind),
@@ -133,6 +134,15 @@ impl Metric {
                     "telemetry_module.time.uptime",
                     "ms",
                     v.uptime_milliseconds,
+                    timestamp,
+                )?;
+            }
+            MetricKind::TelemetryModuleNetworkState(v) => {
+                write_measurement_numerical(
+                    &mut s,
+                    "telemetry_module.network.connection_age",
+                    "s",
+                    v.age().as_secs(),
                     timestamp,
                 )?;
             }
