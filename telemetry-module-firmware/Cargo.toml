@@ -10,44 +10,31 @@ trace = ["embassy-executor/trace"]
 test-panic-on-core-0 = []
 
 [dependencies]
-cortex-m-rt = "0.7.3"
-embassy-rp = { version = "0.7.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 assign-resources = "0.5.0"
-
-# Wifi
-cyw43 = { version = "0.4.0", features = ["defmt", "firmware-logs"] }
-cyw43-pio = { version = "0.6.0", features = ["defmt"] }
-embassy-net = { version = "0.7.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
-
-embassy-executor = { version = "0.8.0", features = ["arch-cortex-m", "executor-thread", "defmt"] }
-embassy-time = { version = "0.4.0", features = ["defmt"] }
-
-embassy-embedded-hal = { version = "0.4.0", features = ["defmt"] }
-embedded-nal-async = "0.8.0"
-
+cortex-m-rt = "0.7.3"
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
-panic-probe = { version = "1.0.0", features = ["print-defmt"] }
-
-embassy-sync = "0.7.0"
+embassy-embedded-hal = { version = "0.4.0", features = ["defmt"] }
+embassy-executor = { version = "0.8.0", features = ["arch-cortex-m", "executor-thread", "defmt"] }
 embassy-futures = "0.1.1"
-portable-atomic = { version = "1.9.0", features = ["critical-section"] }
-static_cell = "2.1.0"
-
-heapless = { git = "https://github.com/rust-embedded/heapless", rev = "4e31d3e604a15739d064ae729eb8fb8b5bda3b46", features = ["defmt-03"] }
-
-# Telemetry RX
-teeny-rpc = { version = "0.1.0", default-features = false, features = ["no-std"] }
-hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
-git-version = "0.3.5"
-
-# Display
+embassy-net = { version = "0.7.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
+embassy-net-wiznet = "0.2.0"
+embassy-rp = { version = "0.7.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-sync = "0.7.0"
+embassy-time = { version = "0.4.0", features = ["defmt"] }
 embedded-graphics = "0.8.1"
+embedded-hal = "1.0.0"
+embedded-nal-async = "0.8.0"
+git-version = "0.3.5"
+heapless = { git = "https://github.com/rust-embedded/heapless", rev = "4e31d3e604a15739d064ae729eb8fb8b5bda3b46", features = ["defmt-03"] }
+hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 mipidsi = "0.9.0"
-
-# Telemetry TX
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+portable-atomic = { version = "1.9.0", features = ["critical-section"] }
 reqwless = { version = "0.13.0", features = ["defmt", "alloc"] }
 sntpc = { version = "0.6.0", features = ["defmt", "embassy-socket"], default-features = false }
+static_cell = "2.1.0"
+teeny-rpc = { version = "0.1.0", default-features = false, features = ["no-std"] }
 
 [profile.release]
 debug = 2

@@ -1,7 +1,7 @@
-use super::info_background::INFO_PANE_BACKGROUND_COLOUR;
+use super::BACKGROUND_COLOUR;
 use crate::display::{DrawType, DrawTypeDrawable, LIGHT_TEXT_COLOUR, SCREEN_WIDTH};
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
+    mono_font::{ascii::FONT_8X13, MonoTextStyle},
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point, Primitive, Size, WebColors},
     primitives::{PrimitiveStyleBuilder, Rectangle},
@@ -24,7 +24,7 @@ pub(crate) struct Measurement<'a> {
 
 impl<'a> Measurement<'a> {
     fn height() -> i32 {
-        12
+        16
     }
 
     pub(crate) fn new(
@@ -43,7 +43,7 @@ impl<'a> Measurement<'a> {
 }
 
 const NAME_TEXT_STYLE: MonoTextStyle<'_, Rgb565> =
-    MonoTextStyle::new(&FONT_6X10, LIGHT_TEXT_COLOUR);
+    MonoTextStyle::new(&FONT_8X13, LIGHT_TEXT_COLOUR);
 
 impl DrawTypeDrawable for Measurement<'_> {
     type Color = Rgb565;
@@ -70,14 +70,14 @@ impl DrawTypeDrawable for Measurement<'_> {
                     Size::new(width as u32, Self::height() as u32),
                 );
                 let background_style = PrimitiveStyleBuilder::new()
-                    .fill_color(INFO_PANE_BACKGROUND_COLOUR)
+                    .fill_color(BACKGROUND_COLOUR)
                     .build();
                 region.into_styled(background_style).draw(target)?;
             }
         }
 
         let value_style = MonoTextStyle::new(
-            &FONT_6X10,
+            &FONT_8X13,
             if self.value.is_some() {
                 LIGHT_TEXT_COLOUR
             } else {

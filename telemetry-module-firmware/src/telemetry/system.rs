@@ -1,8 +1,11 @@
 use crate::{
     metric::{Metric, MetricKind, TimeMetrics},
-    network::telemetry_tx::{
-        METRIC_TX, TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER,
-        TELEMETRY_TX_FAIL_NETWORK, TELEMETRY_TX_SUCCESS,
+    network::{
+        telemetry_tx::{
+            METRIC_TX, TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER,
+            TELEMETRY_TX_FAIL_NETWORK, TELEMETRY_TX_SUCCESS,
+        },
+        LINK_STATE,
     },
     telemetry::machine::{TELEMETRY_RX_FAIL, TELEMETRY_RX_SUCCESS},
 };
@@ -26,6 +29,13 @@ pub(crate) async fn task() {
             .publish(Metric::new(
                 now,
                 MetricKind::TelemetryModuleSystemInformation(crate::system_information()),
+            ))
+            .await;
+
+        metric_tx
+            .publish(Metric::new(
+                now,
+                MetricKind::TelemetryModuleNetworkState(LINK_STATE.lock(|v| v.borrow().clone())),
             ))
             .await;
 

@@ -1,15 +1,15 @@
 #![no_std]
 #![no_main]
 
+mod buttons;
 mod display;
 mod metric;
 mod network;
 mod telemetry;
 #[cfg(feature = "trace")]
 mod trace;
-mod ui_button;
 
-use crate::ui_button::{UiEvent, UI_INPUTS};
+use crate::buttons::{UiEvent, UI_INPUTS};
 use defmt::{info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
@@ -27,35 +27,44 @@ use panic_probe as _;
 use portable_atomic as _;
 
 assign_resources::assign_resources! {
+    ethernet: EthernetResources {
+        miso: PIN_16,
+        mosi: PIN_19,
+        clk: PIN_18,
+        spi: SPI0,
+        tx_dma: DMA_CH0,
+        rx_dma: DMA_CH1,
+        cs_pin: PIN_17,
+        int_pin: PIN_21,
+        rst_pin: PIN_20,
+    },
     display: DisplayResources {
-        miso: PIN_12,
-        mosi: PIN_11,
-        clk: PIN_10,
-        cs: PIN_6,
-        dc: PIN_7,
-        rst: PIN_8,
-        led: PIN_9,
+        mosi_pin: PIN_11,
+        clk_pin: PIN_10,
+        dc_pin: PIN_13,
+        reset_pin: PIN_12,
+        backlight_pin: PIN_14,
         spi: SPI1,
+        backlight_pwm: PWM_SLICE7,
     }
-    telemetry_uart: TelemetryUartResources {
+    rs485_uart_1: Rs485Uart1Resources {
         tx_pin: PIN_0,
         rx_pin: PIN_1,
         uart: UART0,
     }
-    ui: UiResources {
-        button: PIN_17,
+    rs485_uart_2: Rs485Uart2Resources {
+        tx_pin: PIN_4,
+        rx_pin: PIN_5,
+        uart: UART1,
+    }
+    buttons: ButtonResources {
+        a_pin: PIN_6,
+        b_pin: PIN_7,
+        c_pin: PIN_8,
     }
     status: StatusResources {
         watchdog: WATCHDOG,
-        led: PIN_21,
-    }
-    wifi: WifiResources {
-        pwr: PIN_23,
-        cs: PIN_25,
-        pio: PIO0,
-        dio: PIN_24,
-        clk: PIN_29,
-        dma_ch: DMA_CH0,
+        led: PIN_25,
     }
 }
 
@@ -67,10 +76,10 @@ async fn main(spawner: Spawner) {
     info!("{}", system_information());
 
     unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
-    unwrap!(spawner.spawn(crate::network::task(r.wifi, spawner)));
+    unwrap!(spawner.spawn(crate::network::task(r.ethernet, spawner)));
     unwrap!(spawner.spawn(crate::telemetry::system::task()));
-    unwrap!(spawner.spawn(crate::telemetry::machine::task(r.telemetry_uart)));
-    unwrap!(spawner.spawn(crate::ui_button::task(r.ui)));
+    unwrap!(spawner.spawn(crate::telemetry::machine::task(r.rs485_uart_1)));
+    unwrap!(spawner.spawn(crate::buttons::task(r.buttons)));
     unwrap!(spawner.spawn(crate::display::task(r.display)));
 
     #[cfg(feature = "trace")]

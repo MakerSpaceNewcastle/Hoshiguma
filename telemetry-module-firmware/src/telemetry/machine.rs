@@ -23,7 +23,7 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-pub(crate) async fn task(r: crate::TelemetryUartResources) {
+pub(crate) async fn task(r: crate::Rs485Uart1Resources) {
     #[cfg(feature = "trace")]
     crate::trace::name_task("machine telemetry").await;
 

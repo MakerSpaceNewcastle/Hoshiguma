@@ -2,6 +2,7 @@ use crate::metric::Metric;
 use core::sync::atomic::Ordering;
 use defmt::{debug, warn, Format};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
+use embassy_time::Duration;
 use heapless::String;
 use portable_atomic::AtomicU64;
 use reqwless::{
@@ -55,20 +56,30 @@ impl MetricBuffer {
 
         debug!("Submitting metrics to {}", &TELEGRAF_URL);
 
-        let mut request = match http_client.request(Method::POST, TELEGRAF_URL).await {
-            Ok(request) => request
+        let mut request = match embassy_time::with_timeout(
+            Duration::from_secs(3),
+            http_client.request(Method::POST, TELEGRAF_URL),
+        )
+        .await
+        {
+            Ok(Ok(request)) => request
                 .basic_auth(TELEGRAF_USERNAME, TELEGRAF_PASSWORD)
                 .content_type(ContentType::TextPlain)
                 .body(self.body.as_bytes()),
-            Err(e) => {
+            Ok(Err(e)) => {
                 warn!("Metrics submission failed: {}", e);
+                TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                return;
+            }
+            Err(_) => {
+                warn!("Metrics submission failed: timeout");
                 TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
                 return;
             }
         };
 
-        match request.send(rx_buffer).await {
-            Ok(response) => {
+        match embassy_time::with_timeout(Duration::from_secs(3), request.send(rx_buffer)).await {
+            Ok(Ok(response)) => {
                 if response.status == StatusCode(204) {
                     debug!("Metrics submission success: status={}", response.status);
                 } else {
@@ -83,8 +94,13 @@ impl MetricBuffer {
                     return;
                 }
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 warn!("Metrics submission failed: {}", e);
+                TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                return;
+            }
+            Err(_) => {
+                warn!("Metrics submission failed: timeout");
                 TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
                 return;
             }
