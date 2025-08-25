@@ -11,6 +11,19 @@ module UsbConnector() {
   }
 }
 
+module EthernetConnector() {
+  // Connector
+  square([15.9, 13.2], center = true);
+
+  // Connector mounting holes
+  dx = 28 / 2;
+  for(x = [-dx, dx]) {
+    translate([x, 1.5]) {
+      circle(d = 3.1, $fn = 16);
+    }
+  }
+}
+
 module DinConnector() {
   // Connector
   circle(d = 16);
@@ -64,9 +77,9 @@ difference() {
     UsbConnector();
   }
 
-  // Cooler communication socket
+  // Network socket
   translate([-35, 20]) {
-    DinConnector();
+    EthernetConnector();
   }
 
   // Mains in socket
@@ -74,9 +87,9 @@ difference() {
     IecC14();
   }
 
-  // Old cooler power outlet
-  translate([30, 0]) {
-    DeathSocket();
+  // Cooler communication socket
+  translate([30, 20]) {
+    DinConnector();
   }
 
   // Fume extraction fan outlet
