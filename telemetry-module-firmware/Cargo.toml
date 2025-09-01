@@ -14,14 +14,14 @@ assign-resources = "0.5.0"
 cortex-m-rt = "0.7.3"
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
-embassy-embedded-hal = { version = "0.4.0", features = ["defmt"] }
-embassy-executor = { version = "0.8.0", features = ["arch-cortex-m", "executor-thread", "defmt"] }
+embassy-embedded-hal = { version = "0.5.0", features = ["defmt"] }
+embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "defmt"] }
 embassy-futures = "0.1.1"
-embassy-net = { version = "0.7.0", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
-embassy-net-wiznet = "0.2.0"
-embassy-rp = { version = "0.7.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-net = { version = "0.7.1", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
+embassy-net-wiznet = "0.2.1"
+embassy-rp = { version = "0.8.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 embassy-sync = "0.7.0"
-embassy-time = { version = "0.4.0", features = ["defmt"] }
+embassy-time = { version = "0.5.0", features = ["defmt"] }
 embedded-graphics = "0.8.1"
 embedded-hal = "1.0.0"
 embedded-nal-async = "0.8.0"
