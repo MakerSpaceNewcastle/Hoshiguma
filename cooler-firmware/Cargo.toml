@@ -23,8 +23,8 @@ defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 
-embassy-sync = "0.7.0"
-embassy-futures = "0.1.1"
+embassy-sync = "0.7.2"
+embassy-futures = "0.1.2"
 static_cell = "2.1.0"
 
 one-wire-bus = "0.1.1"
