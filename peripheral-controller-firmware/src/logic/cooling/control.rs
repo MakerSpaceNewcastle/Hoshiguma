@@ -1,7 +1,7 @@
 use crate::{
     changed::ObservedValue,
     devices::{
-        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND, COOLER_TEMPERATURES_READ},
+        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
         machine_power_detector::MACHINE_POWER_CHANGED,
     },
     logic::safety::monitor::MONITORS_CHANGED,
@@ -11,7 +11,7 @@ use defmt::{info, unwrap};
 use embassy_futures::select::{select4, Either4};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use hoshiguma_protocol::{
-    cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState, Temperatures},
+    cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
     peripheral_controller::{
         event::EventKind,
         types::{CoolingDemand, CoolingEnabled, MachinePower, MonitorKind},
@@ -20,36 +20,8 @@ use hoshiguma_protocol::{
 };
 
 pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();
-
-/// Temperature thresholds for radiator fan operation due to electronics heating
-const ELECTRONICS_TEMPERATURE_THRESHOLD: f32 = 30.0; // °C for onboard and ambient sensors
-const PUMP_MOTOR_TEMPERATURE_THRESHOLD: f32 = 60.0; // °C for coolant pump motor
-
-/// Check if the cooler electronics are hot and require radiator fan for cooling
-fn are_electronics_hot(temperatures: &Temperatures) -> bool {
-    // Check onboard temperature sensor
-    if let Ok(temp) = temperatures.onboard {
-        if temp > ELECTRONICS_TEMPERATURE_THRESHOLD {
-            return true;
-        }
-    }
-
-    // Check internal ambient temperature
-    if let Ok(temp) = temperatures.internal_ambient {
-        if temp > ELECTRONICS_TEMPERATURE_THRESHOLD {
-            return true;
-        }
-    }
-
-    // Check coolant pump motor temperature
-    if let Ok(temp) = temperatures.coolant_pump_motor {
-        if temp > PUMP_MOTOR_TEMPERATURE_THRESHOLD {
-            return true;
-        }
-    }
-
-    false
-}
+pub(crate) static ELECTRONICS_COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> =
+    Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
@@ -58,22 +30,15 @@ pub(crate) async fn task() {
 
     let mut machine_power_rx = MACHINE_POWER_CHANGED.receiver().unwrap();
     let mut cooling_demand_rx = COOLING_DEMAND.receiver().unwrap();
+    let mut electronics_demand_rx = ELECTRONICS_COOLING_DEMAND.receiver().unwrap();
     let mut monitor_rx = MONITORS_CHANGED.receiver().unwrap();
-    let mut temperatures_rx = COOLER_TEMPERATURES_READ.receiver().unwrap();
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
 
     let mut machine_power = MachinePower::Off;
     let mut external_demand = CoolingDemand::Idle;
+    let mut electronics_demand = CoolingDemand::Idle;
     let mut comms_is_ok = false;
-    let mut temperatures = Temperatures {
-        onboard: Err(()),
-        internal_ambient: Err(()),
-        reservoir_evaporator_coil: Err(()),
-        reservoir_left_side: Err(()),
-        reservoir_right_side: Err(()),
-        coolant_pump_motor: Err(()),
-    };
 
     let mut enabled = ObservedValue::new(CoolingEnabled::Inhibit);
     let mut demand = ObservedValue::new(CoolingDemand::Idle);
@@ -82,8 +47,8 @@ pub(crate) async fn task() {
         match select4(
             machine_power_rx.changed(),
             cooling_demand_rx.changed(),
+            electronics_demand_rx.changed(),
             monitor_rx.changed(),
-            temperatures_rx.changed(),
         )
         .await
         {
@@ -112,11 +77,11 @@ pub(crate) async fn task() {
                 )
                 .await;
 
-                // Update radiator fan based on new machine power state and current temperatures
+                // Update radiator fan based on new machine power state
                 send_radiator_fan_command(
                     &machine_power,
                     &external_demand,
-                    &temperatures,
+                    &electronics_demand,
                     &cooler_command_tx,
                 )
                 .await;
@@ -132,16 +97,28 @@ pub(crate) async fn task() {
                 )
                 .await;
 
-                // Update radiator fan based on new cooling demand and current temperatures
+                // Update radiator fan based on new cooling demand
                 send_radiator_fan_command(
                     &machine_power,
                     &external_demand,
-                    &temperatures,
+                    &electronics_demand,
                     &cooler_command_tx,
                 )
                 .await;
             }
-            Either4::Third(monitors) => {
+            Either4::Third(new_electronics_demand) => {
+                electronics_demand = new_electronics_demand;
+
+                // Update radiator fan based on new electronics cooling demand
+                send_radiator_fan_command(
+                    &machine_power,
+                    &external_demand,
+                    &electronics_demand,
+                    &cooler_command_tx,
+                )
+                .await;
+            }
+            Either4::Fourth(monitors) => {
                 let comms_is_ok_now =
                     *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
                 if !comms_is_ok && comms_is_ok_now {
@@ -152,24 +129,12 @@ pub(crate) async fn task() {
                     send_radiator_fan_command(
                         &machine_power,
                         &external_demand,
-                        &temperatures,
+                        &electronics_demand,
                         &cooler_command_tx,
                     )
                     .await;
                 }
                 comms_is_ok = comms_is_ok_now;
-            }
-            Either4::Fourth(new_temperatures) => {
-                temperatures = new_temperatures;
-
-                // Update radiator fan based on new temperature readings
-                send_radiator_fan_command(
-                    &machine_power,
-                    &external_demand,
-                    &temperatures,
-                    &cooler_command_tx,
-                )
-                .await;
             }
         }
     }
@@ -216,25 +181,25 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
     .await;
 }
 
-/// Send radiator fan command based on cooling demand and electronics temperature
+/// Send radiator fan command based on cooling demand and electronics cooling demand
 ///
 /// The radiator fan should run when either:
 /// 1. There is a demand for cooling, OR
-/// 2. The cooler electronics are hot (temperature thresholds exceeded)
+/// 2. There is a demand for electronics cooling
 async fn send_radiator_fan_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
     machine_power: &MachinePower,
     cooling_demand: &CoolingDemand,
-    temperatures: &Temperatures,
+    electronics_demand: &CoolingDemand,
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
     let should_run = match machine_power {
         MachinePower::Off => {
-            // When machine is off, only run fan if electronics are hot
-            are_electronics_hot(temperatures)
+            // When machine is off, only run fan if electronics need cooling
+            *electronics_demand == CoolingDemand::Demand
         }
         MachinePower::On => {
-            // When machine is on, run fan if there's cooling demand OR electronics are hot
-            *cooling_demand == CoolingDemand::Demand || are_electronics_hot(temperatures)
+            // When machine is on, run fan if there's cooling demand OR electronics need cooling
+            *cooling_demand == CoolingDemand::Demand || *electronics_demand == CoolingDemand::Demand
         }
     };
 
