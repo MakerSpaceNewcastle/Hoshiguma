@@ -46,7 +46,7 @@ impl Monitors {
         self.inner.get_mut(&monitor).unwrap()
     }
 
-    pub fn iter(&self) -> heapless::linear_map::Iter<MonitorKind, Severity> {
+    pub fn iter(&self) -> heapless::linear_map::Iter<'_, MonitorKind, Severity> {
         self.inner.iter()
     }
 
