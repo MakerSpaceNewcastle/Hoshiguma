@@ -33,21 +33,21 @@ fn are_electronics_hot(temperatures: &Temperatures) -> bool {
             return true;
         }
     }
-    
+
     // Check internal ambient temperature
     if let Ok(temp) = temperatures.internal_ambient {
         if temp > ELECTRONICS_TEMPERATURE_THRESHOLD {
             return true;
         }
     }
-    
+
     // Check coolant pump motor temperature
     if let Ok(temp) = temperatures.coolant_pump_motor {
         if temp > PUMP_MOTOR_TEMPERATURE_THRESHOLD {
             return true;
         }
     }
-    
+
     false
 }
 
@@ -217,7 +217,7 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
 }
 
 /// Send radiator fan command based on cooling demand and electronics temperature
-/// 
+///
 /// The radiator fan should run when either:
 /// 1. There is a demand for cooling, OR
 /// 2. The cooler electronics are hot (temperature thresholds exceeded)
