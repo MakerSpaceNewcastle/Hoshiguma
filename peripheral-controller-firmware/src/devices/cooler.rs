@@ -316,10 +316,8 @@ impl TemperaturesExt for Temperatures {
         let sensors = [
             &self.onboard,
             &self.internal_ambient,
-            &self.reservoir_evaporator_coil,
-            &self.reservoir_left_side,
-            &self.reservoir_right_side,
             &self.coolant_pump_motor,
+            &self.reservoir,
         ];
 
         sensors.iter().any(|i| i.is_err())

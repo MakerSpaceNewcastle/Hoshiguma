@@ -67,14 +67,10 @@ pub(crate) async fn task() {
         }
 
         // Check coolant reservoir temperatures
-        if let Some(new_severity) = [
-            temperature_to_state(20.0, 25.0, state.reservoir_evaporator_coil),
-            temperature_to_state(20.0, 25.0, state.reservoir_left_side),
-            temperature_to_state(20.0, 25.0, state.reservoir_right_side),
-        ]
-        .iter()
-        .flatten()
-        .max()
+        if let Some(new_severity) = [temperature_to_state(20.0, 25.0, state.reservoir)]
+            .iter()
+            .flatten()
+            .max()
         {
             reservoir_severity
                 .update_and_async(new_severity.clone(), |severity| async {

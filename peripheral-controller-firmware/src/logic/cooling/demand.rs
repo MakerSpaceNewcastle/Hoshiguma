@@ -24,7 +24,7 @@ pub(crate) async fn task() {
     loop {
         let temperatures = temperatures_rx.changed().await;
 
-        if let Ok(res_flow_loop_temperature) = temperatures.reservoir_left_side {
+        if let Ok(res_flow_loop_temperature) = temperatures.reservoir {
             // Get the new demand based on temperature alone, with hysteresis
             let new_demand = if res_flow_loop_temperature > UPPER_TEMPERATURE {
                 Some(CoolingDemand::Demand)
