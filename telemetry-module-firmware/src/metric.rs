@@ -279,10 +279,8 @@ impl Metric {
                         &[
                             ("onboard", v.onboard),
                             ("internal_ambient", v.internal_ambient),
-                            ("reservoir_evaporator_coil", v.reservoir_evaporator_coil),
-                            ("reservoir_left_side", v.reservoir_left_side),
-                            ("reservoir_right_side", v.reservoir_right_side),
                             ("coolant_pump_motor", v.coolant_pump_motor),
+                            ("reservoir", v.reservoir),
                         ],
                         timestamp,
                     )?;

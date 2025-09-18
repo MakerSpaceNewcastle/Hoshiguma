@@ -20,12 +20,9 @@ pub struct Temperatures {
     pub onboard: TemperatureReading,
     pub internal_ambient: TemperatureReading,
 
-    pub reservoir_evaporator_coil: TemperatureReading,
-
-    pub reservoir_left_side: TemperatureReading,
-    pub reservoir_right_side: TemperatureReading,
-
     pub coolant_pump_motor: TemperatureReading,
+
+    pub reservoir: TemperatureReading,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -13,10 +13,8 @@ static READING: Mutex<CriticalSectionRawMutex, RefCell<Temperatures>> =
     Mutex::new(RefCell::new(Temperatures {
         onboard: Err(()),
         internal_ambient: Err(()),
-        reservoir_evaporator_coil: Err(()),
-        reservoir_left_side: Err(()),
-        reservoir_right_side: Err(()),
         coolant_pump_motor: Err(()),
+        reservoir: Err(()),
     }));
 
 #[embassy_executor::task]
@@ -36,10 +34,8 @@ async fn task(r: OnewireResources) {
 
     let onboard_sensor = Ds18b20::new::<()>(Address(7949810265475014952)).unwrap();
     let internal_ambient_sensor = Ds18b20::new::<()>(Address(6676982032140362024)).unwrap();
-    let reservoir_evaporator_coil = Ds18b20::new::<()>(Address(14339461214714576936)).unwrap();
-    let reservoir_left_side = Ds18b20::new::<()>(Address(9079256849946264616)).unwrap();
-    let reservoir_right_side = Ds18b20::new::<()>(Address(9943947978400069416)).unwrap();
-    let coolant_pump_motor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
+    let coolant_pump_motor_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
+    let reservoir_sensor = Ds18b20::new::<()>(Address(1945555040219935784)).unwrap();
 
     loop {
         ticker.next().await;
@@ -58,10 +54,8 @@ async fn task(r: OnewireResources) {
         let readings = Temperatures {
             onboard: read_sensor(&onboard_sensor),
             internal_ambient: read_sensor(&internal_ambient_sensor),
-            reservoir_evaporator_coil: read_sensor(&reservoir_evaporator_coil),
-            reservoir_left_side: read_sensor(&reservoir_left_side),
-            reservoir_right_side: read_sensor(&reservoir_right_side),
-            coolant_pump_motor: read_sensor(&coolant_pump_motor),
+            coolant_pump_motor: read_sensor(&coolant_pump_motor_sensor),
+            reservoir: read_sensor(&reservoir_sensor),
         };
 
         info!("{}", readings);
