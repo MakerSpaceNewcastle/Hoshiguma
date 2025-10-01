@@ -342,9 +342,9 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "embassy-embedded-hal"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1611b7a7ab5d1fbed84c338df26d56fd9bded58006ebb029075112ed2c5e039"
+checksum = "554e3e840696f54b4c9afcf28a0f24da431c927f4151040020416e7393d6d0d8"
 dependencies = [
  "embassy-futures",
  "embassy-hal-internal",
@@ -359,15 +359,16 @@ dependencies = [
 
 [[package]]
 name = "embassy-executor"
-version = "0.8.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f102d5e04befe3ea74b6f41a0e26218740124636eb2f59e1cc215b5839b96df2"
+checksum = "06070468370195e0e86f241c8e5004356d696590a678d47d6676795b2e439c6b"
 dependencies = [
  "cortex-m",
  "critical-section",
  "defmt 1.0.1",
  "document-features",
  "embassy-executor-macros",
+ "embassy-executor-timer-queue",
 ]
 
 [[package]]
@@ -381,6 +382,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "embassy-executor-timer-queue"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fc328bf943af66b80b98755db9106bf7e7471b0cf47dc8559cd9a6be504cc9c"
 
 [[package]]
 name = "embassy-futures"
@@ -402,9 +409,9 @@ dependencies = [
 
 [[package]]
 name = "embassy-rp"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97c452bbeacf409444a953a834de4a5682b906d2af2703a4f1d68d741f992224"
+checksum = "1a284935af0a869de3fa14af74b5f932389dd66d7048012f1083b06f38d05399"
 dependencies = [
  "atomic-polyfill",
  "cfg-if",
@@ -417,7 +424,7 @@ dependencies = [
  "embassy-futures",
  "embassy-hal-internal",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.5.0",
  "embassy-time-driver",
  "embassy-time-queue-utils",
  "embassy-usb-driver",
@@ -462,13 +469,29 @@ checksum = "f820157f198ada183ad62e0a66f554c610cdcd1a9f27d4b316358103ced7a1f8"
 dependencies = [
  "cfg-if",
  "critical-section",
- "defmt 0.3.100",
  "document-features",
  "embassy-time-driver",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
  "futures-util",
+]
+
+[[package]]
+name = "embassy-time"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4fa65b9284d974dad7a23bb72835c4ec85c0b540d86af7fc4098c88cff51d65"
+dependencies = [
+ "cfg-if",
+ "critical-section",
+ "defmt 1.0.1",
+ "document-features",
+ "embassy-time-driver",
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "futures-core",
 ]
 
 [[package]]
@@ -482,11 +505,11 @@ dependencies = [
 
 [[package]]
 name = "embassy-time-queue-utils"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59b742d6fec7afcfa77c91b476520627151da3735fca6373b287c4c94b69e171"
+checksum = "80e2ee86063bd028a420a5fb5898c18c87a8898026da1d4c852af2c443d0a454"
 dependencies = [
- "embassy-executor",
+ "embassy-executor-timer-queue",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -734,7 +757,7 @@ dependencies = [
  "embassy-executor",
  "embassy-futures",
  "embassy-sync",
- "embassy-time",
+ "embassy-time 0.5.0",
  "git-version",
  "hoshiguma-protocol",
  "one-wire-bus",
@@ -981,7 +1004,7 @@ checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
 [[package]]
 name = "pico-plc-bsp"
 version = "0.1.0"
-source = "git+https://github.com/DanNixon/pico-plc#884d18a6c678fd1a1f9453b51da200c5062dc2d3"
+source = "git+https://github.com/DanNixon/pico-plc#4f7a3f0ae9bc2f35d2adf0af07f8615b6e6e88eb"
 dependencies = [
  "embassy-rp",
  "one-wire-bus",
@@ -1374,7 +1397,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b84256179245dcb67299cc07e2d6050c035601ced62f9e051b7914d7c7f280a"
 dependencies = [
  "defmt 1.0.1",
- "embassy-time",
+ "embassy-time 0.4.0",
  "embedded-io-async",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "postcard",
