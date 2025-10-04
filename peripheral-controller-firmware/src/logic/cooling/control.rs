@@ -8,7 +8,7 @@ use crate::{
     telemetry::queue_telemetry_event,
 };
 use defmt::{info, unwrap};
-use embassy_futures::select::{select3, Either3};
+use embassy_futures::select::{select4, Either4};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use hoshiguma_protocol::{
     cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
@@ -20,6 +20,8 @@ use hoshiguma_protocol::{
 };
 
 pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();
+pub(crate) static ELECTRONICS_COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> =
+    Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
@@ -28,26 +30,29 @@ pub(crate) async fn task() {
 
     let mut machine_power_rx = MACHINE_POWER_CHANGED.receiver().unwrap();
     let mut cooling_demand_rx = COOLING_DEMAND.receiver().unwrap();
+    let mut electronics_demand_rx = ELECTRONICS_COOLING_DEMAND.receiver().unwrap();
     let mut monitor_rx = MONITORS_CHANGED.receiver().unwrap();
 
     let cooler_command_tx = unwrap!(COOLER_CONTROL_COMMAND.publisher());
 
     let mut machine_power = MachinePower::Off;
     let mut external_demand = CoolingDemand::Idle;
+    let mut electronics_demand = CoolingDemand::Idle;
     let mut comms_is_ok = false;
 
     let mut enabled = ObservedValue::new(CoolingEnabled::Inhibit);
     let mut demand = ObservedValue::new(CoolingDemand::Idle);
 
     loop {
-        match select3(
+        match select4(
             machine_power_rx.changed(),
             cooling_demand_rx.changed(),
+            electronics_demand_rx.changed(),
             monitor_rx.changed(),
         )
         .await
         {
-            Either3::First(power) => {
+            Either4::First(power) => {
                 machine_power = power.clone();
 
                 enabled
@@ -71,8 +76,17 @@ pub(crate) async fn task() {
                     &external_demand,
                 )
                 .await;
+
+                // Update radiator fan based on new machine power state
+                send_radiator_fan_command(
+                    &machine_power,
+                    &external_demand,
+                    &electronics_demand,
+                    &cooler_command_tx,
+                )
+                .await;
             }
-            Either3::Second(new_demand) => {
+            Either4::Second(new_demand) => {
                 external_demand = new_demand;
 
                 set_demand(
@@ -82,14 +96,43 @@ pub(crate) async fn task() {
                     &external_demand,
                 )
                 .await;
+
+                // Update radiator fan based on new cooling demand
+                send_radiator_fan_command(
+                    &machine_power,
+                    &external_demand,
+                    &electronics_demand,
+                    &cooler_command_tx,
+                )
+                .await;
             }
-            Either3::Third(monitors) => {
+            Either4::Third(new_electronics_demand) => {
+                electronics_demand = new_electronics_demand;
+
+                // Update radiator fan based on new electronics cooling demand
+                send_radiator_fan_command(
+                    &machine_power,
+                    &external_demand,
+                    &electronics_demand,
+                    &cooler_command_tx,
+                )
+                .await;
+            }
+            Either4::Fourth(monitors) => {
                 let comms_is_ok_now =
                     *monitors.get(MonitorKind::CoolerCommunicationFault) == Severity::Normal;
                 if !comms_is_ok && comms_is_ok_now {
                     info!("Communications restored, resending cooler commands");
                     send_cooler_enable_command(enabled.clone().unwrap(), &cooler_command_tx).await;
                     send_cooler_demand_command(demand.clone().unwrap(), &cooler_command_tx).await;
+                    // Resend radiator fan command based on current state
+                    send_radiator_fan_command(
+                        &machine_power,
+                        &external_demand,
+                        &electronics_demand,
+                        &cooler_command_tx,
+                    )
+                    .await;
                 }
                 comms_is_ok = comms_is_ok_now;
             }
@@ -125,12 +168,6 @@ async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const P
         CoolingEnabled::Enable => CoolantPumpState::Run,
     }))
     .await;
-
-    tx.publish(CoolerControlCommand::RadiatorFan(match enabled {
-        CoolingEnabled::Inhibit => RadiatorFanState::Idle,
-        CoolingEnabled::Enable => RadiatorFanState::Run,
-    }))
-    .await;
 }
 
 async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
@@ -142,4 +179,36 @@ async fn send_cooler_demand_command<const CAP: usize, const SUBS: usize, const P
         CoolingDemand::Demand => CompressorState::Run,
     }))
     .await;
+}
+
+/// Send radiator fan command based on cooling demand and electronics cooling demand
+///
+/// The radiator fan should run when either:
+/// 1. There is a demand for cooling, OR
+/// 2. There is a demand for electronics cooling
+async fn send_radiator_fan_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
+    machine_power: &MachinePower,
+    cooling_demand: &CoolingDemand,
+    electronics_demand: &CoolingDemand,
+    tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
+) {
+    let should_run = match machine_power {
+        MachinePower::Off => {
+            // When machine is off, only run fan if electronics need cooling
+            *electronics_demand == CoolingDemand::Demand
+        }
+        MachinePower::On => {
+            // When machine is on, run fan if there's cooling demand OR electronics need cooling
+            *cooling_demand == CoolingDemand::Demand || *electronics_demand == CoolingDemand::Demand
+        }
+    };
+
+    let fan_state = if should_run {
+        RadiatorFanState::Run
+    } else {
+        RadiatorFanState::Idle
+    };
+
+    tx.publish(CoolerControlCommand::RadiatorFan(fan_state))
+        .await;
 }
