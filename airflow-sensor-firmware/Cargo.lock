@@ -745,12 +745,12 @@ dependencies = [
  "defmt-rtt",
  "embassy-executor",
  "embassy-futures",
+ "embassy-rp",
  "embassy-sync",
  "embassy-time 0.5.0",
  "git-version",
  "hoshiguma-protocol",
  "panic-probe",
- "pico-plc-bsp",
  "static_cell",
  "teeny-rpc",
 ]
@@ -917,15 +917,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "one-wire-bus"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9761e13074f8f916702c1a1dbe0eda3fb8478704db00493f5a5c27ed5847710"
-dependencies = [
- "embedded-hal 0.2.7",
-]
-
-[[package]]
 name = "panic-probe"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -988,16 +979,6 @@ name = "pico-args"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
-
-[[package]]
-name = "pico-plc-bsp"
-version = "0.1.0"
-source = "git+https://github.com/DanNixon/pico-plc#4f7a3f0ae9bc2f35d2adf0af07f8615b6e6e88eb"
-dependencies = [
- "embassy-rp",
- "one-wire-bus",
- "portable-atomic",
-]
 
 [[package]]
 name = "pin-project-lite"
@@ -1064,9 +1045,6 @@ name = "portable-atomic"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f84267b20a16ea918e43c6a88433c2d54fa145c92a811b5b047ccbe153674483"
-dependencies = [
- "critical-section",
-]
 
 [[package]]
 name = "postcard"
