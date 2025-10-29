@@ -7,17 +7,17 @@ use assign_resources::assign_resources;
 use defmt::{info, unwrap};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
+use embassy_rp::{
+    gpio::{Level, Output},
+    peripherals,
+    watchdog::Watchdog,
+    Peri,
+};
 use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use pico_plc_bsp::{
-    embassy_rp::{
-        gpio::{Level, Output},
-        watchdog::Watchdog,
-    },
-    peripherals::{self, Peri, PicoPlc},
-};
+use portable_atomic as _;
 
 assign_resources! {
     status: StatusResources {
@@ -26,15 +26,15 @@ assign_resources! {
     },
     communication: CommunicationResources {
         uart: UART0,
-        tx_pin: IO_0,
-        rx_pin: IO_1,
+        tx_pin: PIN_0,
+        rx_pin: PIN_1,
     },
 }
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    let p = unsafe { PicoPlc::steal() };
+    let p = unsafe { embassy_rp::Peripherals::steal() };
     let r = split_resources!(p);
 
     let mut watchdog = Watchdog::new(r.status.watchdog);
@@ -54,7 +54,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let p = PicoPlc::default();
+    let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
     info!("{}", system_information());
@@ -67,7 +67,7 @@ async fn main(spawner: Spawner) {
 }
 
 #[embassy_executor::task]
-async fn watchdog_feed_task(r: StatusResources) {
+async fn watchdog_feed_task(r: StatusResources) -> ! {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
@@ -89,7 +89,7 @@ fn system_information() -> SystemInformation {
 }
 
 fn boot_reason() -> BootReason {
-    let reason = pico_plc_bsp::embassy_rp::pac::WATCHDOG.reason().read();
+    let reason = embassy_rp::pac::WATCHDOG.reason().read();
 
     if reason.force() {
         BootReason::WatchdogForced
