@@ -14,26 +14,18 @@ bind_interrupts!(struct Irqs {
 #[embassy_executor::task]
 pub(super) async fn task(r: Sdp810Resources) -> ! {
     let mut config = Config::default();
-    config.frequency = 400_000;
-    config.sda_pullup = true;
-    config.scl_pullup = true;
-    let mut i2c = I2c::new_async(r.i2c, r.scl_pin, r.sda_pin, Irqs, config);
+    config.frequency = 100_000;
+    // let mut i2c = I2c::new_async(r.i2c, r.scl_pin, r.sda_pin, Irqs, config);
+    let mut i2c = I2c::new_blocking(r.i2c, r.scl_pin, r.sda_pin, config);
 
     Timer::after_millis(500).await;
 
-    sensirion_i2c::i2c_async::write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1)
-        .await
-        .unwrap();
-    sensirion_i2c::i2c_async::write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_2)
-        .await
-        .unwrap();
-    let mut buff = [0u8; 20];
-    i2c.read_async(DEVICE_ADDRESS, &mut buff).await.unwrap();
-    info!("got bytes: {}", buff);
+    sensirion_i2c::i2c::write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1).unwrap();
+    sensirion_i2c::i2c::write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_2).unwrap();
 
-    i2c.write_async(DEVICE_ADDRESS, CMD_CONT_MASS_FLOW_AVG.to_be_bytes())
-        .await
-        .unwrap();
+    let mut buff = [0u8; 18];
+    sensirion_i2c::i2c::read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff);
+    info!("got bytes: {}", buff);
 
     loop {
         Timer::after_secs(1).await;

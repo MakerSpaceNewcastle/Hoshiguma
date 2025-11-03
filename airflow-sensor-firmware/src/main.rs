@@ -76,7 +76,7 @@ async fn watchdog_feed_task(r: StatusResources) -> ! {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(600));
+    watchdog.start(Duration::from_millis(2000));
 
     loop {
         watchdog.feed();
