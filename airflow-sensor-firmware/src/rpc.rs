@@ -20,7 +20,7 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine) {
+pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine) -> ! {
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];

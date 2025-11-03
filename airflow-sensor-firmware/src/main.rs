@@ -2,6 +2,7 @@
 #![no_main]
 
 // mod rpc;
+mod sdp810;
 
 use assign_resources::assign_resources;
 use defmt::{info, unwrap};
@@ -28,6 +29,11 @@ assign_resources! {
         uart: UART0,
         tx_pin: PIN_0,
         rx_pin: PIN_1,
+    },
+    sdp810: Sdp810Resources {
+        i2c: I2C1,
+        sda_pin: PIN_2,
+        scl_pin: PIN_3,
     },
 }
 
@@ -59,11 +65,10 @@ async fn main(spawner: Spawner) {
 
     info!("{}", system_information());
 
+    spawner.must_spawn(watchdog_feed_task(r.status));
+    spawner.must_spawn(sdp810::task(r.sdp810));
     // TODO
-
-    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
-
-    // unwrap!(spawner.spawn(rpc::task(r.communication, machine)));
+    // spawner.must_spawn(rpc::task(r.communication, machine));
 }
 
 #[embassy_executor::task]
