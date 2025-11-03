@@ -5,7 +5,7 @@
 mod sdp810;
 
 use assign_resources::assign_resources;
-use defmt::{info, unwrap};
+use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_rp::{
