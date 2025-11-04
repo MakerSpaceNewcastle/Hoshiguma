@@ -1,5 +1,5 @@
 flange_outer_diameter = 50;
-flange_thickness = 5;
+flange_thickness = 2;
 
 flange_mounting_hole_diameter = 3.5;
 flange_mounting_hole_offset = 20;
