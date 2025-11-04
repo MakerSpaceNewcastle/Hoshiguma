@@ -26,14 +26,20 @@ pub(super) async fn task(r: Sdp810Resources) -> ! {
     Timer::after_millis(100).await;
 
     // Get sensor product data
-    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1).await.unwrap();
-    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_2).await.unwrap();
+    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1)
+        .await
+        .unwrap();
+    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_2)
+        .await
+        .unwrap();
 
     let mut buff = [0u8; 18];
     read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff).await;
     debug!("Got product ID bytes: {}", buff);
 
-    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_CONT_MASS_FLOW_AVG).await.unwrap();
+    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_CONT_MASS_FLOW_AVG)
+        .await
+        .unwrap();
 
     let mut tick = Ticker::every(Duration::from_millis(100));
 

@@ -1,4 +1,4 @@
-use super::types::{CompressorState, CoolantPumpState, RadiatorFanState, State};
+use super::types::Measurement;
 use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
 
@@ -17,5 +17,5 @@ pub enum Response {
     Ping(u32),
     GetSystemInformation(SystemInformation),
 
-    GetMeasurement(State),
+    GetMeasurement(Measurement),
 }
