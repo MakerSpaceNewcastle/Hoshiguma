@@ -4,7 +4,7 @@ use super::types::{
     MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
 use crate::{
-    accessory_bus::cooler::types::{
+    accessories::cooler::types::{
         CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel, RadiatorFanState,
         Temperatures as CoolerTemperatures,
     },
