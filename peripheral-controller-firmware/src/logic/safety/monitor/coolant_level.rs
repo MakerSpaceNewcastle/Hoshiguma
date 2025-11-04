@@ -2,7 +2,7 @@ use super::{ObservedSeverity, NEW_MONITOR_STATUS};
 use crate::devices::cooler::COOLANT_RESEVOIR_LEVEL_CHANGED;
 use defmt::unwrap;
 use hoshiguma_protocol::{
-    cooler::types::CoolantReservoirLevel, peripheral_controller::types::MonitorKind,
+    accessories::cooler::types::CoolantReservoirLevel, peripheral_controller::types::MonitorKind,
     types::Severity,
 };
 

@@ -15,12 +15,15 @@ use embassy_sync::{
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::{
-    cooler::{
-        rpc::{Request, Response},
-        types::{
-            CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel,
-            RadiatorFanState, Temperatures,
+    accessories::{
+        cooler::{
+            rpc::{Request as CoolerRequest, Response as CoolerResponse},
+            types::{
+                CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel,
+                RadiatorFanState, Temperatures,
+            },
         },
+        rpc::{Request, Response},
     },
     peripheral_controller::{
         event::{
@@ -46,7 +49,7 @@ pub(crate) enum CoolerControlCommand {
     CoolantPump(CoolantPumpState),
 }
 
-impl From<CoolerControlCommand> for Request {
+impl From<CoolerControlCommand> for CoolerRequest {
     fn from(cmd: CoolerControlCommand) -> Self {
         match cmd {
             CoolerControlCommand::RadiatorFan(radiator_fan) => Self::SetRadiatorFan(radiator_fan),
@@ -129,10 +132,13 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
         {
             Either3::First(_) => {
                 match client
-                    .call(Request::GetState, core::time::Duration::from_millis(50))
+                    .call(
+                        Request::Cooler(CoolerRequest::GetState),
+                        core::time::Duration::from_millis(50),
+                    )
                     .await
                 {
-                    Ok(Response::GetState(state)) => {
+                    Ok(Response::Cooler(CoolerResponse::GetState(state))) => {
                         debug!("Got state from cooler: {:?}", state);
                         comm_status.comm_good().await;
 
@@ -204,11 +210,14 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 }
             }
             Either3::Second(WaitResult::Message(cmd)) => {
-                let request: Request = cmd.into();
+                let request: CoolerRequest = cmd.into();
 
                 'cmd_send: for attempt in 0..5 {
                     match client
-                        .call(request.clone(), core::time::Duration::from_millis(50))
+                        .call(
+                            Request::Cooler(request.clone()),
+                            core::time::Duration::from_millis(50),
+                        )
                         .await
                     {
                         Ok(_) => {
