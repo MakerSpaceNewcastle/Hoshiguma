@@ -1,8 +1,11 @@
 use crate::Runner;
 use clap::{Parser, Subcommand};
-use hoshiguma_protocol::cooler::{
+use hoshiguma_protocol::accessories::{
+    cooler::{
+        rpc::Request as CoolerRequest,
+        types::{CompressorState, CoolantPumpState, RadiatorFanState},
+    },
     rpc::{Request, Response},
-    types::{CompressorState, CoolantPumpState, RadiatorFanState},
 };
 use log::{info, warn};
 use std::time::Duration;
@@ -49,18 +52,18 @@ impl Runner for Cli {
 
         loop {
             let request = match self.command {
-                Command::Ping => Request::Ping(42),
-                Command::GetSystemInformation => Request::GetSystemInformation,
-                Command::GetState => Request::GetState,
-                Command::SetRadiatorFanOff => Request::SetRadiatorFan(RadiatorFanState::Idle),
-                Command::SetRadiatorFanOn => Request::SetRadiatorFan(RadiatorFanState::Run),
-                Command::SetCompressorOff => Request::SetCompressor(CompressorState::Idle),
-                Command::SetCompressorOn => Request::SetCompressor(CompressorState::Run),
-                Command::SetCoolantPumpOff => Request::SetCoolantPump(CoolantPumpState::Idle),
-                Command::SetCoolantPumpOn => Request::SetCoolantPump(CoolantPumpState::Run),
+                Command::Ping => CoolerRequest::Ping(42),
+                Command::GetSystemInformation => CoolerRequest::GetSystemInformation,
+                Command::GetState => CoolerRequest::GetState,
+                Command::SetRadiatorFanOff => CoolerRequest::SetRadiatorFan(RadiatorFanState::Idle),
+                Command::SetRadiatorFanOn => CoolerRequest::SetRadiatorFan(RadiatorFanState::Run),
+                Command::SetCompressorOff => CoolerRequest::SetCompressor(CompressorState::Idle),
+                Command::SetCompressorOn => CoolerRequest::SetCompressor(CompressorState::Run),
+                Command::SetCoolantPumpOff => CoolerRequest::SetCoolantPump(CoolantPumpState::Idle),
+                Command::SetCoolantPumpOn => CoolerRequest::SetCoolantPump(CoolantPumpState::Run),
             };
 
-            match client.call(request, timeout).await {
+            match client.call(Request::Cooler(request), timeout).await {
                 Ok(response) => info!("Response: {response:#?}"),
                 Err(e) => warn!("Command failed: {e}"),
             }
