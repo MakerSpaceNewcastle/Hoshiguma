@@ -1,5 +1,5 @@
 use crate::CoolantPumpResources;
-use hoshiguma_protocol::cooler::types::CoolantPumpState;
+use hoshiguma_protocol::accessories::cooler::types::CoolantPumpState;
 use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct CoolantPump {
