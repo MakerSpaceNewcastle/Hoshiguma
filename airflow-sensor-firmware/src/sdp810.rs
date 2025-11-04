@@ -41,7 +41,7 @@ pub(super) async fn task(r: Sdp810Resources) -> ! {
         .await
         .unwrap();
 
-    let mut tick = Ticker::every(Duration::from_millis(100));
+    let mut tick = Ticker::every(Duration::from_millis(1000));
 
     loop {
         let mut buffer = [0u8; 9];
