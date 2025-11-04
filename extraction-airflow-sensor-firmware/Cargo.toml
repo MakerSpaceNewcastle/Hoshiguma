@@ -1,5 +1,5 @@
 [package]
-name = "hoshiguma-airflow-sensor"
+name = "hoshiguma-extraction-airflow-sensor"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
