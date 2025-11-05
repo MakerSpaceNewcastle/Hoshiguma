@@ -65,10 +65,10 @@ async fn main(spawner: Spawner) {
 
     info!("{}", system_information());
 
-    let sensor = sdp810::Sdp810::new(r.sdp810).await;
+    let airflow_sensor = sdp810::Sdp810::new(r.sdp810).await;
 
     spawner.must_spawn(watchdog_feed_task(r.status));
-    spawner.must_spawn(rpc::task(r.communication));
+    spawner.must_spawn(rpc::task(r.communication, airflow_sensor));
 }
 
 #[embassy_executor::task]

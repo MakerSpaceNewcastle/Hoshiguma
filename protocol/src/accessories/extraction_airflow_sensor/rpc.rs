@@ -17,5 +17,5 @@ pub enum Response {
     Ping(u32),
     GetSystemInformation(SystemInformation),
 
-    GetMeasurement(Measurement),
+    GetMeasurement(Result<Measurement, ()>),
 }

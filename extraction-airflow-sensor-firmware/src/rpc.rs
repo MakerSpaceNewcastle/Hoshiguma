@@ -19,7 +19,7 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-pub(crate) async fn task(r: CommunicationResources) {
+pub(crate) async fn task(r: CommunicationResources, mut airflow_sensor: crate::sdp810::Sdp810) {
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
     let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
@@ -46,7 +46,9 @@ pub(crate) async fn task(r: CommunicationResources) {
                     SensorRequest::GetSystemInformation => {
                         SensorResponse::GetSystemInformation(crate::system_information())
                     }
-                    SensorRequest::GetMeasurement => SensorResponse::GetMeasurement(todo!()),
+                    SensorRequest::GetMeasurement => {
+                        SensorResponse::GetMeasurement(airflow_sensor.get_measurement().await)
+                    }
                 };
 
                 if let Err(e) = server
