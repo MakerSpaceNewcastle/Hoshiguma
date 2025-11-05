@@ -87,9 +87,11 @@ difference() {
     IecC14();
   }
 
-  // Cooler communication socket
-  translate([30, 20]) {
-    DinConnector();
+  // Accessory sockets
+  for(y = [0, 32, 64]) {
+    translate([30, 10 + y]) {
+      DinConnector();
+    }
   }
 
   // Fume extraction fan outlet
