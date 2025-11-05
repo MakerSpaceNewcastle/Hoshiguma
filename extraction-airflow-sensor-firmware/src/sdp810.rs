@@ -5,47 +5,52 @@ use embassy_rp::{
     i2c::{Config, I2c, InterruptHandler},
     peripherals::I2C1,
 };
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::Timer;
 use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u16, write_command_u8};
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => InterruptHandler<I2C1>;
 });
 
-#[embassy_executor::task]
-pub(super) async fn task(r: Sdp810Resources) -> ! {
-    let mut config = Config::default();
-    config.frequency = 400_000;
-    let mut i2c = I2c::new_async(r.i2c, r.scl_pin, r.sda_pin, Irqs, config);
+pub(crate) struct Sdp810 {
+    i2c: I2c<'static>,
+}
 
-    Timer::after_millis(100).await;
+impl Sdp810 {
+    pub(crate) async fn new(r: Sdp810Resources) -> Self {
+        let mut config = Config::default();
+        config.frequency = 400_000;
+        let mut i2c = I2c::new_async(r.i2c, r.scl_pin, r.sda_pin, Irqs, config);
 
-    // Soft reset the device
-    write_command_u8(&mut i2c, 0x00, 0x06).await.unwrap();
+        Timer::after_millis(100).await;
 
-    Timer::after_millis(100).await;
+        // Soft reset the device
+        write_command_u8(&mut i2c, 0x00, 0x06).await.unwrap();
 
-    // Get sensor product data
-    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1)
-        .await
-        .unwrap();
-    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_2)
-        .await
-        .unwrap();
+        Timer::after_millis(100).await;
 
-    let mut buff = [0u8; 18];
-    read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff).await;
-    debug!("Got product ID bytes: {}", buff);
+        // Get sensor product data
+        write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1)
+            .await
+            .unwrap();
+        write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_2)
+            .await
+            .unwrap();
 
-    write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_CONT_MASS_FLOW_AVG)
-        .await
-        .unwrap();
+        let mut buff = [0u8; 18];
+        read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff).await;
+        debug!("Got product ID bytes: {}", buff);
 
-    let mut tick = Ticker::every(Duration::from_millis(1000));
+        write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_CONT_MASS_FLOW_AVG)
+            .await
+            .unwrap();
 
-    loop {
+        Self { i2c }
+    }
+
+    pub(crate) async fn get_measurement(&mut self) -> Result<(), ()> {
         let mut buffer = [0u8; 9];
-        read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buffer).await;
+        read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer).await;
         debug!("Got measurement bytes: {}", buffer);
 
         let pressure = i16::from(buffer[0]) << 8 | i16::from(buffer[1]);
@@ -60,7 +65,7 @@ pub(super) async fn task(r: Sdp810Resources) -> ! {
         info!("pressure: {} Pa", pressure);
         info!("temperature: {} C", temperature);
 
-        tick.next().await;
+        Ok(())
     }
 }
 
