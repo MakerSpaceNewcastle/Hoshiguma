@@ -1,5 +1,5 @@
 use super::{ObservedSeverity, NEW_MONITOR_STATUS};
-use crate::devices::cooler::COOLANT_FLOW_READ;
+use crate::devices::accessories::cooler::COOLANT_FLOW_READ;
 use defmt::unwrap;
 use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
 

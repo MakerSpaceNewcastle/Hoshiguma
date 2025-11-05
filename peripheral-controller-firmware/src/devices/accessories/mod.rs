@@ -10,7 +10,7 @@ use crate::{
     changed::ObservedValue,
     logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS},
     telemetry::queue_telemetry_event,
-    CoolerCommunicationResources,
+    AccessoriesCommunicationResources,
 };
 use core::time::Duration as CoreDuration;
 use defmt::{debug, unwrap, warn};
@@ -23,6 +23,9 @@ use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::{
     accessories::{
         cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
+        extraction_airflow_sensor::rpc::{
+            Request as ExtractionAirflowSensorRequest, Response as ExtractionAirflowSensorResponse,
+        },
         rpc::{Request, Response},
     },
     peripheral_controller::{
@@ -30,7 +33,7 @@ use hoshiguma_protocol::{
             ControlEvent as SuperControlEvent, EventKind as SuperEventKind,
             ObservationEvent as SuperObservationEvent,
         },
-        types::MonitorKind,
+        types::{MonitorKind, Monitors},
     },
     types::Severity,
 };
@@ -47,9 +50,9 @@ bind_interrupts!(struct Irqs {
 });
 
 #[embassy_executor::task]
-pub(crate) async fn task(r: CoolerCommunicationResources) {
+pub(crate) async fn task(r: AccessoriesCommunicationResources) {
     #[cfg(feature = "trace")]
-    crate::trace::name_task("cooler comm").await;
+    crate::trace::name_task("accessories comm").await;
 
     const TX_BUFFER_SIZE: usize = 256;
     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
@@ -68,12 +71,15 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
     let transport = EioTransport::<_, 512>::new(uart);
     let mut client = Client::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
 
-    let mut get_state_tick = Ticker::every(Duration::from_secs(1));
+    let mut update_tick = Ticker::every(Duration::from_secs(1));
 
-    let mut comm_status = CommunicationStatusReporter::default();
+    let mut cooler_comm_status =
+        CommunicationStatusReporter::new(MonitorKind::CoolerCommunicationFault);
+    let mut ext_airflow_comm_status =
+        CommunicationStatusReporter::new(MonitorKind::ExtractionAirflowSensorFault);
     let mut comm_status_check_tick = Ticker::every(Duration::from_secs(1));
 
-    let mut control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
+    let mut cooler_control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
 
     let mut coolant_flow = ObservedValue::default();
     let mut temperatures = ObservedValue::default();
@@ -88,8 +94,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
 
     loop {
         match select3(
-            get_state_tick.next(),
-            control_command_rx.next_message(),
+            update_tick.next(),
+            cooler_control_command_rx.next_message(),
             comm_status_check_tick.next(),
         )
         .await
@@ -104,7 +110,7 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 {
                     Ok(Response::Cooler(CoolerResponse::GetState(state))) => {
                         debug!("Got state from cooler: {:?}", state);
-                        comm_status.comm_good().await;
+                        cooler_comm_status.comm_good().await;
 
                         coolant_flow
                             .update_and_async(state.coolant_flow_rate, |value| async {
@@ -165,11 +171,49 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                     }
                     Ok(_) => {
                         warn!("Unexpected RPC response");
-                        comm_status.comm_fail().await;
+                        cooler_comm_status.comm_fail().await;
                     }
                     Err(e) => {
                         warn!("RPC error: {}", e);
-                        comm_status.comm_fail().await;
+                        cooler_comm_status.comm_fail().await;
+                    }
+                }
+
+                match client
+                    .call(
+                        Request::ExtractionAirflowSensor(
+                            ExtractionAirflowSensorRequest::GetMeasurement,
+                        ),
+                        core::time::Duration::from_millis(50),
+                    )
+                    .await
+                {
+                    Ok(Response::ExtractionAirflowSensor(
+                        ExtractionAirflowSensorResponse::GetMeasurement(measurement),
+                    )) => {
+                        debug!(
+                            "Got measurement from extraction airflow sensor: {:?}",
+                            measurement
+                        );
+                        ext_airflow_comm_status.comm_good().await;
+
+                        // TODO
+                        // radiator_fan
+                        //     .update_and_async(state.radiator_fan, |value| async {
+                        //         queue_telemetry_event(SuperEventKind::Control(
+                        //             SuperControlEvent::CoolerRadiatorFan(value),
+                        //         ))
+                        //         .await
+                        //     })
+                        //     .await;
+                    }
+                    Ok(_) => {
+                        warn!("Unexpected RPC response");
+                        ext_airflow_comm_status.comm_fail().await;
+                    }
+                    Err(e) => {
+                        warn!("RPC error: {}", e);
+                        ext_airflow_comm_status.comm_fail().await;
                     }
                 }
             }
@@ -185,12 +229,12 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                         .await
                     {
                         Ok(_) => {
-                            comm_status.comm_good().await;
+                            cooler_comm_status.comm_good().await;
                             break 'cmd_send;
                         }
                         Err(e) => {
                             warn!("RPC error: {} (attempt {})", e, attempt + 1);
-                            comm_status.comm_fail().await;
+                            cooler_comm_status.comm_fail().await;
                             Timer::after_millis(50).await;
                         }
                     }
@@ -200,7 +244,8 @@ pub(crate) async fn task(r: CoolerCommunicationResources) {
                 panic!("Subscriber lagged, losing {} messages", msg_count);
             }
             Either3::Third(_) => {
-                comm_status.evaluate().await;
+                cooler_comm_status.evaluate().await;
+                ext_airflow_comm_status.evaluate().await;
             }
         }
     }
@@ -214,23 +259,24 @@ enum CommunicationStatus {
 struct CommunicationStatusReporter {
     status: CommunicationStatus,
     severity: ObservedSeverity,
+    monitor: MonitorKind,
     monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 8>,
 }
 
-impl Default for CommunicationStatusReporter {
-    fn default() -> Self {
+impl CommunicationStatusReporter {
+    fn new(monitor: MonitorKind) -> Self {
         let monitor_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
+
         Self {
             status: CommunicationStatus::Failed {
                 since: Instant::now(),
             },
             severity: ObservedSeverity::default(),
+            monitor,
             monitor_tx,
         }
     }
-}
 
-impl CommunicationStatusReporter {
     async fn comm_good(&mut self) {
         self.status = CommunicationStatus::Ok {
             last: Instant::now(),
@@ -277,7 +323,7 @@ impl CommunicationStatusReporter {
         self.severity
             .update_and_async(severity, |severity| async {
                 self.monitor_tx
-                    .publish((MonitorKind::CoolerCommunicationFault, severity))
+                    .publish((self.monitor.clone(), severity))
                     .await;
             })
             .await;
