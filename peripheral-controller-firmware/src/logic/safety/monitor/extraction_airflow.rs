@@ -74,7 +74,14 @@ pub(crate) async fn task() {
     }
 }
 
+/// Warning differential pressure in Pa.
 const WARN: f32 = 85.0;
+
+/// Critical differential pressure in Pa.
 const CRITICAL: f32 = 70.0;
 
-const FAN_RUNUP_TIME: Duration = Duration::from_millis(2500);
+/// Amount of time it typically takes the fan to reach normal operating airflow after it is powered
+/// on from stationary.
+/// This can be quite conservative as very little fumes will be produced in the first few seconds
+/// of a job.
+const FAN_RUNUP_TIME: Duration = Duration::from_secs(4);
