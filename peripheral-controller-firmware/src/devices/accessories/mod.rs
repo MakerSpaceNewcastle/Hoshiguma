@@ -1,3 +1,6 @@
+pub(crate) mod cooler;
+pub(crate) mod extraction_airflow_sensor;
+
 use super::TemperaturesExt;
 use crate::{
     changed::ObservedValue,
@@ -41,42 +44,6 @@ use pico_plc_bsp::embassy_rp::{
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};
-
-#[derive(Debug, Clone, Format)]
-pub(crate) enum CoolerControlCommand {
-    RadiatorFan(RadiatorFanState),
-    Compressor(CompressorState),
-    CoolantPump(CoolantPumpState),
-}
-
-impl From<CoolerControlCommand> for CoolerRequest {
-    fn from(cmd: CoolerControlCommand) -> Self {
-        match cmd {
-            CoolerControlCommand::RadiatorFan(radiator_fan) => Self::SetRadiatorFan(radiator_fan),
-            CoolerControlCommand::Compressor(compressor) => Self::SetCompressor(compressor),
-            CoolerControlCommand::CoolantPump(coolant_pump) => Self::SetCoolantPump(coolant_pump),
-        }
-    }
-}
-
-pub(crate) static COOLER_CONTROL_COMMAND: PubSubChannel<
-    CriticalSectionRawMutex,
-    CoolerControlCommand,
-    8,
-    1,
-    2,
-> = PubSubChannel::new();
-
-pub(crate) static COOLANT_FLOW_READ: Watch<CriticalSectionRawMutex, CoolantFlow, 1> = Watch::new();
-
-pub(crate) static COOLER_TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 2> =
-    Watch::new();
-
-pub(crate) static COOLANT_RESEVOIR_LEVEL_CHANGED: Watch<
-    CriticalSectionRawMutex,
-    CoolantReservoirLevel,
-    1,
-> = Watch::new();
 
 bind_interrupts!(struct Irqs {
     UART1_IRQ  => BufferedInterruptHandler<UART1>;
@@ -317,18 +284,5 @@ impl CommunicationStatusReporter {
                     .await;
             })
             .await;
-    }
-}
-
-impl TemperaturesExt for Temperatures {
-    fn any_failed_sensors(&self) -> bool {
-        let sensors = [
-            &self.onboard,
-            &self.internal_ambient,
-            &self.coolant_pump_motor,
-            &self.reservoir,
-        ];
-
-        sensors.iter().any(|i| i.is_err())
     }
 }

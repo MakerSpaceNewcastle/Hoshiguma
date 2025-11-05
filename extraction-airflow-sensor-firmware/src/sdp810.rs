@@ -6,7 +6,7 @@ use embassy_rp::{
     peripherals::I2C1,
 };
 use embassy_time::Timer;
-use hoshiguma_protocol::accessories::extraction_airflow_sensor::types::Measurement;
+use hoshiguma_protocol::accessories::extraction_airflow_sensor::types::FallibleMeasurement;
 use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u16, write_command_u8};
 
 bind_interrupts!(struct Irqs {
@@ -54,7 +54,7 @@ impl Sdp810 {
         Self { i2c }
     }
 
-    pub(crate) async fn get_measurement(&mut self) -> Result<Measurement, ()> {
+    pub(crate) async fn get_measurement(&mut self) -> FallibleMeasurement {
         let mut buffer = [0u8; 9];
         read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer)
             .await

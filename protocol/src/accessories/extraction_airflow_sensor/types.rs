@@ -6,3 +6,5 @@ pub struct Measurement {
     pub differential_pressure: f32,
     pub temperature: f32,
 }
+
+pub type FallibleMeasurement = Result<Measurement, ()>;
