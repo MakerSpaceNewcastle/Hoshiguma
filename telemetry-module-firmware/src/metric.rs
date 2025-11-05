@@ -302,6 +302,24 @@ impl Metric {
                         timestamp,
                     )?;
                 }
+                EventKind::Observation(ObservationEvent::ExtractionAirflowMeasurement(v)) => {
+                    if let Ok(v) = v {
+                        write_measurement_numerical(
+                            &mut s,
+                            "observation.extraction_airflow_suction",
+                            "Pa",
+                            v.differential_pressure,
+                            timestamp.clone(),
+                        )?;
+                        write_measurement_numerical(
+                            &mut s,
+                            "observation.extraction_airflow_sensor_temperature",
+                            "C",
+                            v.temperature,
+                            timestamp,
+                        )?;
+                    }
+                }
                 EventKind::Control(ControlEvent::AirAssistPump(v)) => {
                     write_measurement_str_debug(&mut s, "control.air_assist_pump", v, timestamp)?;
                 }
