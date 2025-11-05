@@ -2,10 +2,11 @@ use super::Sdp810Resources;
 use defmt::{debug, info};
 use embassy_rp::{
     bind_interrupts,
-    i2c::{Config, I2c, InterruptHandler},
+    i2c::{Async, Config, I2c, InterruptHandler},
     peripherals::I2C1,
 };
 use embassy_time::Timer;
+use hoshiguma_protocol::accessories::extraction_airflow_sensor::types::Measurement;
 use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u16, write_command_u8};
 
 bind_interrupts!(struct Irqs {
@@ -13,7 +14,7 @@ bind_interrupts!(struct Irqs {
 });
 
 pub(crate) struct Sdp810 {
-    i2c: I2c<'static>,
+    i2c: I2c<'static, I2C1, Async>,
 }
 
 impl Sdp810 {
@@ -48,7 +49,7 @@ impl Sdp810 {
         Self { i2c }
     }
 
-    pub(crate) async fn get_measurement(&mut self) -> Result<(), ()> {
+    pub(crate) async fn get_measurement(&mut self) -> Result<Measurement, ()> {
         let mut buffer = [0u8; 9];
         read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer).await;
         debug!("Got measurement bytes: {}", buffer);
@@ -62,10 +63,13 @@ impl Sdp810 {
         let pressure = f32::from(pressure) / f32::from(pressure_scale);
         let temperature = f32::from(temperature) / TEMPERATURE_SCALE_FACTOR;
 
-        info!("pressure: {} Pa", pressure);
-        info!("temperature: {} C", temperature);
+        let measurement = Measurement {
+            differential_pressure: pressure,
+            temperature,
+        };
+        info!("{}", measurement);
 
-        Ok(())
+        Ok(measurement)
     }
 }
 
