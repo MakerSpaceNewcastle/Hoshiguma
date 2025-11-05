@@ -1,7 +1,7 @@
 use crate::{
     changed::ObservedValue,
     devices::{
-        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
+        accessories::cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
         machine_power_detector::MACHINE_POWER_CHANGED,
     },
     logic::safety::monitor::MONITORS_CHANGED,

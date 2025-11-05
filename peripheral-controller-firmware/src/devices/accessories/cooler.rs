@@ -1,10 +1,4 @@
 use super::TemperaturesExt;
-use crate::{
-    changed::ObservedValue,
-    logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS},
-    telemetry::queue_telemetry_event,
-    CoolerCommunicationResources,
-};
 use defmt::Format;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel, watch::Watch,
@@ -16,7 +10,6 @@ use hoshiguma_protocol::accessories::cooler::{
         Temperatures,
     },
 };
-use teeny_rpc::{client::Client, transport::embedded::EioTransport};
 
 #[derive(Debug, Clone, Format)]
 pub(crate) enum CoolerControlCommand {

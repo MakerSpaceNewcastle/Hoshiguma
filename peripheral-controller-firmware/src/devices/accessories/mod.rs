@@ -1,6 +1,10 @@
 pub(crate) mod cooler;
 pub(crate) mod extraction_airflow_sensor;
 
+use self::cooler::{
+    COOLANT_FLOW_READ, COOLANT_RESEVOIR_LEVEL_CHANGED, COOLER_CONTROL_COMMAND,
+    COOLER_TEMPERATURES_READ,
+};
 use super::TemperaturesExt;
 use crate::{
     changed::ObservedValue,
@@ -9,23 +13,16 @@ use crate::{
     CoolerCommunicationResources,
 };
 use core::time::Duration as CoreDuration;
-use defmt::{debug, unwrap, warn, Format};
+use defmt::{debug, unwrap, warn};
 use embassy_futures::select::{select3, Either3};
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
-    pubsub::{PubSubChannel, Publisher, WaitResult},
-    watch::Watch,
+    pubsub::{Publisher, WaitResult},
 };
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::{
     accessories::{
-        cooler::{
-            rpc::{Request as CoolerRequest, Response as CoolerResponse},
-            types::{
-                CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel,
-                RadiatorFanState, Temperatures,
-            },
-        },
+        cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
         rpc::{Request, Response},
     },
     peripheral_controller::{

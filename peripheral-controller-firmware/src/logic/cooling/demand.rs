@@ -1,5 +1,5 @@
 use crate::{
-    changed::ObservedValue, devices::cooler::COOLER_TEMPERATURES_READ,
+    changed::ObservedValue, devices::accessories::cooler::COOLER_TEMPERATURES_READ,
     logic::cooling::control::COOLING_DEMAND,
 };
 use defmt::info;
