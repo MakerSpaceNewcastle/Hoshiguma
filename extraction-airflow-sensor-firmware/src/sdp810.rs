@@ -1,5 +1,5 @@
 use super::Sdp810Resources;
-use defmt::{debug, info};
+use defmt::{debug, info, warn};
 use embassy_rp::{
     bind_interrupts,
     i2c::{Async, Config, I2c, InterruptHandler},
@@ -40,7 +40,10 @@ impl Sdp810 {
 
         // Receive sensor product data
         let mut buff = [0u8; 18];
-        read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff).await;
+        read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff)
+            .await
+            .map_err(|_| ())
+            .unwrap();
         debug!("Got product ID bytes: {}", buff);
 
         // Start continuous measurement
@@ -53,7 +56,12 @@ impl Sdp810 {
 
     pub(crate) async fn get_measurement(&mut self) -> Result<Measurement, ()> {
         let mut buffer = [0u8; 9];
-        read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer).await;
+        read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer)
+            .await
+            .map_err(|_| {
+                warn!("Failed to read measurement data");
+                ()
+            })?;
         debug!("Got measurement bytes: {}", buffer);
 
         let pressure = i16::from(buffer[0]) << 8 | i16::from(buffer[1]);
