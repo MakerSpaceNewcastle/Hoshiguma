@@ -8,6 +8,7 @@ use self::cooler::{
 use super::TemperaturesExt;
 use crate::{
     changed::ObservedValue,
+    devices::accessories::extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
     logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS},
     telemetry::queue_telemetry_event,
     AccessoriesCommunicationResources,
@@ -33,7 +34,7 @@ use hoshiguma_protocol::{
             ControlEvent as SuperControlEvent, EventKind as SuperEventKind,
             ObservationEvent as SuperObservationEvent,
         },
-        types::{MonitorKind, Monitors},
+        types::MonitorKind,
     },
     types::Severity,
 };
@@ -92,6 +93,9 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
     let mut compressor = ObservedValue::default();
     let mut radiator_fan = ObservedValue::default();
 
+    let mut ext_airflow_reading = ObservedValue::default();
+    let ext_airflow_reading_tx = EXTRACTION_AIRFLOW_SENSOR_READING.sender();
+
     loop {
         match select3(
             update_tick.next(),
@@ -101,6 +105,7 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
         .await
         {
             Either3::First(_) => {
+                // Cooler
                 match client
                     .call(
                         Request::Cooler(CoolerRequest::GetState),
@@ -179,6 +184,7 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                     }
                 }
 
+                // Extraction airflow sensor
                 match client
                     .call(
                         Request::ExtractionAirflowSensor(
@@ -197,15 +203,15 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                         );
                         ext_airflow_comm_status.comm_good().await;
 
-                        // TODO
-                        // radiator_fan
-                        //     .update_and_async(state.radiator_fan, |value| async {
-                        //         queue_telemetry_event(SuperEventKind::Control(
-                        //             SuperControlEvent::CoolerRadiatorFan(value),
-                        //         ))
-                        //         .await
-                        //     })
-                        //     .await;
+                        ext_airflow_reading
+                            .update_and_async(measurement, |value| async {
+                                ext_airflow_reading_tx.send(value.clone());
+                                queue_telemetry_event(SuperEventKind::Observation(
+                                    SuperObservationEvent::ExtractionAirflowMeasurement(value),
+                                ))
+                                .await;
+                            })
+                            .await;
                     }
                     Ok(_) => {
                         warn!("Unexpected RPC response");
