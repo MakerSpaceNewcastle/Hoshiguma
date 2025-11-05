@@ -1,6 +1,7 @@
 pub(crate) mod chassis_intrusion;
 pub(crate) mod coolant_flow;
 pub(crate) mod coolant_level;
+pub(crate) mod extraction_airflow;
 pub(crate) mod power;
 pub(crate) mod temperatures_a;
 pub(crate) mod temperatures_b;

@@ -208,6 +208,7 @@ fn main() -> ! {
     unwrap!(spawner.spawn(logic::safety::monitor::power::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_flow::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::extraction_airflow::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::temperatures_a::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::temperatures_b::task()));
 
