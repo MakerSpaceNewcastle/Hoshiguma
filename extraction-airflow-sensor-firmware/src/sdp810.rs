@@ -23,14 +23,14 @@ impl Sdp810 {
         config.frequency = 400_000;
         let mut i2c = I2c::new_async(r.i2c, r.scl_pin, r.sda_pin, Irqs, config);
 
-        Timer::after_millis(100).await;
+        Timer::after_millis(10).await;
 
         // Soft reset the device
         write_command_u8(&mut i2c, 0x00, 0x06).await.unwrap();
 
-        Timer::after_millis(100).await;
+        Timer::after_millis(10).await;
 
-        // Get sensor product data
+        // Request sensor product data
         write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_READ_PRODUCT_ID_1)
             .await
             .unwrap();
@@ -38,10 +38,12 @@ impl Sdp810 {
             .await
             .unwrap();
 
+        // Receive sensor product data
         let mut buff = [0u8; 18];
         read_words_with_crc(&mut i2c, DEVICE_ADDRESS, &mut buff).await;
         debug!("Got product ID bytes: {}", buff);
 
+        // Start continuous measurement
         write_command_u16(&mut i2c, DEVICE_ADDRESS, CMD_CONT_MASS_FLOW_AVG)
             .await
             .unwrap();
