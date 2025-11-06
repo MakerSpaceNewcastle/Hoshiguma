@@ -206,6 +206,14 @@ impl Metric {
                             "coolant_reservoir_temp",
                             MonitorKind::CoolantReservoirOvertemperature,
                         ),
+                        (
+                            "ext_airflow_sens_fault",
+                            MonitorKind::ExtractionAirflowSensorFault,
+                        ),
+                        (
+                            "ext_airflow_insufficient",
+                            MonitorKind::ExtractionAirflowInsufficient,
+                        ),
                     ]
                     .into_iter()
                     .map(|(name, kind)| (name, v.get(kind)))
