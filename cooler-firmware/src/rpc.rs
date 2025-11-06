@@ -79,6 +79,7 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
             }
             Either::First(Ok(_)) => {
                 debug!("Got request that was not for us");
+                server.ignore_active_request().expect("There should be an active request here, as we are opting to ignore it based on it's payload");
             }
             Either::First(Err(e)) => {
                 warn!("Server failed waiting for request: {}", e);

@@ -23,7 +23,8 @@ panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 portable-atomic = { version = "1.11.1", features = ["critical-section"] }
 sensirion-i2c = { version = "0.4.0", features = ["embedded-hal-async"] }
 static_cell = "2.1.0"
-teeny-rpc = { version = "0.1.0", default-features = false, features = ["no-std"] }
+# teeny-rpc = { version = "0.1.0", default-features = false, features = ["no-std"] }
+teeny-rpc = { path = "/home/dan/git/teeny-rpc/", default-features = false, features = ["no-std"] }
 
 [profile.release]
 debug = 2

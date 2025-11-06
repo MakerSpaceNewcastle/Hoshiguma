@@ -60,6 +60,7 @@ pub(crate) async fn task(r: CommunicationResources, mut airflow_sensor: crate::s
             }
             Ok(_) => {
                 debug!("Got request that was not for us");
+                server.ignore_active_request().expect("There should be an active request here, as we are opting to ignore it based on it's payload");
             }
             Err(e) => {
                 warn!("Server failed waiting for request: {}", e);

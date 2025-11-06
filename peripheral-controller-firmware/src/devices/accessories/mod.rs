@@ -1,3 +1,4 @@
+mod communication_status;
 pub(crate) mod cooler;
 pub(crate) mod extraction_airflow_sensor;
 
@@ -8,19 +9,18 @@ use self::cooler::{
 use super::TemperaturesExt;
 use crate::{
     changed::ObservedValue,
-    devices::accessories::extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
-    logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS},
+    devices::accessories::{
+        communication_status::CommunicationStatusReporter,
+        extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
+    },
     telemetry::queue_telemetry_event,
     AccessoriesCommunicationResources,
 };
 use core::time::Duration as CoreDuration;
 use defmt::{debug, unwrap, warn};
 use embassy_futures::select::{select3, Either3};
-use embassy_sync::{
-    blocking_mutex::raw::CriticalSectionRawMutex,
-    pubsub::{Publisher, WaitResult},
-};
-use embassy_time::{Duration, Instant, Ticker, Timer};
+use embassy_sync::pubsub::WaitResult;
+use embassy_time::{Duration, Ticker, Timer};
 use hoshiguma_protocol::{
     accessories::{
         cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
@@ -28,6 +28,7 @@ use hoshiguma_protocol::{
             Request as ExtractionAirflowSensorRequest, Response as ExtractionAirflowSensorResponse,
         },
         rpc::{Request, Response},
+        SERIAL_BAUD,
     },
     peripheral_controller::{
         event::{
@@ -36,7 +37,6 @@ use hoshiguma_protocol::{
         },
         types::MonitorKind,
     },
-    types::Severity,
 };
 use pico_plc_bsp::embassy_rp::{
     bind_interrupts,
@@ -64,7 +64,7 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
     let rx_buf = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
 
     let mut config = UartConfig::default();
-    config.baudrate = hoshiguma_protocol::peripheral_controller::SERIAL_BAUD;
+    config.baudrate = SERIAL_BAUD;
 
     let uart = BufferedUart::new(r.uart, r.tx_pin, r.rx_pin, Irqs, tx_buf, rx_buf, config);
 
@@ -106,120 +106,140 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
         {
             Either3::First(_) => {
                 // Cooler
-                match client
-                    .call(
-                        Request::Cooler(CoolerRequest::GetState),
-                        core::time::Duration::from_millis(50),
-                    )
-                    .await
-                {
-                    Ok(Response::Cooler(CoolerResponse::GetState(state))) => {
-                        debug!("Got state from cooler: {:?}", state);
-                        cooler_comm_status.comm_good().await;
+                'comm_retry: loop {
+                    debug!("Cooler update attempt");
+                    match client
+                        .call(
+                            Request::Cooler(CoolerRequest::GetState),
+                            core::time::Duration::from_millis(50),
+                        )
+                        .await
+                    {
+                        Ok(Response::Cooler(CoolerResponse::GetState(state))) => {
+                            debug!("Got state from cooler: {:?}", state);
+                            cooler_comm_status.comm_good().await;
 
-                        coolant_flow
-                            .update_and_async(state.coolant_flow_rate, |value| async {
-                                coolant_flow_tx.send(value.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::CoolantFlow(value),
-                                ))
+                            coolant_flow
+                                .update_and_async(state.coolant_flow_rate, |value| async {
+                                    coolant_flow_tx.send(value.clone());
+                                    queue_telemetry_event(SuperEventKind::Observation(
+                                        SuperObservationEvent::CoolantFlow(value),
+                                    ))
+                                    .await;
+                                })
                                 .await;
-                            })
-                            .await;
 
-                        temperatures
-                            .update_and_async(state.temperatures, |value| async {
-                                temperatures_tx.send(value.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::TemperaturesB(value),
-                                ))
+                            temperatures
+                                .update_and_async(state.temperatures, |value| async {
+                                    temperatures_tx.send(value.clone());
+                                    queue_telemetry_event(SuperEventKind::Observation(
+                                        SuperObservationEvent::TemperaturesB(value),
+                                    ))
+                                    .await;
+                                })
                                 .await;
-                            })
-                            .await;
 
-                        coolant_reservoir_level
-                            .update_and_async(state.coolant_reservoir_level, |value| async {
-                                coolant_reservoir_level_tx.send(value.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::CoolantReservoirLevel(value),
-                                ))
+                            coolant_reservoir_level
+                                .update_and_async(state.coolant_reservoir_level, |value| async {
+                                    coolant_reservoir_level_tx.send(value.clone());
+                                    queue_telemetry_event(SuperEventKind::Observation(
+                                        SuperObservationEvent::CoolantReservoirLevel(value),
+                                    ))
+                                    .await;
+                                })
                                 .await;
-                            })
-                            .await;
 
-                        coolant_pump
-                            .update_and_async(state.coolant_pump, |value| async {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolantPump(value),
-                                ))
-                                .await
-                            })
-                            .await;
+                            coolant_pump
+                                .update_and_async(state.coolant_pump, |value| async {
+                                    queue_telemetry_event(SuperEventKind::Control(
+                                        SuperControlEvent::CoolantPump(value),
+                                    ))
+                                    .await
+                                })
+                                .await;
 
-                        compressor
-                            .update_and_async(state.compressor, |value| async {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolerCompressor(value),
-                                ))
-                                .await
-                            })
-                            .await;
+                            compressor
+                                .update_and_async(state.compressor, |value| async {
+                                    queue_telemetry_event(SuperEventKind::Control(
+                                        SuperControlEvent::CoolerCompressor(value),
+                                    ))
+                                    .await
+                                })
+                                .await;
 
-                        radiator_fan
-                            .update_and_async(state.radiator_fan, |value| async {
-                                queue_telemetry_event(SuperEventKind::Control(
-                                    SuperControlEvent::CoolerRadiatorFan(value),
-                                ))
-                                .await
-                            })
-                            .await;
-                    }
-                    Ok(_) => {
-                        warn!("Unexpected RPC response");
-                        cooler_comm_status.comm_fail().await;
-                    }
-                    Err(e) => {
-                        warn!("RPC error: {}", e);
-                        cooler_comm_status.comm_fail().await;
+                            radiator_fan
+                                .update_and_async(state.radiator_fan, |value| async {
+                                    queue_telemetry_event(SuperEventKind::Control(
+                                        SuperControlEvent::CoolerRadiatorFan(value),
+                                    ))
+                                    .await
+                                })
+                                .await;
+
+                            break 'comm_retry;
+                        }
+                        Ok(_) => {
+                            warn!("Unexpected RPC response");
+                            if cooler_comm_status.comm_fail().await {
+                                break 'comm_retry;
+                            }
+                        }
+                        Err(e) => {
+                            warn!("RPC error: {}", e);
+                            if cooler_comm_status.comm_fail().await {
+                                break 'comm_retry;
+                            }
+                        }
                     }
                 }
 
-                // Extraction airflow sensor
-                match client
-                    .call(
-                        Request::ExtractionAirflowSensor(
-                            ExtractionAirflowSensorRequest::GetMeasurement,
-                        ),
-                        core::time::Duration::from_millis(50),
-                    )
-                    .await
-                {
-                    Ok(Response::ExtractionAirflowSensor(
-                        ExtractionAirflowSensorResponse::GetMeasurement(measurement),
-                    )) => {
-                        debug!(
-                            "Got measurement from extraction airflow sensor: {:?}",
-                            measurement
-                        );
-                        ext_airflow_comm_status.comm_good().await;
+                embassy_time::Timer::after_millis(200).await;
 
-                        ext_airflow_reading
-                            .update_and_async(measurement, |value| async {
-                                ext_airflow_reading_tx.send(value.clone());
-                                queue_telemetry_event(SuperEventKind::Observation(
-                                    SuperObservationEvent::ExtractionAirflowMeasurement(value),
-                                ))
+                // Extraction airflow sensor
+                'comm_retry: loop {
+                    debug!("Extraction airflow sensor update attempt");
+                    match client
+                        .call(
+                            Request::ExtractionAirflowSensor(
+                                ExtractionAirflowSensorRequest::GetMeasurement,
+                            ),
+                            core::time::Duration::from_millis(50),
+                        )
+                        .await
+                    {
+                        Ok(Response::ExtractionAirflowSensor(
+                            ExtractionAirflowSensorResponse::GetMeasurement(measurement),
+                        )) => {
+                            debug!(
+                                "Got measurement from extraction airflow sensor: {:?}",
+                                measurement
+                            );
+                            ext_airflow_comm_status.comm_good().await;
+
+                            ext_airflow_reading
+                                .update_and_async(measurement, |value| async {
+                                    ext_airflow_reading_tx.send(value.clone());
+                                    queue_telemetry_event(SuperEventKind::Observation(
+                                        SuperObservationEvent::ExtractionAirflowMeasurement(value),
+                                    ))
+                                    .await;
+                                })
                                 .await;
-                            })
-                            .await;
-                    }
-                    Ok(_) => {
-                        warn!("Unexpected RPC response");
-                        ext_airflow_comm_status.comm_fail().await;
-                    }
-                    Err(e) => {
-                        warn!("RPC error: {}", e);
-                        ext_airflow_comm_status.comm_fail().await;
+
+                            break 'comm_retry;
+                        }
+                        Ok(_) => {
+                            warn!("Unexpected RPC response");
+                            if ext_airflow_comm_status.comm_fail().await {
+                                break 'comm_retry;
+                            }
+                        }
+                        Err(e) => {
+                            warn!("RPC error: {}", e);
+                            if ext_airflow_comm_status.comm_fail().await {
+                                break 'comm_retry;
+                            }
+                        }
                     }
                 }
             }
@@ -254,84 +274,5 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                 ext_airflow_comm_status.evaluate().await;
             }
         }
-    }
-}
-
-enum CommunicationStatus {
-    Ok { last: Instant },
-    Failed { since: Instant },
-}
-
-struct CommunicationStatusReporter {
-    status: CommunicationStatus,
-    severity: ObservedSeverity,
-    monitor: MonitorKind,
-    monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 8>,
-}
-
-impl CommunicationStatusReporter {
-    fn new(monitor: MonitorKind) -> Self {
-        let monitor_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
-
-        Self {
-            status: CommunicationStatus::Failed {
-                since: Instant::now(),
-            },
-            severity: ObservedSeverity::default(),
-            monitor,
-            monitor_tx,
-        }
-    }
-
-    async fn comm_good(&mut self) {
-        self.status = CommunicationStatus::Ok {
-            last: Instant::now(),
-        };
-
-        self.evaluate().await;
-    }
-
-    async fn comm_fail(&mut self) {
-        self.status = match self.status {
-            CommunicationStatus::Ok { last: _ } => CommunicationStatus::Failed {
-                since: Instant::now(),
-            },
-            CommunicationStatus::Failed { since } => CommunicationStatus::Failed { since },
-        };
-
-        self.evaluate().await;
-    }
-
-    async fn evaluate(&mut self) {
-        const WARN_TIMEOUT: Duration = Duration::from_secs(3);
-        const CRITICAL_TIMEOUT: Duration = Duration::from_secs(10);
-
-        let severity = match self.status {
-            CommunicationStatus::Ok { last } => {
-                if Instant::now().saturating_duration_since(last) > WARN_TIMEOUT {
-                    self.status = CommunicationStatus::Failed {
-                        since: Instant::now(),
-                    };
-                    Severity::Warn
-                } else {
-                    Severity::Normal
-                }
-            }
-            CommunicationStatus::Failed { since } => {
-                if Instant::now().saturating_duration_since(since) > CRITICAL_TIMEOUT {
-                    Severity::Critical
-                } else {
-                    Severity::Warn
-                }
-            }
-        };
-
-        self.severity
-            .update_and_async(severity, |severity| async {
-                self.monitor_tx
-                    .publish((self.monitor.clone(), severity))
-                    .await;
-            })
-            .await;
     }
 }
