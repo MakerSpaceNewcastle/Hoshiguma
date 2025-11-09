@@ -20,7 +20,7 @@ Extraction airflow sensor:
 
 ### 5 pin DIN pinout
 
-From left to right, looking at socket with locking/alighnment pin pointing up.
+From left to right, looking at socket with locking/alignment pin pointing up.
 
 1) 5V
 2) RS485 B/-
