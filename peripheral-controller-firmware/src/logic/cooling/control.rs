@@ -1,7 +1,7 @@
 use crate::{
     changed::ObservedValue,
     devices::{
-        cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
+        accessories::cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
         machine_power_detector::MACHINE_POWER_CHANGED,
     },
     logic::safety::monitor::MONITORS_CHANGED,
@@ -11,7 +11,7 @@ use defmt::{info, unwrap};
 use embassy_futures::select::{select3, Either3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
 use hoshiguma_protocol::{
-    cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
+    accessories::cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
     peripheral_controller::{
         event::EventKind,
         types::{CoolingDemand, CoolingEnabled, MachinePower, MonitorKind},

@@ -1,10 +1,7 @@
 use crate::Runner;
 use clap::{Parser, Subcommand};
 use hoshiguma_protocol::accessories::{
-    cooler::{
-        rpc::Request as CoolerRequest,
-        types::{CompressorState, CoolantPumpState, RadiatorFanState},
-    },
+    extraction_airflow_sensor::rpc::Request as SensorRequest,
     rpc::{Request, Response},
 };
 use log::{info, warn};
@@ -30,14 +27,7 @@ enum Command {
     Ping,
     GetSystemInformation,
 
-    GetState,
-
-    SetRadiatorFanOff,
-    SetRadiatorFanOn,
-    SetCompressorOff,
-    SetCompressorOn,
-    SetCoolantPumpOff,
-    SetCoolantPumpOn,
+    GetMeasurement,
 }
 
 impl Runner for Cli {
@@ -52,18 +42,15 @@ impl Runner for Cli {
 
         loop {
             let request = match self.command {
-                Command::Ping => CoolerRequest::Ping(42),
-                Command::GetSystemInformation => CoolerRequest::GetSystemInformation,
-                Command::GetState => CoolerRequest::GetState,
-                Command::SetRadiatorFanOff => CoolerRequest::SetRadiatorFan(RadiatorFanState::Idle),
-                Command::SetRadiatorFanOn => CoolerRequest::SetRadiatorFan(RadiatorFanState::Run),
-                Command::SetCompressorOff => CoolerRequest::SetCompressor(CompressorState::Idle),
-                Command::SetCompressorOn => CoolerRequest::SetCompressor(CompressorState::Run),
-                Command::SetCoolantPumpOff => CoolerRequest::SetCoolantPump(CoolantPumpState::Idle),
-                Command::SetCoolantPumpOn => CoolerRequest::SetCoolantPump(CoolantPumpState::Run),
+                Command::Ping => SensorRequest::Ping(42),
+                Command::GetSystemInformation => SensorRequest::GetSystemInformation,
+                Command::GetMeasurement => SensorRequest::GetMeasurement,
             };
 
-            match client.call(Request::Cooler(request), timeout).await {
+            match client
+                .call(Request::ExtractionAirflowSensor(request), timeout)
+                .await
+            {
                 Ok(response) => info!("Response: {response:#?}"),
                 Err(e) => warn!("Command failed: {e}"),
             }

@@ -325,16 +325,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ds18b20"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9cd37ace0416c30c2874cd67135508de493e34135c67878b01e13aba91b53ce"
-dependencies = [
- "embedded-hal 0.2.7",
- "one-wire-bus",
-]
-
-[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -455,7 +445,6 @@ checksum = "73974a3edbd0bd286759b3d483540f0ebef705919a5f56f4fc7709066f71689b"
 dependencies = [
  "cfg-if",
  "critical-section",
- "defmt 1.0.1",
  "embedded-io-async",
  "futures-core",
  "futures-sink",
@@ -708,44 +697,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "heapless"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1edcd5a338e64688fbdcb7531a846cfd3476a54784dcb918a0844682bc7ada5"
-dependencies = [
- "defmt 1.0.1",
- "hash32",
- "stable_deref_trait",
-]
-
-[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
-name = "hoshiguma-periperal-controller"
+name = "hoshiguma-extraction-airflow-sensor"
 version = "0.1.0"
 dependencies = [
  "assign-resources",
- "cortex-m",
  "cortex-m-rt",
  "defmt 1.0.1",
  "defmt-rtt",
- "ds18b20",
  "embassy-executor",
- "embassy-futures",
- "embassy-sync",
+ "embassy-rp",
  "embassy-time",
- "embassy-time-driver",
  "git-version",
- "heapless 0.9.1",
  "hoshiguma-protocol",
- "one-wire-bus",
  "panic-probe",
- "pico-plc-bsp",
  "portable-atomic",
+ "sensirion-i2c",
  "static_cell",
  "teeny-rpc",
 ]
@@ -911,15 +883,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "one-wire-bus"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9761e13074f8f916702c1a1dbe0eda3fb8478704db00493f5a5c27ed5847710"
-dependencies = [
- "embedded-hal 0.2.7",
-]
-
-[[package]]
 name = "panic-probe"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -982,16 +945,6 @@ name = "pico-args"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
-
-[[package]]
-name = "pico-plc-bsp"
-version = "0.1.0"
-source = "git+https://github.com/DanNixon/pico-plc#4f7a3f0ae9bc2f35d2adf0af07f8615b6e6e88eb"
-dependencies = [
- "embassy-rp",
- "one-wire-bus",
- "portable-atomic",
-]
 
 [[package]]
 name = "pio"
@@ -1225,6 +1178,16 @@ name = "semver-parser"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
+
+[[package]]
+name = "sensirion-i2c"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "640a03c95c176226cf159ae2727f7fe3245546022639d61459af46d2878aec06"
+dependencies = [
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+]
 
 [[package]]
 name = "serde"

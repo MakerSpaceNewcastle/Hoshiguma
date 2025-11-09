@@ -75,7 +75,7 @@ assign_resources! {
         tx_pin: IO_0,
         rx_pin: IO_1,
     },
-    cooler: CoolerCommunicationResources {
+    accessories_bus: AccessoriesCommunicationResources {
         uart: UART1,
         tx_pin: IO_4,
         rx_pin: IO_5,
@@ -202,12 +202,13 @@ fn main() -> ! {
     unwrap!(spawner.spawn(devices::status_lamp::task(r.status_lamp)));
 
     unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
-    unwrap!(spawner.spawn(devices::cooler::task(r.cooler)));
+    unwrap!(spawner.spawn(devices::accessories::task(r.accessories_bus)));
 
     // State monitor tasks
     unwrap!(spawner.spawn(logic::safety::monitor::power::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_flow::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::task()));
+    unwrap!(spawner.spawn(logic::safety::monitor::extraction_airflow::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::temperatures_a::task()));
     unwrap!(spawner.spawn(logic::safety::monitor::temperatures_b::task()));
 

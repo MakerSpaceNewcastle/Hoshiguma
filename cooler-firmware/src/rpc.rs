@@ -1,9 +1,10 @@
 use crate::{machine::Machine, ControlCommunicationResources};
 use core::time::Duration as CoreDuration;
-use defmt::warn;
+use defmt::{debug, warn};
 use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_protocol::cooler::{
+use hoshiguma_protocol::accessories::{
+    cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
     rpc::{Request, Response},
     SERIAL_BAUD,
 };
@@ -49,32 +50,36 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
         )
         .await
         {
-            Either::First(Ok(request)) => {
+            Either::First(Ok(Request::Cooler(request))) => {
                 watchdog.feed();
 
                 let response = match request {
-                    Request::Ping(i) => Response::Ping(i),
-                    Request::GetSystemInformation => {
-                        Response::GetSystemInformation(crate::system_information())
+                    CoolerRequest::Ping(i) => CoolerResponse::Ping(i),
+                    CoolerRequest::GetSystemInformation => {
+                        CoolerResponse::GetSystemInformation(crate::system_information())
                     }
-                    Request::GetState => Response::GetState(machine.state().await),
-                    Request::SetRadiatorFan(setting) => {
+                    CoolerRequest::GetState => CoolerResponse::GetState(machine.state().await),
+                    CoolerRequest::SetRadiatorFan(setting) => {
                         machine.radiator_fan.set(setting);
-                        Response::SetRadiatorFan
+                        CoolerResponse::SetRadiatorFan
                     }
-                    Request::SetCompressor(setting) => {
+                    CoolerRequest::SetCompressor(setting) => {
                         machine.compressor.set(setting);
-                        Response::SetCompressor
+                        CoolerResponse::SetCompressor
                     }
-                    Request::SetCoolantPump(setting) => {
+                    CoolerRequest::SetCoolantPump(setting) => {
                         machine.coolant_pump.set(setting);
-                        Response::SetCoolantPump
+                        CoolerResponse::SetCoolantPump
                     }
                 };
 
-                if let Err(e) = server.send_response(response).await {
+                if let Err(e) = server.send_response(Response::Cooler(response)).await {
                     warn!("Server failed sending response: {}", e);
                 }
+            }
+            Either::First(Ok(_)) => {
+                debug!("Got request that was not for us");
+                server.ignore_active_request().expect("There should be an active request here, as we are opting to ignore it based on it's payload");
             }
             Either::First(Err(e)) => {
                 warn!("Server failed waiting for request: {}", e);

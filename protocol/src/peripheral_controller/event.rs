@@ -4,9 +4,12 @@ use super::types::{
     MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
 use crate::{
-    cooler::types::{
-        CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel, RadiatorFanState,
-        Temperatures as CoolerTemperatures,
+    accessories::{
+        cooler::types::{
+            CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel,
+            RadiatorFanState, Temperatures as CoolerTemperatures,
+        },
+        extraction_airflow_sensor::types::FallibleMeasurement as ExtractionAirflowFallibleMeasurement,
     },
     types::SystemInformation,
 };
@@ -51,6 +54,9 @@ pub enum ObservationEvent {
     TemperaturesB(CoolerTemperatures),
     CoolantFlow(CoolantFlow),
     CoolantReservoirLevel(CoolantReservoirLevel),
+
+    // Forwarded from extraction airflow sensor
+    ExtractionAirflowMeasurement(ExtractionAirflowFallibleMeasurement),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

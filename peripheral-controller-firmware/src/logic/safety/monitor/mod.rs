@@ -1,6 +1,7 @@
 pub(crate) mod chassis_intrusion;
 pub(crate) mod coolant_flow;
 pub(crate) mod coolant_level;
+pub(crate) mod extraction_airflow;
 pub(crate) mod power;
 pub(crate) mod temperatures_a;
 pub(crate) mod temperatures_b;
@@ -28,7 +29,7 @@ pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     (MonitorKind, Severity),
     8,
     1,
-    8,
+    9,
 > = PubSubChannel::new();
 
 pub(crate) static MONITORS_CHANGED: Watch<CriticalSectionRawMutex, Monitors, 3> = Watch::new();
