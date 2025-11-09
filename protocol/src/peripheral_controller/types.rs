@@ -7,30 +7,25 @@ use strum::{EnumIter, IntoEnumIterator};
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MonitorKind {
     MachinePowerOff,
-
     ChassisIntrusion,
-
     CoolerCommunicationFault,
-
     MachineElectronicsOvertemperature,
     CoolerElectronicsOvertemperature,
-
     CoolantReservoirLevelLow,
-
     CoolantFlowInsufficient,
-
     TemperatureSensorFaultA,
     TemperatureSensorFaultB,
-
     CoolantFlowOvertemperature,
     CoolantReservoirOvertemperature,
+    ExtractionAirflowInsufficient,
+    ExtractionAirflowSensorFault,
 }
 
 /// The number of monitors in the system.
 ///
 /// This constant defines the total count of monitor types that are observed.
 /// It must be equal to the number of variants of `MonitorKind`.
-const NUM_MONITORS: usize = 11;
+const NUM_MONITORS: usize = 13;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Monitors {

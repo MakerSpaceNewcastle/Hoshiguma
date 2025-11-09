@@ -3,6 +3,7 @@ use log::error;
 use teeny_rpc::transport::serialport::SerialTransport;
 
 mod cooler;
+mod extraction_airflow_sensor;
 mod peripheral_controller;
 
 /// Tool to receive data from coprocessors via the postcard protocol.
@@ -28,6 +29,7 @@ trait Runner {
 enum Device {
     PeripheralController(peripheral_controller::Cli),
     Cooler(cooler::Cli),
+    ExtractionAirflowSensor(extraction_airflow_sensor::Cli),
 }
 
 impl Runner for Device {
@@ -35,6 +37,7 @@ impl Runner for Device {
         match self {
             Device::PeripheralController(cli) => cli.run(transport).await,
             Device::Cooler(cli) => cli.run(transport).await,
+            Device::ExtractionAirflowSensor(cli) => cli.run(transport).await,
         }
     }
 }

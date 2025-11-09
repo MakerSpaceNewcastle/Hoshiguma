@@ -35,7 +35,7 @@ ds18b20 = "0.1.1"
 
 git-version = "0.3.5"
 
-teeny-rpc = { version = "0.1.0", default-features = false, features = ["no-std"] }
+teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
 hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 
 heapless = { version = "0.9.1", features = ["defmt"], optional = true }

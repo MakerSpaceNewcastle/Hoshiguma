@@ -206,6 +206,14 @@ impl Metric {
                             "coolant_reservoir_temp",
                             MonitorKind::CoolantReservoirOvertemperature,
                         ),
+                        (
+                            "ext_airflow_sens_fault",
+                            MonitorKind::ExtractionAirflowSensorFault,
+                        ),
+                        (
+                            "ext_airflow_insufficient",
+                            MonitorKind::ExtractionAirflowInsufficient,
+                        ),
                     ]
                     .into_iter()
                     .map(|(name, kind)| (name, v.get(kind)))
@@ -301,6 +309,24 @@ impl Metric {
                         v,
                         timestamp,
                     )?;
+                }
+                EventKind::Observation(ObservationEvent::ExtractionAirflowMeasurement(v)) => {
+                    if let Ok(v) = v {
+                        write_measurement_numerical(
+                            &mut s,
+                            "observation.extraction_airflow_suction",
+                            "Pa",
+                            v.differential_pressure,
+                            timestamp.clone(),
+                        )?;
+                        write_measurement_numerical(
+                            &mut s,
+                            "observation.extraction_airflow_sensor_temperature",
+                            "C",
+                            v.temperature,
+                            timestamp,
+                        )?;
+                    }
                 }
                 EventKind::Control(ControlEvent::AirAssistPump(v)) => {
                     write_measurement_str_debug(&mut s, "control.air_assist_pump", v, timestamp)?;
