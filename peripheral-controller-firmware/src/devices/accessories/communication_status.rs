@@ -1,7 +1,7 @@
 use crate::logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS};
 use defmt::{unwrap, warn};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher};
-use embassy_time::{Duration, Instant};
+use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
 
 enum CommunicationStatus {
@@ -56,11 +56,14 @@ impl CommunicationStatusReporter {
             CommunicationStatus::Failed { since: _, times } => times,
         };
 
-        if attempts > 3 {
+        if attempts > 5 {
             warn!("Giving up after {} communication attempts", attempts);
             self.evaluate().await;
             true
         } else {
+            // Wait before retry
+            Timer::after_millis(50).await;
+
             false
         }
     }

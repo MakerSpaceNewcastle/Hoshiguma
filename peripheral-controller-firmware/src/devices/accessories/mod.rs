@@ -193,8 +193,6 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                     }
                 }
 
-                embassy_time::Timer::after_millis(200).await;
-
                 // Extraction airflow sensor
                 'comm_retry: loop {
                     debug!("Extraction airflow sensor update attempt");
