@@ -13,11 +13,17 @@ pub(super) struct CommunicationStatusReporter {
     status: CommunicationStatus,
     severity: ObservedSeverity,
     monitor: MonitorKind,
+    warn_timeout: Duration,
+    critical_timeout: Duration,
     monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 9>,
 }
 
 impl CommunicationStatusReporter {
-    pub(super) fn new(monitor: MonitorKind) -> Self {
+    pub(super) fn new(
+        monitor: MonitorKind,
+        warn_timeout: Duration,
+        critical_timeout: Duration,
+    ) -> Self {
         let monitor_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
         Self {
@@ -27,6 +33,8 @@ impl CommunicationStatusReporter {
             },
             severity: ObservedSeverity::default(),
             monitor,
+            warn_timeout,
+            critical_timeout,
             monitor_tx,
         }
     }
@@ -40,6 +48,8 @@ impl CommunicationStatusReporter {
     }
 
     pub(super) async fn comm_fail(&mut self) -> CommunicationFailureAction {
+        const ATTEMPTS_BEFORE_GIVE_UP: usize = 10;
+
         self.status = match self.status {
             CommunicationStatus::Ok { last: _ } => CommunicationStatus::Failed {
                 since: Instant::now(),
@@ -56,25 +66,22 @@ impl CommunicationStatusReporter {
             CommunicationStatus::Failed { since: _, times } => times,
         };
 
-        if attempts > 5 {
+        if attempts > ATTEMPTS_BEFORE_GIVE_UP {
             warn!("Giving up after {} communication attempts", attempts);
             self.evaluate().await;
             CommunicationFailureAction::GiveUp
         } else {
             // Wait before retry
-            Timer::after_millis(50).await;
+            Timer::after_millis(10).await;
 
             CommunicationFailureAction::Retry
         }
     }
 
     pub(super) async fn evaluate(&mut self) {
-        const WARN_TIMEOUT: Duration = Duration::from_secs(3);
-        const CRITICAL_TIMEOUT: Duration = Duration::from_secs(10);
-
         let severity = match self.status {
             CommunicationStatus::Ok { last } => {
-                if Instant::now().saturating_duration_since(last) > WARN_TIMEOUT {
+                if Instant::now().saturating_duration_since(last) > self.warn_timeout {
                     self.status = CommunicationStatus::Failed {
                         since: Instant::now(),
                         times: 1,
@@ -85,7 +92,7 @@ impl CommunicationStatusReporter {
                 }
             }
             CommunicationStatus::Failed { since, times: _ } => {
-                if Instant::now().saturating_duration_since(since) > CRITICAL_TIMEOUT {
+                if Instant::now().saturating_duration_since(since) > self.critical_timeout {
                     Severity::Critical
                 } else {
                     Severity::Warn
