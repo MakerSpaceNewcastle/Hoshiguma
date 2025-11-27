@@ -1,5 +1,5 @@
 use crate::logic::safety::monitor::{ObservedSeverity, NEW_MONITOR_STATUS};
-use defmt::{unwrap, warn};
+use defmt::{unwrap, warn, Format};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher};
 use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
@@ -39,7 +39,7 @@ impl CommunicationStatusReporter {
         self.evaluate().await;
     }
 
-    pub(super) async fn comm_fail(&mut self) -> bool {
+    pub(super) async fn comm_fail(&mut self) -> CommunicationFailureAction {
         self.status = match self.status {
             CommunicationStatus::Ok { last: _ } => CommunicationStatus::Failed {
                 since: Instant::now(),
@@ -59,12 +59,12 @@ impl CommunicationStatusReporter {
         if attempts > 5 {
             warn!("Giving up after {} communication attempts", attempts);
             self.evaluate().await;
-            true
+            CommunicationFailureAction::GiveUp
         } else {
             // Wait before retry
             Timer::after_millis(50).await;
 
-            false
+            CommunicationFailureAction::Retry
         }
     }
 
@@ -101,4 +101,10 @@ impl CommunicationStatusReporter {
             })
             .await;
     }
+}
+
+#[derive(Format, PartialEq, Eq)]
+pub(super) enum CommunicationFailureAction {
+    Retry,
+    GiveUp,
 }
