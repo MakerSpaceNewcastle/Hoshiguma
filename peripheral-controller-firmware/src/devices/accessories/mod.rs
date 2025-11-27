@@ -10,7 +10,7 @@ use super::TemperaturesExt;
 use crate::{
     changed::ObservedValue,
     devices::accessories::{
-        communication_status::CommunicationStatusReporter,
+        communication_status::{CommunicationFailureAction, CommunicationStatusReporter},
         extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
     },
     telemetry::queue_telemetry_event,
@@ -228,13 +228,17 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                         }
                         Ok(_) => {
                             warn!("Unexpected RPC response");
-                            if ext_airflow_comm_status.comm_fail().await {
+                            if ext_airflow_comm_status.comm_fail().await
+                                == CommunicationFailureAction::Retry
+                            {
                                 break 'comm_retry;
                             }
                         }
                         Err(e) => {
                             warn!("RPC error: {}", e);
-                            if ext_airflow_comm_status.comm_fail().await {
+                            if ext_airflow_comm_status.comm_fail().await
+                                == CommunicationFailureAction::Retry
+                            {
                                 break 'comm_retry;
                             }
                         }
