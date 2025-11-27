@@ -74,10 +74,16 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
 
     let mut update_tick = Ticker::every(Duration::from_secs(1));
 
-    let mut cooler_comm_status =
-        CommunicationStatusReporter::new(MonitorKind::CoolerCommunicationFault);
-    let mut ext_airflow_comm_status =
-        CommunicationStatusReporter::new(MonitorKind::ExtractionAirflowSensorFault);
+    let mut cooler_comm_status = CommunicationStatusReporter::new(
+        MonitorKind::CoolerCommunicationFault,
+        Duration::from_secs(3),
+        Duration::from_secs(10),
+    );
+    let mut ext_airflow_comm_status = CommunicationStatusReporter::new(
+        MonitorKind::ExtractionAirflowSensorFault,
+        Duration::from_secs(10),
+        Duration::from_secs(30),
+    );
     let mut comm_status_check_tick = Ticker::every(Duration::from_secs(1));
 
     let mut cooler_control_command_rx = unwrap!(COOLER_CONTROL_COMMAND.subscriber());
@@ -106,7 +112,7 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
         {
             Either3::First(_) => {
                 // Cooler
-                'comm_retry: loop {
+                'cooler_comm_retry: loop {
                     debug!("Cooler update attempt");
                     match client
                         .call(
@@ -176,25 +182,29 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                                 })
                                 .await;
 
-                            break 'comm_retry;
+                            break 'cooler_comm_retry;
                         }
                         Ok(_) => {
                             warn!("Unexpected RPC response");
-                            if cooler_comm_status.comm_fail().await {
-                                break 'comm_retry;
+                            if cooler_comm_status.comm_fail().await
+                                == CommunicationFailureAction::GiveUp
+                            {
+                                break 'cooler_comm_retry;
                             }
                         }
                         Err(e) => {
                             warn!("RPC error: {}", e);
-                            if cooler_comm_status.comm_fail().await {
-                                break 'comm_retry;
+                            if cooler_comm_status.comm_fail().await
+                                == CommunicationFailureAction::GiveUp
+                            {
+                                break 'cooler_comm_retry;
                             }
                         }
                     }
                 }
 
                 // Extraction airflow sensor
-                'comm_retry: loop {
+                'airflow_sensor_comm_retry: loop {
                     debug!("Extraction airflow sensor update attempt");
                     match client
                         .call(
@@ -224,22 +234,22 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                                 })
                                 .await;
 
-                            break 'comm_retry;
+                            break 'airflow_sensor_comm_retry;
                         }
                         Ok(_) => {
                             warn!("Unexpected RPC response");
                             if ext_airflow_comm_status.comm_fail().await
-                                == CommunicationFailureAction::Retry
+                                == CommunicationFailureAction::GiveUp
                             {
-                                break 'comm_retry;
+                                break 'airflow_sensor_comm_retry;
                             }
                         }
                         Err(e) => {
                             warn!("RPC error: {}", e);
                             if ext_airflow_comm_status.comm_fail().await
-                                == CommunicationFailureAction::Retry
+                                == CommunicationFailureAction::GiveUp
                             {
-                                break 'comm_retry;
+                                break 'airflow_sensor_comm_retry;
                             }
                         }
                     }
