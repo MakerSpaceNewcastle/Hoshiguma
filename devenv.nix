@@ -8,7 +8,7 @@
 
     # Rust toolchain
     rustup
-    probe-rs
+    probe-rs-tools
 
     # Peripheral controller telemetry receiver
     pkg-config
