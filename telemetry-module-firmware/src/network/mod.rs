@@ -153,7 +153,7 @@ pub(super) async fn task(r: crate::EthernetResources, spawner: Spawner) {
         }
 
         loop {
-            match select(metric_rx.next_message(), Timer::after_secs(2)).await {
+            match select(metric_rx.next_message(), Timer::after_millis(800)).await {
                 Either::First(WaitResult::Message(metric)) => {
                     // Add the metric to the buffer
                     match metric_buffer.push(metric) {
