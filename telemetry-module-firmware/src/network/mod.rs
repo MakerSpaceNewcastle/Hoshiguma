@@ -2,7 +2,7 @@ pub(crate) mod telemetry_tx;
 pub(crate) mod time;
 
 use core::{cell::RefCell, sync::atomic::Ordering};
-use defmt::{info, unwrap, warn};
+use defmt::{info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDeviceWithConfig;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
@@ -88,7 +88,7 @@ pub(super) async fn task(r: crate::EthernetResources, spawner: Spawner) {
         .await
         .unwrap();
 
-    unwrap!(spawner.spawn(ethernet_task(runner)));
+    spawner.must_spawn(ethernet_task(runner));
 
     let mut rng = RoscRng;
 
@@ -99,7 +99,7 @@ pub(super) async fn task(r: crate::EthernetResources, spawner: Spawner) {
         RESOURCES.init(StackResources::<4>::new()),
         rng.next_u64(),
     );
-    unwrap!(spawner.spawn(net_task(runner)));
+    spawner.must_spawn(net_task(runner));
 
     'connection: loop {
         // Get configuration via DHCP

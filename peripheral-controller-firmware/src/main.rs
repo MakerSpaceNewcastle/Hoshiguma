@@ -12,7 +12,7 @@ mod trace;
 
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
-use defmt::{info, unwrap};
+use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_time::{Duration, Instant, Ticker};
@@ -158,30 +158,30 @@ fn main() -> ! {
             trace::identify_core_1_executor(executor_1.id() as u32);
             let spawner = executor_1.spawner();
 
-            unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
+            spawner.must_spawn(watchdog_feed_task(r.status));
 
-            unwrap!(spawner.spawn(devices::machine_power_detector::task(
-                r.machine_power_detect
-            )));
-            unwrap!(spawner.spawn(devices::machine_run_detector::task(r.machine_run_detect)));
-            unwrap!(spawner.spawn(devices::chassis_intrusion_detector::task(
-                r.chassis_intrusion_detect
-            )));
+            spawner.must_spawn(devices::machine_power_detector::task(
+                r.machine_power_detect,
+            ));
+            spawner.must_spawn(devices::machine_run_detector::task(r.machine_run_detect));
+            spawner.must_spawn(devices::chassis_intrusion_detector::task(
+                r.chassis_intrusion_detect,
+            ));
 
             // State monitor tasks
-            unwrap!(spawner.spawn(logic::safety::monitor::chassis_intrusion::task()));
+            spawner.must_spawn(logic::safety::monitor::chassis_intrusion::task());
 
             // State monitor observation and alarm tasks
-            unwrap!(spawner.spawn(logic::safety::monitor::observation_task()));
-            unwrap!(spawner.spawn(logic::safety::lockout::alarm_evaluation_task()));
+            spawner.must_spawn(logic::safety::monitor::observation_task());
+            spawner.must_spawn(logic::safety::lockout::alarm_evaluation_task());
 
             // Machine operation permission control tasks
-            unwrap!(spawner.spawn(logic::safety::lockout::machine_lockout_task()));
-            unwrap!(spawner.spawn(devices::laser_enable::task(r.laser_enable)));
-            unwrap!(spawner.spawn(devices::machine_enable::task(r.machine_enable)));
+            spawner.must_spawn(logic::safety::lockout::machine_lockout_task());
+            spawner.must_spawn(devices::laser_enable::task(r.laser_enable));
+            spawner.must_spawn(devices::machine_enable::task(r.machine_enable));
 
             #[cfg(feature = "test-panic-on-core-1")]
-            unwrap!(spawner.spawn(dummy_panic()));
+            spawner.must_spawn(dummy_panic());
 
             loop {
                 cortex_m::asm::wfe();
@@ -198,47 +198,47 @@ fn main() -> ! {
     trace::identify_core_0_executor(executor_0.id() as u32);
     let spawner = executor_0.spawner();
 
-    unwrap!(spawner.spawn(logic::status_lamp::task()));
-    unwrap!(spawner.spawn(devices::status_lamp::task(r.status_lamp)));
+    spawner.must_spawn(logic::status_lamp::task());
+    spawner.must_spawn(devices::status_lamp::task(r.status_lamp));
 
-    unwrap!(spawner.spawn(devices::temperature_sensors::task(r.onewire)));
-    unwrap!(spawner.spawn(devices::accessories::task(r.accessories_bus)));
+    spawner.must_spawn(devices::temperature_sensors::task(r.onewire));
+    spawner.must_spawn(devices::accessories::task(r.accessories_bus));
 
     // State monitor tasks
-    unwrap!(spawner.spawn(logic::safety::monitor::power::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::coolant_flow::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::coolant_level::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::extraction_airflow::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::temperatures_a::task()));
-    unwrap!(spawner.spawn(logic::safety::monitor::temperatures_b::task()));
+    spawner.must_spawn(logic::safety::monitor::power::task());
+    spawner.must_spawn(logic::safety::monitor::coolant_flow::task());
+    spawner.must_spawn(logic::safety::monitor::coolant_level::task());
+    spawner.must_spawn(logic::safety::monitor::extraction_airflow::task());
+    spawner.must_spawn(logic::safety::monitor::temperatures_a::task());
+    spawner.must_spawn(logic::safety::monitor::temperatures_b::task());
 
     // Air assist control tasks
-    unwrap!(spawner.spawn(devices::air_assist_demand_detector::task(
-        r.air_assist_demand_detect
-    )));
-    unwrap!(spawner.spawn(devices::air_assist_pump::task(r.air_assist_pump)));
-    unwrap!(spawner.spawn(logic::air_assist::task()));
+    spawner.must_spawn(devices::air_assist_demand_detector::task(
+        r.air_assist_demand_detect,
+    ));
+    spawner.must_spawn(devices::air_assist_pump::task(r.air_assist_pump));
+    spawner.must_spawn(logic::air_assist::task());
 
     // Fume extraction control tasks
-    unwrap!(spawner.spawn(devices::fume_extraction_mode_switch::task(
-        r.fume_extraction_mode_switch
-    )));
-    unwrap!(spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan)));
-    unwrap!(spawner.spawn(logic::fume_extraction::task()));
+    spawner.must_spawn(devices::fume_extraction_mode_switch::task(
+        r.fume_extraction_mode_switch,
+    ));
+    spawner.must_spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan));
+    spawner.must_spawn(logic::fume_extraction::task());
 
     // Cooler control tasks
-    unwrap!(spawner.spawn(logic::cooling::control::task()));
-    unwrap!(spawner.spawn(logic::cooling::demand::task()));
+    spawner.must_spawn(logic::cooling::control::task());
+    spawner.must_spawn(logic::cooling::demand::task());
 
     // Telemetry reporting
-    unwrap!(spawner.spawn(telemetry::task(r.telemetry)));
+    spawner.must_spawn(telemetry::task(r.telemetry));
 
     // Task reporting
     #[cfg(feature = "trace")]
-    unwrap!(spawner.spawn(trace::task()));
+    spawner.must_spawn(trace::task());
 
     #[cfg(feature = "test-panic-on-core-0")]
-    unwrap!(spawner.spawn(dummy_panic()));
+    spawner.must_spawn(dummy_panic());
 
     loop {
         cortex_m::asm::wfe();

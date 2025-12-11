@@ -6,7 +6,7 @@ mod machine;
 mod rpc;
 
 use assign_resources::assign_resources;
-use defmt::{info, unwrap};
+use defmt::info;
 use defmt_rtt as _;
 use devices::{
     compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
@@ -119,12 +119,12 @@ async fn main(spawner: Spawner) {
         temperature_sensors,
     };
 
-    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
+    spawner.must_spawn(watchdog_feed_task(r.status));
 
-    unwrap!(spawner.spawn(rpc::task(r.communication, machine,)));
+    spawner.must_spawn(rpc::task(r.communication, machine));
 
     #[cfg(feature = "test-panic-on-core-0")]
-    unwrap!(spawner.spawn(dummy_panic()));
+    spawner.must_spawn(dummy_panic());
 }
 
 #[embassy_executor::task]
