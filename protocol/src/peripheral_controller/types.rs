@@ -7,6 +7,7 @@ use strum::{EnumIter, IntoEnumIterator};
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum MonitorKind {
     MachinePowerOff,
+    AccessControlDenied,
     ChassisIntrusion,
     CoolerCommunicationFault,
     MachineElectronicsOvertemperature,
@@ -25,7 +26,7 @@ pub enum MonitorKind {
 ///
 /// This constant defines the total count of monitor types that are observed.
 /// It must be equal to the number of variants of `MonitorKind`.
-const NUM_MONITORS: usize = 13;
+const NUM_MONITORS: usize = 14;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Monitors {
@@ -170,6 +171,13 @@ pub enum MachinePower {
 pub enum MachineRun {
     Idle,
     Running,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum AccessControlState {
+    Denied,
+    Allowed,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

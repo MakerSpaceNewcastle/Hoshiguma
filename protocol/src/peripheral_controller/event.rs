@@ -1,7 +1,7 @@
 use super::types::{
-    AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolingDemand, CoolingEnabled,
-    FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable, MachineOperationLockout,
-    MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
+    AccessControlState, AirAssistDemand, AirAssistPump, ChassisIntrusion, CoolingDemand,
+    CoolingEnabled, FumeExtractionFan, FumeExtractionMode, LaserEnable, MachineEnable,
+    MachineOperationLockout, MachinePower, MachineRun, Monitors, StatusLamp, Temperatures,
 };
 use crate::{
     accessories::{
@@ -47,8 +47,9 @@ pub enum ObservationEvent {
     AirAssistDemand(AirAssistDemand),
     ChassisIntrusion(ChassisIntrusion),
     FumeExtractionMode(FumeExtractionMode),
-    MachinePower(MachinePower),
+    MachinePowerDetect(MachinePower),
     MachineRun(MachineRun),
+    AccessControl(AccessControlState),
 
     // Forwarded from cooler
     TemperaturesB(CoolerTemperatures),
@@ -68,6 +69,7 @@ pub enum ControlEvent {
     LaserEnable(LaserEnable),
     MachineEnable(MachineEnable),
     StatusLamp(StatusLamp),
+    MachinePower(MachinePower),
 
     // Forwarded from cooler
     CoolerCompressor(CompressorState),
