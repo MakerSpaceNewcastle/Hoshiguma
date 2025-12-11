@@ -1,3 +1,4 @@
+pub(crate) mod access_control;
 pub(crate) mod chassis_intrusion;
 pub(crate) mod coolant_flow;
 pub(crate) mod coolant_level;

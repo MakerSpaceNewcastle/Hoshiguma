@@ -6,6 +6,7 @@ pub(crate) mod fume_extraction_fan;
 pub(crate) mod fume_extraction_mode_switch;
 pub(crate) mod laser_enable;
 pub(crate) mod machine_enable;
+pub(crate) mod machine_power;
 pub(crate) mod machine_power_detector;
 pub(crate) mod machine_run_detector;
 pub(crate) mod status_lamp;

@@ -47,7 +47,7 @@ pub enum ObservationEvent {
     AirAssistDemand(AirAssistDemand),
     ChassisIntrusion(ChassisIntrusion),
     FumeExtractionMode(FumeExtractionMode),
-    MachinePowerDetect(MachinePower),
+    MachinePower(MachinePower),
     MachineRun(MachineRun),
     AccessControl(AccessControlState),
 

@@ -70,6 +70,12 @@ assign_resources! {
     machine_enable: MachineEnableResources {
         relay: RELAY_3,
     },
+    machine_power: MachinePowerResources {
+        relay: RELAY_5,
+    },
+    access_control: AccessControlResources {
+        detect: IN_2,
+    },
     telemetry: TelemetryResources {
         uart: UART0,
         tx_pin: IO_0,
@@ -145,8 +151,6 @@ fn main() -> ! {
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
     let _in1 = Input::new(p.IN_1, Pull::Down);
-    let _in2 = Input::new(p.IN_2, Pull::Down);
-    let _relay5 = Output::new(p.RELAY_5, Level::Low);
 
     // Safety critical things go on core 1
     spawn_core1(
@@ -211,6 +215,9 @@ fn main() -> ! {
     spawner.must_spawn(logic::safety::monitor::extraction_airflow::task());
     spawner.must_spawn(logic::safety::monitor::temperatures_a::task());
     spawner.must_spawn(logic::safety::monitor::temperatures_b::task());
+
+    // Power control tasks
+    spawner.must_spawn(devices::machine_power::task(r.machine_power));
 
     // Air assist control tasks
     spawner.must_spawn(devices::air_assist_demand_detector::task(
