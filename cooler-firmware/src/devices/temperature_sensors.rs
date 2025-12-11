@@ -1,6 +1,6 @@
 use crate::OnewireResources;
 use core::cell::RefCell;
-use defmt::{info, unwrap};
+use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
@@ -68,7 +68,7 @@ pub(crate) struct TemperatureSensors {}
 
 impl TemperatureSensors {
     pub(crate) fn new(spawner: &Spawner, r: OnewireResources) -> Self {
-        unwrap!(spawner.spawn(task(r)));
+        spawner.must_spawn(task(r));
         Self {}
     }
 

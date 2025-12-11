@@ -1,6 +1,6 @@
 use crate::FlowSensorResources;
 use core::cell::RefCell;
-use defmt::{info, unwrap};
+use defmt::info;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Ticker};
@@ -59,7 +59,7 @@ pub(crate) struct CoolantFlowSensor {}
 
 impl CoolantFlowSensor {
     pub(crate) fn new(spawner: &Spawner, r: FlowSensorResources) -> Self {
-        unwrap!(spawner.spawn(task(r)));
+        spawner.must_spawn(task(r));
         Self {}
     }
 

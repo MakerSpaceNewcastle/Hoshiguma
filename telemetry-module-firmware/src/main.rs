@@ -10,7 +10,7 @@ mod telemetry;
 mod trace;
 
 use crate::buttons::{UiEvent, UI_INPUTS};
-use defmt::{info, unwrap};
+use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_futures::select::{select, Either};
@@ -75,18 +75,18 @@ async fn main(spawner: Spawner) {
 
     info!("{}", system_information());
 
-    unwrap!(spawner.spawn(watchdog_feed_task(r.status)));
-    unwrap!(spawner.spawn(crate::network::task(r.ethernet, spawner)));
-    unwrap!(spawner.spawn(crate::telemetry::system::task()));
-    unwrap!(spawner.spawn(crate::telemetry::machine::task(r.rs485_uart_1)));
-    unwrap!(spawner.spawn(crate::buttons::task(r.buttons)));
-    unwrap!(spawner.spawn(crate::display::task(r.display)));
+    spawner.must_spawn(watchdog_feed_task(r.status));
+    spawner.must_spawn(crate::network::task(r.ethernet, spawner));
+    spawner.must_spawn(crate::telemetry::system::task());
+    spawner.must_spawn(crate::telemetry::machine::task(r.rs485_uart_1));
+    spawner.must_spawn(crate::buttons::task(r.buttons));
+    spawner.must_spawn(crate::display::task(r.display));
 
     #[cfg(feature = "trace")]
-    unwrap!(spawner.spawn(trace::task()));
+    spawner.must_spawn(trace::task());
 
     #[cfg(feature = "test-panic-on-core-0")]
-    unwrap!(spawner.spawn(dummy_panic()));
+    spawner.must_spawn(dummy_panic());
 }
 
 #[embassy_executor::task]
