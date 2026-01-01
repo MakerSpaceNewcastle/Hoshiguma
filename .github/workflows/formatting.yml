@@ -14,13 +14,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: cachix/install-nix-action@v31
-      - uses: cachix/cachix-action@v16
-        with:
-          name: devenv
-      - name: Install devenv.sh
-        run: nix profile install nixpkgs#devenv
+      - uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Format
-        shell: devenv shell bash -- -e {0}
-        run: treefmt --fail-on-change
+        run: nix develop --command treefmt --fail-on-change
