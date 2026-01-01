@@ -15,12 +15,12 @@ cortex-m-rt = "0.7.5"
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "defmt"] }
-embassy-rp = { version = "0.8.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
+embassy-rp = { version = "0.9.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }
 embassy-time = { version = "0.5.0", features = ["defmt"] }
 git-version = "0.3.5"
 hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
-portable-atomic = { version = "1.11.1", features = ["critical-section"] }
+portable-atomic = { version = "1.13.0", features = ["critical-section"] }
 sensirion-i2c = { version = "0.4.0", features = ["embedded-hal-async"] }
 static_cell = "2.1.0"
 teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
