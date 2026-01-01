@@ -7,43 +7,13 @@ updates:
       interval: quarterly
 
   - package-ecosystem: cargo
-    directory: "cooler-firmware"
-    schedule:
-      interval: quarterly
-    groups:
-      cargo-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: cargo
-    directory: "diagnostic-cli"
-    schedule:
-      interval: quarterly
-    groups:
-      cargo-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: cargo
-    directory: "peripheral-controller-firmware"
-    schedule:
-      interval: quarterly
-    groups:
-      cargo-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: cargo
-    directory: "protocol"
-    schedule:
-      interval: quarterly
-    groups:
-      cargo-dependencies:
-        patterns:
-          - "*"
-
-  - package-ecosystem: cargo
-    directory: "telemetry-module-firmware"
+    directories:
+      - cooler-firmware
+      - diagnostic-cli
+      - extraction-airflow-sensor-firmware
+      - peripheral-controller-firmware
+      - protocol
+      - telemetry-module-firmware
     schedule:
       interval: quarterly
     groups:
