@@ -4,12 +4,12 @@ updates:
   - package-ecosystem: github-actions
     directory: "."
     schedule:
-      interval: "monthly"
+      interval: quarterly
 
   - package-ecosystem: cargo
     directory: "cooler-firmware"
     schedule:
-      interval: "monthly"
+      interval: quarterly
     groups:
       cargo-dependencies:
         patterns:
@@ -18,7 +18,7 @@ updates:
   - package-ecosystem: cargo
     directory: "diagnostic-cli"
     schedule:
-      interval: "monthly"
+      interval: quarterly
     groups:
       cargo-dependencies:
         patterns:
@@ -27,7 +27,7 @@ updates:
   - package-ecosystem: cargo
     directory: "peripheral-controller-firmware"
     schedule:
-      interval: "monthly"
+      interval: quarterly
     groups:
       cargo-dependencies:
         patterns:
@@ -36,7 +36,7 @@ updates:
   - package-ecosystem: cargo
     directory: "protocol"
     schedule:
-      interval: "monthly"
+      interval: quarterly
     groups:
       cargo-dependencies:
         patterns:
@@ -45,7 +45,7 @@ updates:
   - package-ecosystem: cargo
     directory: "telemetry-module-firmware"
     schedule:
-      interval: "monthly"
+      interval: quarterly
     groups:
       cargo-dependencies:
         patterns:
