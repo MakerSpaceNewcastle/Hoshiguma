@@ -256,7 +256,7 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    // watchdog.start(Duration::from_millis(500));
+    watchdog.start(Duration::from_millis(500));
 
     let mut feed_ticker = Ticker::every(Duration::from_millis(100));
 
