@@ -36,5 +36,4 @@ jobs:
           cd ./protocol
           nix develop --command cargo test
 
-      # Will be built as part of other jobs (diagnostic CLI, periperhal
-      # controller firmware, etc.) so no need to do that here.
+      # Will be built as part of other jobs so no need to do that here.
