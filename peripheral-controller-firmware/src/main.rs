@@ -2,6 +2,7 @@
 #![no_main]
 
 mod changed;
+mod cli;
 mod devices;
 mod logic;
 mod maybe_timer;
@@ -34,6 +35,9 @@ assign_resources! {
     status: StatusResources {
         watchdog: WATCHDOG,
         led: PIN_25,
+    },
+    usb: UsbResources {
+        usb: USB,
     },
     onewire: OnewireResources {
         pin: ONEWIRE,
@@ -197,6 +201,8 @@ fn main() -> ! {
     #[cfg(feature = "trace")]
     trace::identify_core_0_executor(executor_0.id() as u32);
     let spawner = executor_0.spawner();
+
+    spawner.must_spawn(cli::task(r.usb, spawner));
 
     spawner.must_spawn(logic::status_lamp::task());
     spawner.must_spawn(devices::status_lamp::task(r.status_lamp));

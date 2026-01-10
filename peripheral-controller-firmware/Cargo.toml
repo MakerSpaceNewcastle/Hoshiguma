@@ -6,7 +6,7 @@ edition = "2021"
 license = "MIT"
 
 [features]
-trace = ["embassy-executor/trace", "dep:heapless"]
+trace = ["embassy-executor/trace"]
 panic-probe = ["dep:panic-probe"]
 test-panic-on-core-0 = []
 test-panic-on-core-1 = []
@@ -38,7 +38,8 @@ git-version = "0.3.5"
 teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
 hoshiguma-protocol = { path = "../protocol", default-features = false, features = ["no-std"] }
 
-heapless = { version = "0.9.1", features = ["defmt"], optional = true }
+heapless = { version = "0.9.1", features = ["defmt"] }
+embassy-usb = "0.5.1"
 
 [profile.release]
 debug = 2
