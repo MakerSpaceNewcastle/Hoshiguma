@@ -169,8 +169,8 @@ version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5698b2eda4613b62f3aa3119805df1ca6739e00167a2600b3a234ac49b14803"
 dependencies = [
- "embedded-io",
- "embedded-io-async",
+ "embedded-io 0.6.1",
+ "embedded-io-async 0.6.1",
 ]
 
 [[package]]
@@ -536,17 +536,17 @@ dependencies = [
 
 [[package]]
 name = "embassy-net"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0558a231a47e7d4a06a28b5278c92e860f1200f24821d2f365a2f40fe3f3c7b2"
+checksum = "71f0aa32082b7df00164f485322d6edab59122c9718b363b07ec23424c2c06a0"
 dependencies = [
  "defmt 1.0.1",
  "document-features",
  "embassy-net-driver",
  "embassy-sync",
  "embassy-time",
- "embedded-io-async",
- "embedded-nal-async",
+ "embedded-io-async 0.7.0",
+ "embedded-nal-async 0.9.0",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "managed",
  "smoltcp",
@@ -609,8 +609,8 @@ dependencies = [
  "embedded-hal 1.0.0",
  "embedded-hal-async",
  "embedded-hal-nb",
- "embedded-io",
- "embedded-io-async",
+ "embedded-io 0.6.1",
+ "embedded-io-async 0.6.1",
  "embedded-storage",
  "embedded-storage-async",
  "fixed",
@@ -632,7 +632,7 @@ checksum = "73974a3edbd0bd286759b3d483540f0ebef705919a5f56f4fc7709066f71689b"
 dependencies = [
  "cfg-if",
  "critical-section",
- "embedded-io-async",
+ "embedded-io-async 0.6.1",
  "futures-core",
  "futures-sink",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -681,7 +681,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17119855ccc2d1f7470a39756b12068454ae27a3eabb037d940b5c03d9c77b7a"
 dependencies = [
  "defmt 1.0.1",
- "embedded-io-async",
+ "embedded-io-async 0.6.1",
 ]
 
 [[package]]
@@ -752,13 +752,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-io"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9eb1aa714776b75c7e67e1da744b81a129b3ff919c8712b5e1b32252c1f07cc7"
+
+[[package]]
 name = "embedded-io-async"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ff09972d4073aa8c299395be75161d582e7629cd663171d62af73c8d50dba3f"
 dependencies = [
  "defmt 0.3.100",
- "embedded-io",
+ "embedded-io 0.6.1",
+]
+
+[[package]]
+name = "embedded-io-async"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2564b9f813c544241430e147d8bc454815ef9ac998878d30cc3055449f7fd4c0"
+dependencies = [
+ "embedded-io 0.7.1",
 ]
 
 [[package]]
@@ -776,7 +791,17 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76959917cd2b86f40a98c28dd5624eddd1fa69d746241c8257eac428d83cb211"
 dependencies = [
- "embedded-io-async",
+ "embedded-io-async 0.6.1",
+ "embedded-nal",
+]
+
+[[package]]
+name = "embedded-nal-async"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb5a1bd585135d302f8f6d7de329310938093da6271b37a6c94b8798795c0c6d"
+dependencies = [
+ "embedded-io-async 0.7.0",
  "embedded-nal",
 ]
 
@@ -805,8 +830,8 @@ dependencies = [
  "atomic-polyfill",
  "defmt 0.3.100",
  "digest",
- "embedded-io",
- "embedded-io-async",
+ "embedded-io 0.6.1",
+ "embedded-io-async 0.6.1",
  "generic-array 0.14.7",
  "heapless 0.6.1",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1097,7 +1122,7 @@ dependencies = [
  "embassy-time",
  "embedded-graphics",
  "embedded-hal 1.0.0",
- "embedded-nal-async",
+ "embedded-nal-async 0.8.0",
  "git-version",
  "heapless 0.8.0 (git+https://github.com/rust-embedded/heapless?rev=4e31d3e604a15739d064ae729eb8fb8b5bda3b46)",
  "hoshiguma-protocol",
@@ -1600,9 +1625,9 @@ dependencies = [
  "base64",
  "buffered-io",
  "defmt 0.3.100",
- "embedded-io",
- "embedded-io-async",
- "embedded-nal-async",
+ "embedded-io 0.6.1",
+ "embedded-io-async 0.6.1",
+ "embedded-nal-async 0.8.0",
  "embedded-tls",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex",
@@ -1886,7 +1911,7 @@ checksum = "d9cc2cbd3f0e112bdec135906036d8e10c80074982a1170ae90fa6b4f059b808"
 dependencies = [
  "defmt 1.0.1",
  "embassy-time",
- "embedded-io-async",
+ "embedded-io-async 0.6.1",
  "heapless 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "postcard",
  "serde",
