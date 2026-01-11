@@ -16,7 +16,7 @@ use core::sync::atomic::Ordering;
 use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
-use embassy_time::{Duration, Instant, Ticker};
+use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -62,6 +62,9 @@ assign_resources! {
     fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
         switch: IN_5,
     },
+    access_control: AccessControlResources {
+        detect: IN_2,
+    },
     air_assist_pump: AirAssistPumpResources {
         relay: RELAY_6,
     },
@@ -73,6 +76,9 @@ assign_resources! {
     },
     machine_enable: MachineEnableResources {
         relay: RELAY_3,
+    },
+    machine_power: MachinePowerResources {
+        relay: RELAY_5,
     },
     telemetry: TelemetryResources {
         uart: UART0,
@@ -149,8 +155,6 @@ fn main() -> ! {
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
     let _in1 = Input::new(p.IN_1, Pull::Down);
-    let _in2 = Input::new(p.IN_2, Pull::Down);
-    let _relay5 = Output::new(p.RELAY_5, Level::Low);
 
     // Safety critical things go on core 1
     spawn_core1(
@@ -209,6 +213,11 @@ fn main() -> ! {
 
     spawner.must_spawn(devices::temperature_sensors::task(r.onewire));
     spawner.must_spawn(devices::accessories::task(r.accessories_bus));
+
+    spawner.must_spawn(quick_and_dirty_machine_power_for_new_access_control_task(
+        r.access_control,
+        r.machine_power,
+    ));
 
     // State monitor tasks
     spawner.must_spawn(logic::safety::monitor::power::task());
@@ -312,5 +321,21 @@ fn boot_reason() -> BootReason {
         BootReason::WatchdogTimeout
     } else {
         BootReason::Normal
+    }
+}
+
+#[embassy_executor::task]
+async fn quick_and_dirty_machine_power_for_new_access_control_task(
+    ir: AccessControlResources,
+    or: MachinePowerResources,
+) {
+    let access_control = Input::new(ir.detect, Pull::Down);
+    let mut machine_power = Output::new(or.relay, Level::Low);
+
+    loop {
+        let level = access_control.get_level();
+        machine_power.set_level(level);
+
+        Timer::after_millis(200).await;
     }
 }
