@@ -16,10 +16,6 @@
         # Rust toolchain
         rustup
         probe-rs-tools
-
-        # Peripheral controller telemetry receiver
-        pkg-config
-        systemd
       ];
     };
   };
