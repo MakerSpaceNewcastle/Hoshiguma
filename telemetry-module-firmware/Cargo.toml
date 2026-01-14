@@ -6,6 +6,8 @@ edition = "2024"
 license = "MIT"
 
 [features]
+default = ["enable-network"]
+enable-network = []
 trace = ["embassy-executor/trace"]
 test-panic-on-core-0 = []
 

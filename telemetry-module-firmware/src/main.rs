@@ -76,6 +76,7 @@ async fn main(spawner: Spawner) {
     info!("{}", system_information());
 
     spawner.must_spawn(watchdog_feed_task(r.status));
+    #[cfg(feature = "enable-network")]
     spawner.must_spawn(crate::network::task(r.ethernet, spawner));
     spawner.must_spawn(crate::telemetry::system::task());
     spawner.must_spawn(crate::telemetry::machine::task(r.rs485_uart_1));
