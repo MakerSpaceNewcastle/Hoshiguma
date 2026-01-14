@@ -79,7 +79,7 @@ fn temperature_to_state(
                 "Temperature {} is above warning threshold of {}",
                 temperature, warn
             );
-            Severity::Warn
+            Severity::Warning
         } else {
             debug!("Temperature {} is normal", temperature);
             Severity::Normal

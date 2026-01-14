@@ -49,7 +49,8 @@ pub(crate) async fn alarm_evaluation_task() {
 
         let lockout = match severity {
             Severity::Normal => MachineOperationLockout::Permitted,
-            Severity::Warn => match is_running {
+            Severity::Information => MachineOperationLockout::Permitted,
+            Severity::Warning => match is_running {
                 MachineRun::Idle => MachineOperationLockout::Denied,
                 MachineRun::Running => MachineOperationLockout::PermittedUntilIdle,
             },
