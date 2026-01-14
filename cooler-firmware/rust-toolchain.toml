@@ -1,5 +1,0 @@
-[toolchain]
-channel = "1.91"
-components = ["rust-src", "clippy", "rust-analyzer"]
-targets = ["thumbv6m-none-eabi"]
-profile = "minimal"
