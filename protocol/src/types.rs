@@ -22,7 +22,8 @@ pub struct SystemInformation {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Severity {
     Normal,
-    Warn,
+    Information,
+    Warning,
     Critical,
 }
 

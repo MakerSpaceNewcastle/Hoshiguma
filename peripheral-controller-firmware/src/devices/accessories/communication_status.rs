@@ -86,7 +86,7 @@ impl CommunicationStatusReporter {
                         since: Instant::now(),
                         times: 1,
                     };
-                    Severity::Warn
+                    Severity::Warning
                 } else {
                     Severity::Normal
                 }
@@ -95,7 +95,7 @@ impl CommunicationStatusReporter {
                 if Instant::now().saturating_duration_since(since) > self.critical_timeout {
                     Severity::Critical
                 } else {
-                    Severity::Warn
+                    Severity::Warning
                 }
             }
         };

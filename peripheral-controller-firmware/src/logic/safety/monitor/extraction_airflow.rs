@@ -46,12 +46,12 @@ pub(crate) async fn task() {
                                 if reading.differential_pressure > WARN {
                                     Severity::Normal
                                 } else if reading.differential_pressure > CRITICAL {
-                                    Severity::Warn
+                                    Severity::Warning
                                 } else {
                                     Severity::Critical
                                 }
                             }
-                            Some(Err(_)) => Severity::Warn,
+                            Some(Err(_)) => Severity::Warning,
                             None => Severity::Critical,
                         }
                     } else {

@@ -25,7 +25,7 @@ pub(crate) async fn task() {
                 if *reading < CRITICAL {
                     Severity::Critical
                 } else if *reading < WARN {
-                    Severity::Warn
+                    Severity::Warning
                 } else {
                     Severity::Normal
                 },

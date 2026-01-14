@@ -31,7 +31,7 @@ pub(crate) async fn task() {
             if sensor_failure_counter < 3 {
                 Severity::Normal
             } else {
-                Severity::Warn
+                Severity::Warning
             }
         } else {
             sensor_failure_counter = 0;
