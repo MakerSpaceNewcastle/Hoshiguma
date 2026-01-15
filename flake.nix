@@ -12,6 +12,7 @@
         alejandra
         mdl
         rustfmt
+        typos
 
         # Rust toolchain
         rustup

@@ -20,7 +20,7 @@ module Box() {
         }
       }
 
-      // Moutning holes
+      // Mounting holes
       for(x = [-50, 50]) {
         translate([x, -(box_inner[1] / 2) + 0.05, box_inner[2] / 2]) {
           rotate([90, 0, 0]) {

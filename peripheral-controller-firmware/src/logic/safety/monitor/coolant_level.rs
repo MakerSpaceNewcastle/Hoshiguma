@@ -1,5 +1,5 @@
 use super::{ObservedSeverity, NEW_MONITOR_STATUS};
-use crate::devices::accessories::cooler::COOLANT_RESEVOIR_LEVEL_CHANGED;
+use crate::devices::accessories::cooler::COOLANT_RESERVOIR_LEVEL_CHANGED;
 use defmt::unwrap;
 use hoshiguma_protocol::{
     accessories::cooler::types::CoolantReservoirLevel, peripheral_controller::types::MonitorKind,
@@ -13,7 +13,7 @@ pub(crate) async fn task() {
 
     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-    let mut level_rx = COOLANT_RESEVOIR_LEVEL_CHANGED.receiver().unwrap();
+    let mut level_rx = COOLANT_RESERVOIR_LEVEL_CHANGED.receiver().unwrap();
 
     let mut level_low = ObservedSeverity::default();
 

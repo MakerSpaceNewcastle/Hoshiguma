@@ -41,7 +41,7 @@ pub(crate) static COOLANT_FLOW_READ: Watch<CriticalSectionRawMutex, CoolantFlow,
 pub(crate) static COOLER_TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 2> =
     Watch::new();
 
-pub(crate) static COOLANT_RESEVOIR_LEVEL_CHANGED: Watch<
+pub(crate) static COOLANT_RESERVOIR_LEVEL_CHANGED: Watch<
     CriticalSectionRawMutex,
     CoolantReservoirLevel,
     1,
