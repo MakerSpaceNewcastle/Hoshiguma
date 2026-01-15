@@ -3,7 +3,7 @@ pub(crate) mod cooler;
 pub(crate) mod extraction_airflow_sensor;
 
 use self::cooler::{
-    COOLANT_FLOW_READ, COOLANT_RESEVOIR_LEVEL_CHANGED, COOLER_CONTROL_COMMAND,
+    COOLANT_FLOW_READ, COOLANT_RESERVOIR_LEVEL_CHANGED, COOLER_CONTROL_COMMAND,
     COOLER_TEMPERATURES_READ,
 };
 use super::TemperaturesExt;
@@ -93,7 +93,7 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
     let mut coolant_reservoir_level = ObservedValue::default();
     let coolant_flow_tx = COOLANT_FLOW_READ.sender();
     let temperatures_tx = COOLER_TEMPERATURES_READ.sender();
-    let coolant_reservoir_level_tx = COOLANT_RESEVOIR_LEVEL_CHANGED.sender();
+    let coolant_reservoir_level_tx = COOLANT_RESERVOIR_LEVEL_CHANGED.sender();
 
     let mut coolant_pump = ObservedValue::default();
     let mut compressor = ObservedValue::default();
