@@ -1,0 +1,29 @@
+[package]
+name = "hoshiguma-hmi"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+cortex-m-rt = "0.7.5"
+defmt = "1.0.1"
+defmt-rtt = "1.0.0"
+embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-time = "0.5.0"
+embedded-graphics = "0.8.1"
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+peek-o-display-bsp = { git = "https://github.com/DanNixon/peek-o-display", features = ["rp2040"] }
+
+[profile.release]
+debug = 2
+lto = true
+opt-level = 'z'
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = "z"
+
+[lints.rust]
+unused_crate_dependencies = "deny"
