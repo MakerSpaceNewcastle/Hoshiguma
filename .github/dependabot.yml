@@ -10,6 +10,7 @@ updates:
     directories:
       - cooler-firmware
       - extraction-airflow-sensor-firmware
+      - hmi-firmware
       - peripheral-controller-firmware
       - protocol
       - telemetry-module-firmware
