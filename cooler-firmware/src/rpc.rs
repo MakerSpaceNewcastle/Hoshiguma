@@ -1,12 +1,12 @@
-use crate::{machine::Machine, ControlCommunicationResources};
+use crate::{ControlCommunicationResources, machine::Machine};
 use core::time::Duration as CoreDuration;
 use defmt::{debug, warn};
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{Either, select};
 use embassy_time::{Duration, Instant, Ticker};
 use hoshiguma_protocol::accessories::{
+    SERIAL_BAUD,
     cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
     rpc::{Request, Response},
-    SERIAL_BAUD,
 };
 use pico_plc_bsp::embassy_rp::{
     bind_interrupts,

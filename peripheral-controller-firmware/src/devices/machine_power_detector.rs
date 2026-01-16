@@ -1,5 +1,5 @@
 use crate::{
-    polled_input::PolledInput, telemetry::queue_telemetry_event, MachinePowerDetectResources,
+    MachinePowerDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_event,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Timer};

@@ -1,7 +1,7 @@
 mod drawables;
 
 use core::{cell::RefCell, convert::Infallible};
-use defmt::{warn, Format};
+use defmt::{Format, warn};
 use drawables::boot_screen::BootScreen;
 use embassy_embedded_hal::shared_bus::blocking::spi::SpiDeviceWithConfig;
 use embassy_rp::{
@@ -9,15 +9,15 @@ use embassy_rp::{
     pwm::{Pwm, SetDutyCycle},
     spi::{Config as SpiConfig, Spi},
 };
-use embassy_sync::blocking_mutex::{raw::NoopRawMutex, Mutex};
+use embassy_sync::blocking_mutex::{Mutex, raw::NoopRawMutex};
 use embassy_time::{Delay, Timer};
 use embedded_graphics::{
+    Drawable,
     pixelcolor::Rgb565,
     prelude::{DrawTarget, WebColors},
-    Drawable,
 };
 use embedded_hal::digital::{ErrorType, OutputPin};
-use mipidsi::{interface::SpiInterface, models::ST7789, options::ColorInversion, Builder};
+use mipidsi::{Builder, interface::SpiInterface, models::ST7789, options::ColorInversion};
 
 const SCREEN_WIDTH: u16 = 240;
 const SCREEN_HEIGHT: u16 = 240;

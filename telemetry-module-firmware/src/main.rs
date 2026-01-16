@@ -9,16 +9,16 @@ mod telemetry;
 #[cfg(feature = "trace")]
 mod trace;
 
-use crate::buttons::{UiEvent, UI_INPUTS};
+use crate::buttons::{UI_INPUTS, UiEvent};
 use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{Either, select};
 use embassy_rp::{
+    Peri,
     gpio::{Level, Output},
     peripherals,
     watchdog::Watchdog,
-    Peri,
 };
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Instant, Timer};

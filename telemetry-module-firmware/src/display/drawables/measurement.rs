@@ -1,12 +1,12 @@
 use super::BACKGROUND_COLOUR;
 use crate::display::{DrawType, DrawTypeDrawable, LIGHT_TEXT_COLOUR, SCREEN_WIDTH};
 use embedded_graphics::{
-    mono_font::{ascii::FONT_8X13, MonoTextStyle},
+    Drawable,
+    mono_font::{MonoTextStyle, ascii::FONT_8X13},
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point, Primitive, Size, WebColors},
     primitives::{PrimitiveStyleBuilder, Rectangle},
     text::{Alignment, Text},
-    Drawable,
 };
 
 pub(crate) const UNKNOWN_TEXT: &str = "<unknown>";

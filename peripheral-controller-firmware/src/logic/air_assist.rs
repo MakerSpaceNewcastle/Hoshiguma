@@ -5,7 +5,7 @@ use crate::{
     },
     maybe_timer::MaybeTimer,
 };
-use defmt::{debug, info, unwrap, Format};
+use defmt::{Format, debug, info, unwrap};
 use embassy_time::{Duration, Instant};
 use hoshiguma_protocol::peripheral_controller::types::{
     AirAssistDemand, AirAssistPump, MachinePower,
@@ -51,7 +51,7 @@ pub(crate) async fn task() {
         });
 
         let new_state = {
-            use embassy_futures::select::{select3, Either3};
+            use embassy_futures::select::{Either3, select3};
 
             match select3(
                 machine_power_rx.changed(),

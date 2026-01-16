@@ -29,7 +29,7 @@ pub(crate) async fn task() {
     let mut machine_power = MachinePower::Off;
 
     loop {
-        use embassy_futures::select::{select3, Either3};
+        use embassy_futures::select::{Either3, select3};
 
         match select3(
             machine_power_rx.changed(),

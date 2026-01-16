@@ -7,7 +7,7 @@ use crate::{
     },
     maybe_timer::MaybeTimer,
 };
-use defmt::{debug, info, unwrap, Format};
+use defmt::{Format, debug, info, unwrap};
 use embassy_time::{Duration, Instant};
 use hoshiguma_protocol::peripheral_controller::types::{
     FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun,
@@ -79,7 +79,7 @@ pub(crate) async fn task() {
             });
 
         let new_state = {
-            use embassy_futures::select::{select4, Either4};
+            use embassy_futures::select::{Either4, select4};
 
             match select4(
                 machine_power_rx.changed(),

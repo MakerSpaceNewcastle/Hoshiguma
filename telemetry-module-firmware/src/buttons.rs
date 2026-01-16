@@ -1,4 +1,4 @@
-use defmt::{debug, info, Format};
+use defmt::{Format, debug, info};
 use embassy_rp::gpio::{Input, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use embassy_time::{Duration, Instant, Timer};

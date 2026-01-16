@@ -1,10 +1,10 @@
 use embedded_graphics::{
-    mono_font::{ascii::FONT_10X20, MonoTextStyle},
+    Drawable,
+    mono_font::{MonoTextStyle, ascii::FONT_10X20},
     pixelcolor::Rgb565,
     prelude::{DrawTarget, Point, Primitive, WebColors},
     primitives::{Line, PrimitiveStyleBuilder, StrokeAlignment},
     text::{Alignment, Text},
-    Drawable,
 };
 
 /// Boot screen, shows firmware name, version and display alignment/bounds/offset verification bars.

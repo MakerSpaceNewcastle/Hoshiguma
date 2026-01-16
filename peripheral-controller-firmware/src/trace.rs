@@ -1,5 +1,5 @@
 use core::{cell::RefCell, fmt::Write, future::poll_fn, sync::atomic::Ordering, task::Poll};
-use defmt::{info, Format};
+use defmt::{Format, info};
 use embassy_executor::raw::task_from_waker;
 use embassy_sync::blocking_mutex::CriticalSectionMutex;
 use embassy_time::{Duration, Instant, Ticker};

@@ -36,7 +36,7 @@ pub(crate) async fn alarm_evaluation_task() {
     let mut severity = Severity::Critical;
 
     loop {
-        use embassy_futures::select::{select, Either};
+        use embassy_futures::select::{Either, select};
 
         match select(running_rx.changed(), monitors_rx.changed()).await {
             Either::First(running) => {

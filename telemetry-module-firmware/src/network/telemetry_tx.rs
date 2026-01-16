@@ -1,6 +1,6 @@
 use crate::metric::Metric;
 use core::sync::atomic::Ordering;
-use defmt::{debug, warn, Format};
+use defmt::{Format, debug, warn};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use embassy_time::Duration;
 use heapless::String;
@@ -87,7 +87,9 @@ impl MetricBuffer {
                     TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
 
                     if response.status == StatusCode(400) {
-                        warn!("Telegraf reports bad request, also clearing the buffer as this is probably a line format serialization issue");
+                        warn!(
+                            "Telegraf reports bad request, also clearing the buffer as this is probably a line format serialization issue"
+                        );
                         self.body.clear();
                     }
 

@@ -1,5 +1,5 @@
 use super::TemperaturesExt;
-use crate::{telemetry::queue_telemetry_event, OnewireResources};
+use crate::{OnewireResources, telemetry::queue_telemetry_event};
 use defmt::{info, warn};
 use ds18b20::{Ds18b20, Resolution};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};

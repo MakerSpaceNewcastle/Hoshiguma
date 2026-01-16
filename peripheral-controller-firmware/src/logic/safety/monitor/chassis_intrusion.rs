@@ -1,4 +1,4 @@
-use super::{ObservedSeverity, NEW_MONITOR_STATUS};
+use super::{NEW_MONITOR_STATUS, ObservedSeverity};
 use crate::devices::chassis_intrusion_detector::CHASSIS_INTRUSION_CHANGED;
 use defmt::unwrap;
 use hoshiguma_protocol::{

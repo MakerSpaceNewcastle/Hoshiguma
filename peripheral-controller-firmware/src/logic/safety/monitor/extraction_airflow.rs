@@ -1,10 +1,10 @@
-use super::{ObservedSeverity, NEW_MONITOR_STATUS};
+use super::{NEW_MONITOR_STATUS, ObservedSeverity};
 use crate::devices::{
     accessories::extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
     fume_extraction_fan::FUME_EXTRACTION_FAN,
 };
 use defmt::{debug, unwrap};
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{Either, select};
 use embassy_time::{Duration, Instant};
 use hoshiguma_protocol::{
     peripheral_controller::types::{FumeExtractionFan, MonitorKind},
@@ -55,7 +55,9 @@ pub(crate) async fn task() {
                             None => Severity::Critical,
                         }
                     } else {
-                        debug!("Fan still in runup phase, assume airflow will be OK until it is obviously not");
+                        debug!(
+                            "Fan still in runup phase, assume airflow will be OK until it is obviously not"
+                        );
                         Severity::Normal
                     }
                 }

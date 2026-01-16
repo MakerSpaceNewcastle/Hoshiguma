@@ -1,4 +1,4 @@
-use crate::{telemetry::queue_telemetry_event, AirAssistPumpResources};
+use crate::{AirAssistPumpResources, telemetry::queue_telemetry_event};
 use defmt::unwrap;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_protocol::peripheral_controller::{

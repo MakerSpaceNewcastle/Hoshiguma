@@ -1,4 +1,4 @@
-use crate::network::{telemetry_tx::BUFFER_FREE_SPACE_THRESHOLD, LinkState};
+use crate::network::{LinkState, telemetry_tx::BUFFER_FREE_SPACE_THRESHOLD};
 use core::{fmt::Write, time::Duration};
 use defmt::Format;
 use heapless::String;

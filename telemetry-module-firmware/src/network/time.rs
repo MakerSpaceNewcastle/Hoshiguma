@@ -5,9 +5,9 @@ use core::{
 };
 use defmt::{error, info};
 use embassy_net::{
+    Stack,
     dns::DnsQueryType,
     udp::{PacketMetadata, UdpSocket},
-    Stack,
 };
 use embassy_time::Instant;
 use portable_atomic::{AtomicI128, AtomicU64};

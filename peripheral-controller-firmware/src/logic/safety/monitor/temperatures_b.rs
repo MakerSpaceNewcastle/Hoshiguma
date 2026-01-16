@@ -1,5 +1,5 @@
-use super::{temperature_to_state, ObservedSeverity, NEW_MONITOR_STATUS};
-use crate::devices::{accessories::cooler::COOLER_TEMPERATURES_READ, TemperaturesExt};
+use super::{NEW_MONITOR_STATUS, ObservedSeverity, temperature_to_state};
+use crate::devices::{TemperaturesExt, accessories::cooler::COOLER_TEMPERATURES_READ};
 use defmt::{unwrap, warn};
 use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
 

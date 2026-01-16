@@ -1,4 +1,4 @@
-use crate::{telemetry::queue_telemetry_event, StatusLampResources};
+use crate::{StatusLampResources, telemetry::queue_telemetry_event};
 use defmt::unwrap;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_protocol::peripheral_controller::{

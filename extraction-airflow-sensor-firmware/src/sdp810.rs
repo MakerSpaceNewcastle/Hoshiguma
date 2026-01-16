@@ -9,7 +9,7 @@ use embassy_time::Timer;
 use hoshiguma_protocol::accessories::extraction_airflow_sensor::types::{
     FallibleMeasurement, Measurement,
 };
-use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u16, write_command_u8};
+use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u8, write_command_u16};
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => InterruptHandler<I2C1>;
