@@ -7,13 +7,13 @@ on:
       - main
     paths:
       - '.github/workflows/peripheral-controller.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
       - 'peripheral-controller-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/peripheral-controller.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
       - 'peripheral-controller-firmware/**'
 
