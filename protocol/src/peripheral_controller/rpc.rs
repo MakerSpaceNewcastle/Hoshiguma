@@ -1,5 +1,4 @@
-use super::event::Event;
-use crate::{event_queue::EventStatistics, types::SystemInformation};
+use crate::types::SystemInformation;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,7 +30,7 @@ pub struct StringsMetadata {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct TelemetryDataPointResponse {
     data_point: Option<TelemetryDataPoint>,
-    more: bool,    
+    more: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
