@@ -1,4 +1,4 @@
-use crate::{telemetry::queue_telemetry_event, FumeExtractionFanResources};
+use crate::{FumeExtractionFanResources, telemetry::queue_telemetry_event};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_protocol::peripheral_controller::{
     event::{ControlEvent, EventKind},

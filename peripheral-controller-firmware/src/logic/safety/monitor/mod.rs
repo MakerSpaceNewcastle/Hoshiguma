@@ -7,7 +7,7 @@ pub(crate) mod temperatures_a;
 pub(crate) mod temperatures_b;
 
 use crate::{
-    changed::{checked_set, Changed, ObservedValue},
+    changed::{Changed, ObservedValue, checked_set},
     telemetry::queue_telemetry_event,
 };
 use defmt::{debug, info, unwrap, warn};

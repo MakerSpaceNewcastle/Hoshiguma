@@ -7,9 +7,9 @@ use embassy_rp::{
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use hoshiguma_protocol::accessories::{
+    SERIAL_BAUD,
     extraction_airflow_sensor::rpc::{Request as SensorRequest, Response as SensorResponse},
     rpc::{Request, Response},
-    SERIAL_BAUD,
 };
 use static_cell::StaticCell;
 use teeny_rpc::{server::Server, transport::embedded::EioTransport};

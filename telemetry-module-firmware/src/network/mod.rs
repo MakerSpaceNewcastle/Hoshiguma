@@ -5,13 +5,13 @@ use core::{cell::RefCell, sync::atomic::Ordering};
 use defmt::{info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDeviceWithConfig;
 use embassy_executor::Spawner;
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{Either, select};
 use embassy_net::{
+    Config, StackResources, StaticConfigV4,
     dns::DnsSocket,
     tcp::client::{TcpClient, TcpClientState},
-    Config, StackResources, StaticConfigV4,
 };
-use embassy_net_wiznet::{chip::W5500, Device, Runner, State};
+use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
     clocks::RoscRng,
     gpio::{Input, Level, Output, Pull},
@@ -19,7 +19,7 @@ use embassy_rp::{
     spi::Spi,
 };
 use embassy_sync::{
-    blocking_mutex::{raw::CriticalSectionRawMutex, CriticalSectionMutex},
+    blocking_mutex::{CriticalSectionMutex, raw::CriticalSectionRawMutex},
     mutex::Mutex,
     pubsub::WaitResult,
 };
@@ -27,7 +27,7 @@ use embassy_time::{Duration, Instant, Timer};
 use reqwless::client::{HttpClient, TlsConfig, TlsVerify};
 use static_cell::StaticCell;
 use telemetry_tx::{
-    MetricBuffer, METRIC_TX, TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER,
+    METRIC_TX, MetricBuffer, TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER,
 };
 
 pub(crate) static LINK_STATE: CriticalSectionMutex<RefCell<LinkState>> =

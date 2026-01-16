@@ -1,11 +1,11 @@
 use crate::{
-    display::{drawables::measurement::Measurement, DrawType, DrawTypeDrawable},
+    display::{DrawType, DrawTypeDrawable, drawables::measurement::Measurement},
     network::{
+        LINK_STATE,
         telemetry_tx::{
             TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER, TELEMETRY_TX_FAIL_NETWORK,
             TELEMETRY_TX_SUCCESS,
         },
-        LINK_STATE,
     },
     telemetry::machine::{TELEMETRY_RX_FAIL, TELEMETRY_RX_SUCCESS},
 };

@@ -1,7 +1,7 @@
 use crate::UsbResources;
-use defmt::{debug, info, warn, Format};
+use defmt::{Format, debug, info, warn};
 use embassy_executor::Spawner;
-use embassy_usb::{driver::EndpointError, UsbDevice};
+use embassy_usb::{UsbDevice, driver::EndpointError};
 use heapless::Vec;
 use pico_plc_bsp::embassy_rp::{bind_interrupts, peripherals::USB, usb::InterruptHandler};
 use static_cell::StaticCell;
@@ -132,7 +132,7 @@ async fn process_line<'a>(
     serial: &mut CdcAcmClass,
 ) -> Result<(), CliFailReason> {
     use crate::devices::{
-        accessories::cooler::{CoolerControlCommand, COOLER_CONTROL_COMMAND},
+        accessories::cooler::{COOLER_CONTROL_COMMAND, CoolerControlCommand},
         air_assist_pump::AIR_ASSIST_PUMP,
     };
     use hoshiguma_protocol::{

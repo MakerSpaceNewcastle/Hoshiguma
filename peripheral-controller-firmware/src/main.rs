@@ -23,7 +23,7 @@ use panic_probe as _;
 use pico_plc_bsp::{
     embassy_rp::{
         gpio::{Input, Level, Output, Pull},
-        multicore::{spawn_core1, Stack},
+        multicore::{Stack, spawn_core1},
         watchdog::Watchdog,
     },
     peripherals::{self, Peri, PicoPlc},

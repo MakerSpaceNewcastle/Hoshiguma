@@ -9,10 +9,10 @@ use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_rp::{
+    Peri,
     gpio::{Level, Output},
     peripherals,
     watchdog::Watchdog,
-    Peri,
 };
 use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_protocol::types::{BootReason, SystemInformation};

@@ -58,14 +58,14 @@ pub(crate) async fn task() {
             );
 
             // If the final demand command is new, then send it
-            if let Some(new_demand) = new_demand {
-                if state_change_allowed {
-                    demand.update_and(new_demand, |demand| {
-                        info!("Cooling demand: {}", demand);
-                        cooling_demand_tx.send(demand);
-                        last_state_change = Some(now);
-                    });
-                }
+            if let Some(new_demand) = new_demand
+                && state_change_allowed
+            {
+                demand.update_and(new_demand, |demand| {
+                    info!("Cooling demand: {}", demand);
+                    cooling_demand_tx.send(demand);
+                    last_state_change = Some(now);
+                });
             }
         }
     }

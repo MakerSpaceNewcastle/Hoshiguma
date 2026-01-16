@@ -1,7 +1,7 @@
 use crate::TelemetryResources;
 use core::time::Duration as CoreDuration;
 use defmt::warn;
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{Either, select};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Instant;
 use hoshiguma_protocol::{

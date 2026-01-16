@@ -8,27 +8,27 @@ use self::cooler::{
 };
 use super::TemperaturesExt;
 use crate::{
+    AccessoriesCommunicationResources,
     changed::ObservedValue,
     devices::accessories::{
         communication_status::{CommunicationFailureAction, CommunicationStatusReporter},
         extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
     },
     telemetry::queue_telemetry_event,
-    AccessoriesCommunicationResources,
 };
 use core::time::Duration as CoreDuration;
 use defmt::{debug, unwrap, warn};
-use embassy_futures::select::{select3, Either3};
+use embassy_futures::select::{Either3, select3};
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Ticker, Timer};
 use hoshiguma_protocol::{
     accessories::{
+        SERIAL_BAUD,
         cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
         extraction_airflow_sensor::rpc::{
             Request as ExtractionAirflowSensorRequest, Response as ExtractionAirflowSensorResponse,
         },
         rpc::{Request, Response},
-        SERIAL_BAUD,
     },
     peripheral_controller::{
         event::{
