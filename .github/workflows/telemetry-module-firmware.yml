@@ -7,13 +7,13 @@ on:
       - main
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
       - 'telemetry-module-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
       - 'telemetry-module-firmware/**'
 

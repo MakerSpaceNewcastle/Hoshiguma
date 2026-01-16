@@ -7,13 +7,13 @@ on:
       - main
     paths:
       - '.github/workflows/cooler-firmware.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
       - 'cooler-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/cooler-firmware.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
       - 'cooler-firmware/**'
 

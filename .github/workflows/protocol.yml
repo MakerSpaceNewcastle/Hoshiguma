@@ -7,12 +7,12 @@ on:
       - main
     paths:
       - '.github/workflows/protocol.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
   pull_request:
     paths:
       - '.github/workflows/protocol.yml'
-      - 'devenv.*'
+      - 'flake.*'
       - 'protocol/**'
 
 jobs:
