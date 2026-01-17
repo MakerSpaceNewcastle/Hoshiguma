@@ -46,9 +46,9 @@ mod test {
         let mut sr = StringRegistry::default();
         assert_eq!(sr.len(), 0);
 
-        sr.push("feck".try_into().unwrap()).unwrap();
-        sr.push("arse".try_into().unwrap()).unwrap();
-        sr.push("drink".try_into().unwrap()).unwrap();
+        sr.push_str("feck").unwrap();
+        sr.push_str("arse").unwrap();
+        sr.push_str("drink").unwrap();
         assert_eq!(sr.len(), 3);
 
         assert_eq!(sr.get_index("arse"), Some(1));
@@ -57,15 +57,6 @@ mod test {
 
         sr.clear();
         assert_eq!(sr.len(), 0);
-    }
-
-    #[test]
-    fn push_str() {
-        let mut sr = StringRegistry::default();
-
-        sr.push_str("feck").unwrap();
-        sr.push_str("arse").unwrap();
-        assert_eq!(sr.len(), 2);
     }
 
     #[test]
