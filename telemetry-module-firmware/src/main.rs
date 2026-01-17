@@ -2,6 +2,7 @@
 #![no_main]
 
 mod buttons;
+mod usb_serial;
 // mod display;
 // mod metric;
 // mod network;
@@ -83,6 +84,7 @@ async fn main(spawner: Spawner) {
     // spawner.must_spawn(crate::telemetry::machine::task(r.rs485_uart_1));
     spawner.must_spawn(crate::buttons::task(r.buttons));
     // spawner.must_spawn(crate::display::task(r.display));
+    spawner.must_spawn(crate::usb_serial::task(r.usb, spawner));
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.must_spawn(dummy_panic());
