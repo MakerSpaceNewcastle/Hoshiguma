@@ -1,11 +1,11 @@
 use heapless::Vec;
 
-pub type RegisteredString = heapless::String<32>;
+pub type String = heapless::String<32>;
 
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct StringRegistry {
-    strings: Vec<RegisteredString, 32>,
+    strings: Vec<String, 32>,
 }
 
 impl StringRegistry {
@@ -13,8 +13,15 @@ impl StringRegistry {
         self.strings.len()
     }
 
-    pub fn push(&mut self, s: RegisteredString) -> Result<(), RegisteredString> {
+    pub fn push(&mut self, s: String) -> Result<(), String> {
         self.strings.push(s)
+    }
+
+    pub fn push_str(&mut self, s: &str) -> Result<(), String> {
+        self.push(
+            s.try_into()
+                .expect("string is too long for string registry"),
+        )
     }
 
     pub fn clear(&mut self) {
@@ -50,6 +57,23 @@ mod test {
 
         sr.clear();
         assert_eq!(sr.len(), 0);
+    }
+
+    #[test]
+    fn push_str() {
+        let mut sr = StringRegistry::default();
+
+        sr.push_str("feck").unwrap();
+        sr.push_str("arse").unwrap();
+        assert_eq!(sr.len(), 2);
+    }
+
+    #[test]
+    #[should_panic(expected = "string is too long for string registry")]
+    fn push_str_too_long() {
+        let mut sr = StringRegistry::default();
+
+        sr.push_str("012345678901234567890123456789012").unwrap();
     }
 
     #[test]
