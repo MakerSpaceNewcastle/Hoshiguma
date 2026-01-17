@@ -2,10 +2,10 @@
 #![no_main]
 
 mod buttons;
-mod display;
-mod metric;
-mod network;
-mod telemetry;
+// mod display;
+// mod metric;
+// mod network;
+// mod telemetry;
 #[cfg(feature = "trace")]
 mod trace;
 
@@ -80,11 +80,11 @@ async fn main(spawner: Spawner) {
 
     spawner.must_spawn(watchdog_feed_task(r.status));
     #[cfg(feature = "enable-network")]
-    spawner.must_spawn(crate::network::task(r.ethernet, spawner));
-    spawner.must_spawn(crate::telemetry::system::task());
-    spawner.must_spawn(crate::telemetry::machine::task(r.rs485_uart_1));
+    // spawner.must_spawn(crate::network::task(r.ethernet, spawner));
+    // spawner.must_spawn(crate::telemetry::system::task());
+    // spawner.must_spawn(crate::telemetry::machine::task(r.rs485_uart_1));
     spawner.must_spawn(crate::buttons::task(r.buttons));
-    spawner.must_spawn(crate::display::task(r.display));
+    // spawner.must_spawn(crate::display::task(r.display));
 
     #[cfg(feature = "trace")]
     spawner.must_spawn(trace::task());
