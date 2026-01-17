@@ -66,6 +66,9 @@ assign_resources::assign_resources! {
         watchdog: WATCHDOG,
         led: PIN_25,
     }
+    usb: UsbResources {
+        usb: USB,
+    }
 }
 
 #[embassy_executor::main]
