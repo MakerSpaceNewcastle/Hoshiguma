@@ -6,8 +6,6 @@ mod buttons;
 // mod metric;
 // mod network;
 // mod telemetry;
-#[cfg(feature = "trace")]
-mod trace;
 
 use crate::buttons::{UI_INPUTS, UiEvent};
 use defmt::info;
@@ -86,18 +84,12 @@ async fn main(spawner: Spawner) {
     spawner.must_spawn(crate::buttons::task(r.buttons));
     // spawner.must_spawn(crate::display::task(r.display));
 
-    #[cfg(feature = "trace")]
-    spawner.must_spawn(trace::task());
-
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.must_spawn(dummy_panic());
 }
 
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: crate::StatusResources) {
-    #[cfg(feature = "trace")]
-    trace::name_task("watchdog feed").await;
-
     let mut watchdog = Watchdog::new(r.watchdog);
     watchdog.start(Duration::from_secs(5));
 
