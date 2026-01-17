@@ -108,7 +108,7 @@ mod tests {
     }
 
     #[test]
-    fn test_event_queue_new() {
+    fn event_queue_new() {
         let queue: EventQueue<TestEvent, 5> = EventQueue::default();
         assert!(queue.events.is_empty());
         assert_eq!(queue.events.len(), 0);
@@ -117,7 +117,7 @@ mod tests {
     }
 
     #[test]
-    fn test_event_queue_push() {
+    fn event_queue_push() {
         let mut queue: EventQueue<TestEvent, 2> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
@@ -134,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn test_event_queue_ret_request() {
+    fn event_queue_ret_request() {
         let mut queue: EventQueue<TestEvent, 5> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
@@ -144,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn test_event_queue_ret_get() {
+    fn event_queue_ret_get() {
         let mut queue: EventQueue<TestEvent, 5> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn test_event_queue_ret_commit() {
+    fn event_queue_ret_commit() {
         let mut queue: EventQueue<TestEvent, 5> = EventQueue::default();
         queue.push(TestEvent { id: 1 });
         queue.push(TestEvent { id: 2 });
