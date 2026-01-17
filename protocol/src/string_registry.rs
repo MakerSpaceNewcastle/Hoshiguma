@@ -9,6 +9,10 @@ pub struct StringRegistry {
 }
 
 impl StringRegistry {
+    pub fn len(&self) -> usize {
+        self.strings.len()
+    }
+
     pub fn push(&mut self, s: RegisteredString) -> Result<(), RegisteredString> {
         self.strings.push(s)
     }
@@ -29,10 +33,12 @@ mod test {
     #[test]
     fn basic_use() {
         let mut sr = StringRegistry::default();
+        assert_eq!(sr.len(), 0);
 
         sr.push("feck".try_into().unwrap()).unwrap();
         sr.push("arse".try_into().unwrap()).unwrap();
         sr.push("drink".try_into().unwrap()).unwrap();
+        assert_eq!(sr.len(), 3);
 
         assert_eq!(sr.get_index("arse"), Some(1));
 
