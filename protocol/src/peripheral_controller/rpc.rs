@@ -36,8 +36,10 @@ pub struct TelemetryDataPointResponse {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct TelemetryDataPoint {
-    timestamp_milliseconds: u64,
+    measurement_string_idx: usize,
+    field_string_idx: usize,
     value: TelemetryValue,
+    timestamp_milliseconds: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
