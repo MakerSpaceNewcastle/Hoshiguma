@@ -17,6 +17,10 @@ impl StringRegistry {
         self.strings.push(s)
     }
 
+    pub fn clear(&mut self) {
+        self.strings.clear()
+    }
+
     pub fn get_str(&self, idx: usize) -> Option<&str> {
         self.strings.get(idx).map(|v| &**v)
     }
@@ -43,6 +47,9 @@ mod test {
         assert_eq!(sr.get_index("arse"), Some(1));
 
         assert_eq!(sr.get_str(2), Some("drink"));
+
+        sr.clear();
+        assert_eq!(sr.len(), 0);
     }
 
     #[test]
