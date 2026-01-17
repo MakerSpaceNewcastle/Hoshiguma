@@ -60,6 +60,13 @@ mod test {
     }
 
     #[test]
+    fn push_str_just_right() {
+        let mut sr = StringRegistry::default();
+
+        sr.push_str("01234567890123456789012345678901").unwrap();
+    }
+
+    #[test]
     #[should_panic(expected = "string is too long for string registry")]
     fn push_str_too_long() {
         let mut sr = StringRegistry::default();
