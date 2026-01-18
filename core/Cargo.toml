@@ -1,5 +1,5 @@
 [package]
-name = "hoshiguma-protocol"
+name = "hoshiguma-core"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
