@@ -1,4 +1,5 @@
 use heapless::Vec;
+use serde::{Deserialize, Serialize};
 
 pub type String = heapless::String<32>;
 
@@ -11,6 +12,20 @@ pub struct StringRegistry {
 impl StringRegistry {
     pub fn len(&self) -> usize {
         self.strings.len()
+    }
+
+    pub fn metadata(&self) -> Metadata {
+        let crc = crc::Crc::<u16>::new(&crc::CRC_16_IBM_SDLC);
+        let mut digest = crc.digest();
+        for s in &self.strings {
+            digest.update(s.as_bytes());
+        }
+        let checksum = digest.finalize();
+
+        Metadata {
+            count: self.strings.len(),
+            checksum,
+        }
     }
 
     pub fn push(&mut self, s: String) -> Result<(), String> {
@@ -35,6 +50,13 @@ impl StringRegistry {
     pub fn get_index(&self, s: &str) -> Option<usize> {
         self.strings.iter().position(|v| v == s)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub struct Metadata {
+    count: usize,
+    checksum: u16,
 }
 
 #[cfg(test)]
@@ -86,5 +108,28 @@ mod test {
         let sr = StringRegistry::default();
 
         assert!(sr.get_str(0).is_none());
+    }
+
+    #[test]
+    fn metadata() {
+        let mut sr = StringRegistry::default();
+        let m = sr.metadata();
+        assert_eq!(m.count, 0);
+        assert_eq!(m.checksum, 0x0000);
+
+        sr.push_str("feck").unwrap();
+        let m = sr.metadata();
+        assert_eq!(m.count, 1);
+        assert_eq!(m.checksum, 32952);
+
+        sr.push_str("arse").unwrap();
+        let m = sr.metadata();
+        assert_eq!(m.count, 2);
+        assert_eq!(m.checksum, 10830);
+
+        sr.push_str("drink").unwrap();
+        let m = sr.metadata();
+        assert_eq!(m.count, 3);
+        assert_eq!(m.checksum, 26691);
     }
 }

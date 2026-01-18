@@ -14,16 +14,9 @@ pub enum Request {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Response {
     GetSystemInformation(SystemInformation),
-    GetStringsMetadata(StringsMetadata),
+    GetStringsMetadata(crate::string_registry::Metadata),
     GetString(Option<StaticTelemetryString>),
     GetTelemetryDataPoint(TelemetryDataPointResponse),
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub struct StringsMetadata {
-    count: usize,
-    checksum: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
