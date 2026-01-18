@@ -15,7 +15,7 @@ pub enum Request {
 pub enum Response {
     GetSystemInformation(SystemInformation),
     GetStringsMetadata(crate::string_registry::Metadata),
-    GetString(Option<StaticTelemetryString>),
+    GetString(Option<crate::string_registry::String>),
     GetTelemetryDataPoint(TelemetryDataPointResponse),
 }
 
@@ -35,12 +35,18 @@ pub struct TelemetryDataPoint {
     timestamp_milliseconds: u64,
 }
 
+impl TelemetryDataPoint {
+    pub fn to_string<const LEN: usize>(&self) -> heapless::String<LEN> {
+        todo!()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum TelemetryValue {
     Float32(f32),
+    RegisteredString(usize),
     String(TelemetryStringValue),
 }
 
-pub type StaticTelemetryString = heapless::String<64>;
 pub type TelemetryStringValue = heapless::String<32>;
