@@ -37,7 +37,11 @@ pub struct TelemetryDataPoint {
 
 impl TelemetryDataPoint {
     pub fn to_string<const LEN: usize>(&self) -> heapless::String<LEN> {
-        todo!()
+        let s = heapless::String::new();
+
+        // TODO
+
+        s
     }
 }
 
@@ -50,3 +54,13 @@ pub enum TelemetryValue {
 }
 
 pub type TelemetryStringValue = heapless::String<32>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn doot() {
+        todo!();
+    }
+}
