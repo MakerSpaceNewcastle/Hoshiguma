@@ -1,4 +1,4 @@
-use crate::types::SystemInformation;
+use crate::{string_registry::StringRegistry, types::SystemInformation};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -36,8 +36,11 @@ pub struct TelemetryDataPoint {
 }
 
 impl TelemetryDataPoint {
-    pub fn to_string<const LEN: usize>(&self) -> heapless::String<LEN> {
+    pub fn to_string<const LEN: usize>(&self, sr: &StringRegistry) -> heapless::String<LEN> {
         let s = heapless::String::new();
+
+        let measurement = sr.get_str(self.measurement_string_idx).unwrap();
+        let field = sr.get_str(self.field_string_idx).unwrap();
 
         // TODO
 
