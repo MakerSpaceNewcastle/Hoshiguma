@@ -8,13 +8,13 @@ on:
     paths:
       - '.github/workflows/peripheral-controller.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'peripheral-controller-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/peripheral-controller.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'peripheral-controller-firmware/**'
 
 jobs:
