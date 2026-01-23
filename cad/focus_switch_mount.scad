@@ -1,4 +1,5 @@
-bottom_height = 43;
+bottom_height = 30;
+magic_1 = 32;
 
 // An approximation of the head/lens assembly that the mount must attach to.
 module LensAssembly() {
@@ -6,7 +7,7 @@ module LensAssembly() {
     cylinder(h = bottom_height, d = 28);
 
     translate([0, 0, bottom_height]) {
-      cylinder(h = 50, d = 21);
+      cylinder(h = 50, d = 24);
     }
   }
 }
@@ -33,21 +34,21 @@ module MainMount() {
               cube([mount_width, 22, 10]);
             }
 
-            translate([0, 19, -45/2]) {
+            translate([0, 19, -magic_1/2]) {
               rotate([90, 0, 0]) {
                 linear_extrude(3) {
                   difference() {
                     union() {
                       polygon(points=[
-                        [-mount_width/2, 45/2],
-                        [mount_width/2, 45/2],
-                        [10, -45/2],
-                        [-10, -45/2],
+                        [-mount_width/2, magic_1/2],
+                        [mount_width/2, magic_1/2],
+                        [10, -magic_1/2],
+                        [-10, -magic_1/2],
                       ]);
                     }
 
                     for(x = [-3, 3]) {
-                      translate([x, -(45/2)+3, 0]) {
+                      translate([x, -(magic_1/2)+3, 0]) {
                         circle(d = 1.8, $fn = 5);
                       }
                     }
