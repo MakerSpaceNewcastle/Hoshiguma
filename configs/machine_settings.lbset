@@ -99,7 +99,7 @@
         {
             "Desc": "Focus Distance",
             "ID": "0x20e",
-            "Value": 0
+            "Value": 3
         },
         {
             "Desc": "X Axis Backlash (mm)",
@@ -125,6 +125,56 @@
             "Desc": "Wireless panel speed slow (mm/sec)",
             "ID": "0x232",
             "Value": 50
+        },
+        {
+            "Desc": "X Axis docking position (mm)",
+            "ID": "0x215",
+            "Value": 43.208
+        },
+        {
+            "Desc": "Y Axis docking position (mm)",
+            "ID": "0x216",
+            "Value": 55.091
+        },
+        {
+            "Desc": "Z Axis docking position (mm)",
+            "ID": "0x22d",
+            "Value": -231145.472
+        },
+        {
+            "Desc": "Reset delay (ms)",
+            "ID": "0x233",
+            "Value": -231145.472
+        },
+        {
+            "Desc": "Status on delay (ms)",
+            "ID": "0x238",
+            "Value": 0
+        },
+        {
+            "Desc": "Status off delay (ms)",
+            "ID": "0x351",
+            "Value": 0
+        },
+        {
+            "Desc": "Finish delay (ms)",
+            "ID": "0x352",
+            "Value": -231145.472
+        },
+        {
+            "Desc": "Focus Enabled",
+            "ID": "0x30f0001",
+            "Value": false
+        },
+        {
+            "Desc": "Z Axis return to docking",
+            "ID": "0x30f0008",
+            "Value": false
+        },
+        {
+            "Desc": "Air Assist Mode",
+            "ID": "0x30f0600",
+            "Value": "On/off with laser"
         },
         {
             "Desc": "Engraving Mode",
@@ -154,7 +204,7 @@
         {
             "Desc": "Water Protect Enable, Laser 1",
             "ID": "0x40020",
-            "Value": true
+            "Value": false
         },
         {
             "Desc": "Water Protect Enable, Laser 2",
@@ -209,7 +259,7 @@
         {
             "Desc": "Max speed (mm/sec)",
             "ID": "0x23",
-            "Value": 3000
+            "Value": 1500
         },
         {
             "Desc": "Jumpoff speed (mm/s^2)",
@@ -224,7 +274,7 @@
         {
             "Desc": "Max travel (mm)",
             "ID": "0x26",
-            "Value": 620
+            "Value": 590
         },
         {
             "Desc": "Keypad jumpoff speed (mm/sec)",
@@ -299,7 +349,7 @@
         {
             "Desc": "Max travel (mm)",
             "ID": "0x36",
-            "Value": 398
+            "Value": 385
         },
         {
             "Desc": "Keypad jumpoff speed (mm/sec)",
@@ -397,6 +447,16 @@
             "Value": 0
         },
         {
+            "Desc": "Z Home Speed (mm/sec)",
+            "ID": "0x240",
+            "Value": 5
+        },
+        {
+            "Desc": "Z Work Speed (mm/sec)",
+            "ID": "0x241",
+            "Value": 5
+        },
+        {
             "Desc": "Enable Homing",
             "ID": "0x500008",
             "Value": false
@@ -470,6 +530,16 @@
             "Desc": "Home offset (mm)",
             "ID": "0x5a",
             "Value": 0
+        },
+        {
+            "Desc": "U Home Speed (mm/sec)",
+            "ID": "0x242",
+            "Value": 100
+        },
+        {
+            "Desc": "U Work Speed (mm/sec)",
+            "ID": "0x243",
+            "Value": 300
         },
         {
             "Desc": "Tube Type",
