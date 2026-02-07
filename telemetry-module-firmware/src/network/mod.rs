@@ -183,7 +183,9 @@ async fn connection_task(stack: Stack<'static>) -> ! {
                         telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
                     }
                 }
-                Either::First(WaitResult::Lagged(_)) => unreachable!(),
+                Either::First(WaitResult::Lagged(n)) => {
+                    warn!("Subscriber lagged, lost {} messages", n);
+                }
                 Either::Second(_) => {
                     info!("Tx reason: periodic purge");
                     telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;

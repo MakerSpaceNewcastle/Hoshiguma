@@ -26,14 +26,14 @@ pub(crate) async fn task() {
             measurement: "peripheral_controller_git_revision",
             field: "value",
             value: TelemetryValue::DynamicString(git_version::git_version!().try_into().unwrap()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         });
 
         queue_telemetry_data_point(StaticTelemetryDataPoint {
             measurement: "peripheral_controller_boot_reason",
             field: "value",
             value: TelemetryValue::StaticString(crate::boot_reason().telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         });
     }
 
@@ -42,21 +42,21 @@ pub(crate) async fn task() {
             measurement: "peripheral_controller_uptime",
             field: "value",
             value: TelemetryValue::U64(Instant::now().as_millis()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         });
 
         queue_telemetry_data_point(StaticTelemetryDataPoint {
             measurement: "peripheral_controller_data_point_template_errors",
             field: "value",
             value: TelemetryValue::Usize(DATA_POINT_TEMPLATE_ERRORS.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         });
 
         queue_telemetry_data_point(StaticTelemetryDataPoint {
             measurement: "peripheral_controller_data_points_discarded",
             field: "value",
             value: TelemetryValue::Usize(DATA_POINTS_DISCARDED.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         });
 
         // Send data points (approximately) every minute

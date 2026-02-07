@@ -54,7 +54,7 @@ impl AsTelemetry<6, 8> for Temperatures {
                 measurement: name,
                 field: "sensor_ok",
                 value: TelemetryValue::Bool(reading.is_ok()),
-                timestamp_nanoseconds: None,
+                timestamp: None,
             })
             .unwrap();
 
@@ -63,7 +63,7 @@ impl AsTelemetry<6, 8> for Temperatures {
                     measurement: name,
                     field: "value",
                     value: TelemetryValue::Float32(reading),
-                    timestamp_nanoseconds: None,
+                    timestamp: None,
                 })
                 .unwrap();
             }
@@ -95,7 +95,7 @@ impl AsTelemetry<4, 1> for CoolantPumpState {
             measurement: "coolant_pump",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -131,7 +131,7 @@ impl AsTelemetry<4, 1> for CompressorState {
             measurement: "cooler_compressor",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -167,7 +167,7 @@ impl AsTelemetry<4, 1> for RadiatorFanState {
             measurement: "cooler_radiator_fan",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -203,7 +203,7 @@ impl AsTelemetry<4, 1> for CoolantReservoirLevel {
             measurement: "coolant_reservoir_level",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -248,7 +248,7 @@ impl AsTelemetry<3, 1> for CoolantFlow {
             measurement: "coolant_rate",
             field: "flow",
             value: TelemetryValue::Float64(**self),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }

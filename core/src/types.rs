@@ -183,7 +183,7 @@ impl AsTelemetry<{ NUM_MONITORS + 5 }, { NUM_MONITORS }> for Monitors {
                 measurement: kind.telemetry_str(),
                 field: "value",
                 value: TelemetryValue::StaticString(state.telemetry_str()),
-                timestamp_nanoseconds: None,
+                timestamp: None,
             })
             .unwrap();
         }
@@ -216,7 +216,7 @@ impl AsTelemetry<5, 1> for MachineOperationLockout {
             measurement: "machine_lockout",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -253,7 +253,7 @@ impl AsTelemetry<4, 1> for CoolingEnable {
             measurement: "cooling_enable",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -289,7 +289,7 @@ impl AsTelemetry<4, 1> for CoolingDemand {
             measurement: "cooling_demand",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -325,7 +325,7 @@ impl AsTelemetry<4, 1> for AirAssistDemand {
             measurement: "air_assist_demand",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -361,7 +361,7 @@ impl AsTelemetry<4, 1> for AirAssistPump {
             measurement: "air_assist_pump",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -397,7 +397,7 @@ impl AsTelemetry<4, 1> for FumeExtractionMode {
             measurement: "fume_extraction_mode",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -433,7 +433,7 @@ impl AsTelemetry<4, 1> for FumeExtractionFan {
             measurement: "fume_extraction_fan",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -469,7 +469,7 @@ impl AsTelemetry<4, 1> for LaserEnable {
             measurement: "laser_enable",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -505,7 +505,7 @@ impl AsTelemetry<4, 1> for MachineEnable {
             measurement: "machine_enable",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -549,7 +549,7 @@ impl AsTelemetry<4, 1> for ChassisIntrusion {
             measurement: "chassis_intrusion",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -585,7 +585,7 @@ impl AsTelemetry<4, 1> for MachinePower {
             measurement: "machine_power",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -621,7 +621,7 @@ impl AsTelemetry<4, 1> for MachineRun {
             measurement: "machine_run",
             field: "value",
             value: TelemetryValue::StaticString(self.telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         }])
     }
 }
@@ -679,7 +679,7 @@ impl AsTelemetry<7, 10> for MachineTemperatures {
                 measurement: name,
                 field: "sensor_ok",
                 value: TelemetryValue::Bool(reading.is_ok()),
-                timestamp_nanoseconds: None,
+                timestamp: None,
             })
             .unwrap();
 
@@ -688,7 +688,7 @@ impl AsTelemetry<7, 10> for MachineTemperatures {
                     measurement: name,
                     field: "value",
                     value: TelemetryValue::Float32(reading),
-                    timestamp_nanoseconds: None,
+                    timestamp: None,
                 })
                 .unwrap();
             }

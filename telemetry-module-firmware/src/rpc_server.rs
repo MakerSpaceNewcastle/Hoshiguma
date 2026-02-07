@@ -66,7 +66,7 @@ pub(crate) async fn task(r: crate::Rs485Uart1Resources, net_stack: Stack<'static
                 RPC_REQUEST_ISREADY.fetch_add(1, Ordering::Relaxed);
             }
             Ok(Request::GetWallTime) => {
-                let result = crate::network::time::get_unix_timestamp_offset(net_stack).await;
+                let result = crate::network::time::get_unix_timestamp(net_stack).await;
 
                 if let Err(e) = server.send_response(Response::GetWallTime(result)).await {
                     warn!("{}", e);
