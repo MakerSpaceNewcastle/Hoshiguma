@@ -7,9 +7,7 @@ use crate::{
 };
 use defmt::{Format, debug, info, unwrap};
 use embassy_time::{Duration, Instant};
-use hoshiguma_protocol::peripheral_controller::types::{
-    AirAssistDemand, AirAssistPump, MachinePower,
-};
+use hoshiguma_core::types::{AirAssistDemand, AirAssistPump, MachinePower};
 
 #[derive(Clone, Format)]
 enum AirAssistState {

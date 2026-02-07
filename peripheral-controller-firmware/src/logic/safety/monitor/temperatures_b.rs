@@ -1,7 +1,7 @@
 use super::{NEW_MONITOR_STATUS, ObservedSeverity, temperature_to_state};
 use crate::devices::{TemperaturesExt, accessories::cooler::COOLER_TEMPERATURES_READ};
 use defmt::{unwrap, warn};
-use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
+use hoshiguma_core::types::{MonitorKind, Severity};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

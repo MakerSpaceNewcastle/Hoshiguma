@@ -1,13 +1,10 @@
 use crate::{
     display::{DrawType, DrawTypeDrawable, drawables::measurement::Measurement},
-    network::{
-        LINK_STATE,
-        telemetry_tx::{
-            TELEMETRY_TX_BUFFER_SUBMISSIONS, TELEMETRY_TX_FAIL_BUFFER, TELEMETRY_TX_FAIL_NETWORK,
-            TELEMETRY_TX_SUCCESS,
-        },
+    network::LINK_STATE,
+    self_telemetry::{
+        DATA_POINTS_ACCEPTED, DATA_POINTS_DISCARDED, RPC_REQUEST_DATAPOINT, STRING_REGISTRY_SIZE,
+        TELEGRAF_SUBMIT_FAIL, TELEGRAF_SUBMIT_SUCCESS,
     },
-    telemetry::machine::{TELEMETRY_RX_FAIL, TELEMETRY_RX_SUCCESS},
 };
 use core::{fmt::Write, sync::atomic::Ordering};
 use embassy_time::Instant;
@@ -32,7 +29,6 @@ impl DrawTypeDrawable for Diagnostics {
             target.bounding_box().top_left.y + 12,
         );
 
-        // Git revision of the telemetry module
         let cursor = Measurement::new(
             cursor,
             value_offset,
@@ -41,14 +37,12 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Uptime of the telemetry module
         let mut s = heapless::String::<16>::new();
         s.write_fmt(format_args!("{}s", Instant::now().as_secs()))
             .unwrap();
         let cursor =
             Measurement::new(cursor, value_offset, "Uptime", Some(&s)).draw(target, draw_type)?;
 
-        // Boot reason of the telemetry module
         let boot_reason = embassy_rp::pac::WATCHDOG.reason().read();
         let cursor = Measurement::new(
             cursor,
@@ -66,7 +60,6 @@ impl DrawTypeDrawable for Diagnostics {
 
         let link_state = LINK_STATE.lock(|v| v.borrow().clone());
 
-        // Our IP address
         let cursor = Measurement::new(
             cursor,
             value_offset,
@@ -84,7 +77,6 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Gateway IP address
         let cursor = Measurement::new(
             cursor,
             value_offset,
@@ -102,7 +94,6 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // DNS IP addresses
         let cursor = Measurement::new(
             cursor,
             value_offset,
@@ -121,7 +112,6 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Connection state age
         let cursor = Measurement::new(
             cursor,
             value_offset,
@@ -138,30 +128,31 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Time
         let cursor = Measurement::new(
             cursor,
             value_offset,
-            "Time",
-            crate::network::time::wall_time()
-                .map(|time| {
+            "#Strings",
+            Some(
+                {
+                    let count = STRING_REGISTRY_SIZE.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{}", time.as_secs())).unwrap();
+                    s.write_fmt(format_args!("{count}")).unwrap();
                     s
-                })
-                .as_deref(),
+                }
+                .as_ref(),
+            ),
         )
         .draw(target, draw_type)?;
 
-        // Seconds since last time sync
         let cursor = Measurement::new(
             cursor,
             value_offset,
-            "Time Age",
+            "Strings Age",
             Some(
                 {
-                    let age = crate::network::time::time_sync_age().as_secs();
-                    let mut s = heapless::String::<10>::new();
+                    let age =
+                        crate::self_telemetry::string_registry_last_modification_age_ms() / 1000;
+                    let mut s = heapless::String::<16>::new();
                     s.write_fmt(format_args!("{age}s")).unwrap();
                     s
                 }
@@ -170,14 +161,13 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Number of events received from peripheral controller
         let cursor = Measurement::new(
             cursor,
             value_offset,
-            "#Events Rx",
+            "#RPC data pt.",
             Some(
                 {
-                    let count = TELEMETRY_RX_SUCCESS.load(Ordering::Relaxed);
+                    let count = RPC_REQUEST_DATAPOINT.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
                     s.write_fmt(format_args!("{count}")).unwrap();
                     s
@@ -187,31 +177,13 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Number of receive failures
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "#Rx Fail",
-            Some(
-                {
-                    let count = TELEMETRY_RX_FAIL.load(Ordering::Relaxed);
-                    let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{count}")).unwrap();
-                    s
-                }
-                .as_ref(),
-            ),
-        )
-        .draw(target, draw_type)?;
-
-        // Number of metrics added to the transmit buffer
         let cursor = Measurement::new(
             cursor,
             value_offset,
             "#Tx Buf Ins",
             Some(
                 {
-                    let count = TELEMETRY_TX_BUFFER_SUBMISSIONS.load(Ordering::Relaxed);
+                    let count = DATA_POINTS_ACCEPTED.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
                     s.write_fmt(format_args!("{count}")).unwrap();
                     s
@@ -221,31 +193,13 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Number of messages transmitted
-        let cursor = Measurement::new(
-            cursor,
-            value_offset,
-            "#Msgs Tx",
-            Some(
-                {
-                    let count = TELEMETRY_TX_SUCCESS.load(Ordering::Relaxed);
-                    let mut s = heapless::String::<10>::new();
-                    s.write_fmt(format_args!("{count}")).unwrap();
-                    s
-                }
-                .as_ref(),
-            ),
-        )
-        .draw(target, draw_type)?;
-
-        // Number of buffer related transmit failures
         let cursor = Measurement::new(
             cursor,
             value_offset,
             "#Tx Fail Buf",
             Some(
                 {
-                    let count = TELEMETRY_TX_FAIL_BUFFER.load(Ordering::Relaxed);
+                    let count = DATA_POINTS_DISCARDED.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
                     s.write_fmt(format_args!("{count}")).unwrap();
                     s
@@ -255,14 +209,29 @@ impl DrawTypeDrawable for Diagnostics {
         )
         .draw(target, draw_type)?;
 
-        // Number of network related transmit failures
+        let cursor = Measurement::new(
+            cursor,
+            value_offset,
+            "#Msgs Tx",
+            Some(
+                {
+                    let count = TELEGRAF_SUBMIT_SUCCESS.load(Ordering::Relaxed);
+                    let mut s = heapless::String::<10>::new();
+                    s.write_fmt(format_args!("{count}")).unwrap();
+                    s
+                }
+                .as_ref(),
+            ),
+        )
+        .draw(target, draw_type)?;
+
         let _cursor = Measurement::new(
             cursor,
             value_offset,
             "#Tx Fail Net",
             Some(
                 {
-                    let count = TELEMETRY_TX_FAIL_NETWORK.load(Ordering::Relaxed);
+                    let count = TELEGRAF_SUBMIT_FAIL.load(Ordering::Relaxed);
                     let mut s = heapless::String::<10>::new();
                     s.write_fmt(format_args!("{count}")).unwrap();
                     s

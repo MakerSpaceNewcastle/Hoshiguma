@@ -1,5 +1,5 @@
 use crate::CoolantReservoirLevelSensorResources;
-use hoshiguma_protocol::accessories::cooler::types::CoolantReservoirLevel;
+use hoshiguma_core::accessories::cooler::types::CoolantReservoirLevel;
 use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) struct CoolantReservoirLevelSensor {

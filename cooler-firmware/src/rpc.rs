@@ -3,7 +3,8 @@ use core::time::Duration as CoreDuration;
 use defmt::{debug, warn};
 use embassy_futures::select::{Either, select};
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_protocol::accessories::{
+use git_version::git_version;
+use hoshiguma_core::accessories::{
     SERIAL_BAUD,
     cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
     rpc::{Request, Response},
@@ -54,9 +55,14 @@ pub(crate) async fn task(r: ControlCommunicationResources, mut machine: Machine)
                 watchdog.feed();
 
                 let response = match request {
-                    CoolerRequest::Ping(i) => CoolerResponse::Ping(i),
-                    CoolerRequest::GetSystemInformation => {
-                        CoolerResponse::GetSystemInformation(crate::system_information())
+                    CoolerRequest::GetUptime => {
+                        CoolerResponse::GetUptime(Instant::now().as_millis())
+                    }
+                    CoolerRequest::GetBootReason => {
+                        CoolerResponse::GetBootReason(crate::boot_reason())
+                    }
+                    CoolerRequest::GetGitRevision => {
+                        CoolerResponse::GetGitRevision(git_version!().try_into().unwrap())
                     }
                     CoolerRequest::GetState => CoolerResponse::GetState(machine.state().await),
                     CoolerRequest::SetRadiatorFan(setting) => {

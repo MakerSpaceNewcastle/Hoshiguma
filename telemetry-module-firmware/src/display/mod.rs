@@ -41,9 +41,6 @@ trait DrawTypeDrawable {
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::DisplayResources) {
-    #[cfg(feature = "trace")]
-    crate::trace::name_task("display").await;
-
     let mut config = SpiConfig::default();
     config.frequency = 64_000_000;
     config.phase = embassy_rp::spi::Phase::CaptureOnSecondTransition;

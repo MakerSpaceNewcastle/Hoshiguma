@@ -1,10 +1,8 @@
-use crate::metric::Metric;
-use core::sync::atomic::Ordering;
-use defmt::{Format, debug, warn};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
+use crate::self_telemetry::{TELEGRAF_SUBMIT_FAIL, TELEGRAF_SUBMIT_SUCCESS};
+use core::{fmt::Write, sync::atomic::Ordering};
+use defmt::{Format, debug, info, warn};
 use embassy_time::Duration;
 use heapless::String;
-use portable_atomic::AtomicU64;
 use reqwless::{
     client::HttpClient,
     headers::ContentType,
@@ -12,25 +10,19 @@ use reqwless::{
     response::StatusCode,
 };
 
-pub(crate) static METRIC_TX: PubSubChannel<CriticalSectionRawMutex, Metric, 32, 1, 2> =
-    PubSubChannel::new();
-
-pub(crate) static TELEMETRY_TX_BUFFER_SUBMISSIONS: AtomicU64 = AtomicU64::new(0);
-pub(crate) static TELEMETRY_TX_SUCCESS: AtomicU64 = AtomicU64::new(0);
-pub(crate) static TELEMETRY_TX_FAIL_BUFFER: AtomicU64 = AtomicU64::new(0);
-pub(crate) static TELEMETRY_TX_FAIL_NETWORK: AtomicU64 = AtomicU64::new(0);
-
 #[derive(Format, Default)]
-pub(super) struct MetricBuffer {
+pub(super) struct TelegrafBuffer {
     body: String<12288>,
 }
 
-pub(crate) const BUFFER_FREE_SPACE_THRESHOLD: usize = 2048;
+pub const BUFFER_FREE_SPACE_THRESHOLD: usize = 2048;
 
-impl MetricBuffer {
-    pub(super) fn push(&mut self, metric: Metric) -> Result<(), ()> {
+impl TelegrafBuffer {
+    pub(super) fn push<const LEN: usize>(&mut self, line: String<LEN>) -> Result<(), ()> {
+        info!("New line: {}", line);
         debug!("buffer length = {}", self.body.len());
-        metric.format_influx(&mut self.body).map_err(|_| ())?;
+        self.body.write_str(&line).map_err(|_| ())?;
+        self.body.write_str("\n").map_err(|_| ())?;
         debug!("new buffer length = {}", self.body.len());
         Ok(())
     }
@@ -68,12 +60,12 @@ impl MetricBuffer {
                 .body(self.body.as_bytes()),
             Ok(Err(e)) => {
                 warn!("Metrics submission failed: {}", e);
-                TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
                 return;
             }
             Err(_) => {
                 warn!("Metrics submission failed: timeout");
-                TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
                 return;
             }
         };
@@ -84,7 +76,7 @@ impl MetricBuffer {
                     debug!("Metrics submission success: status={}", response.status);
                 } else {
                     warn!("Metrics submission failed: status={}", response.status);
-                    TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                    TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
 
                     if response.status == StatusCode(400) {
                         warn!(
@@ -98,12 +90,12 @@ impl MetricBuffer {
             }
             Ok(Err(e)) => {
                 warn!("Metrics submission failed: {}", e);
-                TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
                 return;
             }
             Err(_) => {
                 warn!("Metrics submission failed: timeout");
-                TELEMETRY_TX_FAIL_NETWORK.add(1, Ordering::Relaxed);
+                TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
                 return;
             }
         };
@@ -112,6 +104,6 @@ impl MetricBuffer {
         self.body.clear();
 
         debug!("Metric submission successful");
-        TELEMETRY_TX_SUCCESS.add(1, Ordering::Relaxed);
+        TELEGRAF_SUBMIT_SUCCESS.add(1, Ordering::Relaxed);
     }
 }

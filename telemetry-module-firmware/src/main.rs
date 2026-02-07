@@ -3,11 +3,10 @@
 
 mod buttons;
 mod display;
-mod metric;
 mod network;
-mod telemetry;
-#[cfg(feature = "trace")]
-mod trace;
+mod rpc_server;
+mod self_telemetry;
+mod usb_serial;
 
 use crate::buttons::{UI_INPUTS, UiEvent};
 use defmt::info;
@@ -20,9 +19,13 @@ use embassy_rp::{
     peripherals,
     watchdog::Watchdog,
 };
-use embassy_sync::pubsub::WaitResult;
-use embassy_time::{Duration, Instant, Timer};
-use hoshiguma_protocol::types::{BootReason, SystemInformation};
+use embassy_sync::{
+    blocking_mutex::raw::CriticalSectionRawMutex,
+    pubsub::{PubSubChannel, WaitResult},
+};
+use embassy_time::{Duration, Timer};
+use heapless::String;
+use hoshiguma_core::types::BootReason;
 use panic_probe as _;
 use portable_atomic as _;
 
@@ -52,11 +55,6 @@ assign_resources::assign_resources! {
         rx_pin: PIN_1,
         uart: UART0,
     }
-    rs485_uart_2: Rs485Uart2Resources {
-        tx_pin: PIN_4,
-        rx_pin: PIN_5,
-        uart: UART1,
-    }
     buttons: ButtonResources {
         a_pin: PIN_6,
         b_pin: PIN_7,
@@ -66,25 +64,29 @@ assign_resources::assign_resources! {
         watchdog: WATCHDOG,
         led: PIN_25,
     }
+    usb: UsbResources {
+        usb: USB,
+    }
 }
+
+pub(crate) static TELEMETRY_TX: PubSubChannel<CriticalSectionRawMutex, String<128>, 32, 2, 2> =
+    PubSubChannel::new();
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
-    info!("{}", system_information());
+    info!("Version: {}", git_version::git_version!());
+    info!("Boot reason: {}", boot_reason());
 
     spawner.must_spawn(watchdog_feed_task(r.status));
-    #[cfg(feature = "enable-network")]
-    spawner.must_spawn(crate::network::task(r.ethernet, spawner));
-    spawner.must_spawn(crate::telemetry::system::task());
-    spawner.must_spawn(crate::telemetry::machine::task(r.rs485_uart_1));
+    spawner.must_spawn(crate::usb_serial::task(r.usb, spawner));
+    let net_stack = crate::network::init(r.ethernet, spawner).await;
+    spawner.must_spawn(crate::self_telemetry::task());
+    spawner.must_spawn(crate::rpc_server::task(r.rs485_uart_1, net_stack));
     spawner.must_spawn(crate::buttons::task(r.buttons));
     spawner.must_spawn(crate::display::task(r.display));
-
-    #[cfg(feature = "trace")]
-    spawner.must_spawn(trace::task());
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.must_spawn(dummy_panic());
@@ -92,9 +94,6 @@ async fn main(spawner: Spawner) {
 
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: crate::StatusResources) {
-    #[cfg(feature = "trace")]
-    trace::name_task("watchdog feed").await;
-
     let mut watchdog = Watchdog::new(r.watchdog);
     watchdog.start(Duration::from_secs(5));
 
@@ -123,14 +122,6 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
-}
-
-fn system_information() -> SystemInformation {
-    SystemInformation {
-        git_revision: git_version::git_version!().try_into().unwrap(),
-        last_boot_reason: boot_reason(),
-        uptime_milliseconds: Instant::now().as_millis(),
-    }
 }
 
 fn boot_reason() -> BootReason {

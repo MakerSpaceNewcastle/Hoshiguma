@@ -135,9 +135,7 @@ async fn process_line<'a>(
         accessories::cooler::{COOLER_CONTROL_COMMAND, CoolerControlCommand},
         air_assist_pump::AIR_ASSIST_PUMP,
     };
-    use hoshiguma_protocol::{
-        accessories::cooler::types::CoolantPumpState, peripheral_controller::types::AirAssistPump,
-    };
+    use hoshiguma_core::{accessories::cooler::types::CoolantPumpState, types::AirAssistPump};
 
     match line[0] {
         b"version" => {

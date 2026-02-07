@@ -4,7 +4,7 @@ use crate::{
 };
 use defmt::info;
 use embassy_time::{Duration, Instant};
-use hoshiguma_protocol::peripheral_controller::types::CoolingDemand;
+use hoshiguma_core::types::CoolingDemand;
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

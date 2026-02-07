@@ -9,9 +9,7 @@ use crate::{
 };
 use defmt::{Format, debug, info, unwrap};
 use embassy_time::{Duration, Instant};
-use hoshiguma_protocol::peripheral_controller::types::{
-    FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun,
-};
+use hoshiguma_core::types::{FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun};
 
 #[derive(Clone, Format)]
 enum FumeExtractionAutomaticState {

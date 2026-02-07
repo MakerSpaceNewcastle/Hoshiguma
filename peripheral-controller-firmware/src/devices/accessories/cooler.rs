@@ -3,7 +3,7 @@ use defmt::Format;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel, watch::Watch,
 };
-use hoshiguma_protocol::accessories::cooler::{
+use hoshiguma_core::accessories::cooler::{
     rpc::Request as CoolerRequest,
     types::{
         CompressorState, CoolantFlow, CoolantPumpState, CoolantReservoirLevel, RadiatorFanState,

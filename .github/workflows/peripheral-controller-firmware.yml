@@ -6,15 +6,15 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/peripheral-controller.yml'
+      - '.github/workflows/peripheral-controller-firmware.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'peripheral-controller-firmware/**'
   pull_request:
     paths:
-      - '.github/workflows/peripheral-controller.yml'
+      - '.github/workflows/peripheral-controller-firmware.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'peripheral-controller-firmware/**'
 
 jobs:

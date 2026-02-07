@@ -8,13 +8,13 @@ on:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'telemetry-module-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/telemetry-module-firmware.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'telemetry-module-firmware/**'
 
 jobs:

@@ -6,10 +6,7 @@ use crate::devices::{
 use defmt::{debug, unwrap};
 use embassy_futures::select::{Either, select};
 use embassy_time::{Duration, Instant};
-use hoshiguma_protocol::{
-    peripheral_controller::types::{FumeExtractionFan, MonitorKind},
-    types::Severity,
-};
+use hoshiguma_core::types::{FumeExtractionFan, MonitorKind, Severity};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
@@ -42,16 +39,18 @@ pub(crate) async fn task() {
                     let time_fan_running = Instant::now() - state_change_time;
                     if time_fan_running >= FAN_RUNUP_TIME {
                         match reading {
-                            Some(Ok(ref reading)) => {
-                                if reading.differential_pressure > WARN {
-                                    Severity::Normal
-                                } else if reading.differential_pressure > CRITICAL {
-                                    Severity::Warning
-                                } else {
-                                    Severity::Critical
+                            Some(ref reading) => match **reading {
+                                Ok(ref reading) => {
+                                    if reading.differential_pressure > WARN {
+                                        Severity::Normal
+                                    } else if reading.differential_pressure > CRITICAL {
+                                        Severity::Warning
+                                    } else {
+                                        Severity::Critical
+                                    }
                                 }
-                            }
-                            Some(Err(_)) => Severity::Warning,
+                                Err(_) => Severity::Warning,
+                            },
                             None => Severity::Critical,
                         }
                     } else {

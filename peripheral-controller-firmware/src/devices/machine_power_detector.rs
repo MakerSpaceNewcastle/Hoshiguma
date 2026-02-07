@@ -1,12 +1,9 @@
 use crate::{
-    MachinePowerDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_event,
+    MachinePowerDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_data_point,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Timer};
-use hoshiguma_protocol::peripheral_controller::{
-    event::{EventKind, ObservationEvent},
-    types::MachinePower,
-};
+use hoshiguma_core::{telemetry::AsTelemetry, types::MachinePower};
 use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 5> =
@@ -30,10 +27,9 @@ pub(crate) async fn task(r: MachinePowerDetectResources) {
             Level::High => MachinePower::On,
         };
 
-        queue_telemetry_event(EventKind::Observation(ObservationEvent::MachinePower(
-            state.clone(),
-        )))
-        .await;
+        for dp in state.telemetry() {
+            queue_telemetry_data_point(dp);
+        }
 
         if state == MachinePower::On {
             // Wait a while before sending state, allows 24V bus to stabalise and
