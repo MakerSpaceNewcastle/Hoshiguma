@@ -1,4 +1,5 @@
 use crate::telemetry::TelemetryDataPoint;
+use chrono::{DateTime, Utc};
 use heapless::String;
 use serde::{Deserialize, Serialize};
 
@@ -21,7 +22,7 @@ pub enum Request {
 pub enum Response {
     IsReady(bool),
 
-    GetWallTime(Result<i64, ()>),
+    GetWallTime(Result<DateTime<Utc>, ()>),
 
     GetStringRegistryMetadata(crate::string_registry::Metadata),
     ClearStringRegistry,

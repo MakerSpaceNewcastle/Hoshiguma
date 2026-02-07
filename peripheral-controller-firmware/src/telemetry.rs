@@ -3,7 +3,8 @@ use crate::{
     logic::safety::monitor::NEW_MONITOR_STATUS,
     self_telemetry::{DATA_POINT_TEMPLATE_ERRORS, DATA_POINTS_DISCARDED},
 };
-use core::{sync::atomic::Ordering, time::Duration as CoreDuration};
+use chrono::{DateTime, TimeDelta, Utc};
+use core::{sync::atomic::Ordering, time::Duration};
 use defmt::{debug, error, info, unwrap, warn};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Instant, Timer};
@@ -54,7 +55,7 @@ pub(super) async fn task(r: TelemetryResources) {
 
     // Setup RPC client
     let transport = EioTransport::<_, 512>::new(uart);
-    let mut client = Client::<_, Request, Response>::new(transport, CoreDuration::from_millis(100));
+    let mut client = Client::<_, Request, Response>::new(transport, Duration::from_millis(100));
 
     let strings = hoshiguma_core::telemetry_module::build_string_registry().unwrap();
 
@@ -72,7 +73,7 @@ pub(super) async fn task(r: TelemetryResources) {
         // Send static strings to telemetry module
         if let Err(e) = populate_telemetry_module_string_registry(&mut client, &strings).await {
             error!("Failed to send strings to telemetry module: {}", e);
-            Timer::after_millis(250).await;
+            Timer::after_secs(1).await;
             continue 'connection;
         }
 
@@ -80,11 +81,14 @@ pub(super) async fn task(r: TelemetryResources) {
         let time = match get_time_offset_from_telemetry_module(&mut client).await {
             Ok(time) => {
                 info!("Got time from telemetry module: {}", time);
-                NtpSyncedTime::new(Instant::now().as_micros(), time)
+                NtpSyncedTime::new(
+                    TimeDelta::microseconds(Instant::now().as_micros() as i64),
+                    time,
+                )
             }
             Err(e) => {
                 error!("Failed to get time from telemetry module: {}", e);
-                Timer::after_millis(250).await;
+                Timer::after_secs(1).await;
                 continue 'connection;
             }
         };
@@ -101,14 +105,14 @@ pub(super) async fn task(r: TelemetryResources) {
             match data_point.to_templated_data_point(&strings) {
                 Ok(mut data_point) => {
                     // Set the actual time for the data point
-                    data_point.timestamp_nanoseconds =
-                        Some(time.unix(Instant::now().as_micros()) * 1_000);
+                    data_point.timestamp =
+                        Some(time.now(TimeDelta::microseconds(Instant::now().as_micros() as i64)));
 
                     debug!("Submitting data point {}", data_point);
                     match client
                         .call(
                             Request::SendTelemetryDataPoint(data_point),
-                            CoreDuration::from_millis(50),
+                            Duration::from_millis(50),
                         )
                         .await
                     {
@@ -144,10 +148,12 @@ async fn wait_for_telemetry_module_ready<T: Transport<RpcMessage<Request, Respon
 ) {
     loop {
         match is_telemetry_module_ready(client).await {
-            Ok(true) => break,
-            Ok(false) => continue,
-            Err(_) => continue,
+            Ok(true) => return,
+            Ok(false) => (),
+            Err(_) => (),
         }
+
+        Timer::after_secs(1).await;
     }
 }
 
@@ -155,7 +161,7 @@ async fn is_telemetry_module_ready<T: Transport<RpcMessage<Request, Response>>>(
     client: &mut Client<'_, T, Request, Response>,
 ) -> Result<bool, teeny_rpc::Error> {
     match client
-        .call(Request::IsReady, CoreDuration::from_millis(500))
+        .call(Request::IsReady, Duration::from_millis(500))
         .await
     {
         Ok(Response::IsReady(ready)) => {
@@ -181,7 +187,7 @@ async fn populate_telemetry_module_string_registry<T: Transport<RpcMessage<Reque
     client: &mut Client<'_, T, Request, Response>,
     strings: &StringRegistry,
 ) -> Result<(), ()> {
-    let timeout = CoreDuration::from_millis(500);
+    let timeout = Duration::from_millis(500);
 
     // Clear existing strings
     debug!("Clearing existing strings");
@@ -235,9 +241,9 @@ async fn populate_telemetry_module_string_registry<T: Transport<RpcMessage<Reque
 
 async fn get_time_offset_from_telemetry_module<T: Transport<RpcMessage<Request, Response>>>(
     client: &mut Client<'_, T, Request, Response>,
-) -> Result<i64, ()> {
+) -> Result<DateTime<Utc>, ()> {
     match client
-        .call(Request::GetWallTime, CoreDuration::from_millis(500))
+        .call(Request::GetWallTime, Duration::from_millis(500))
         .await
     {
         Ok(Response::GetWallTime(Ok(time))) => {

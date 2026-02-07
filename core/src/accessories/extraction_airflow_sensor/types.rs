@@ -45,7 +45,7 @@ impl AsTelemetry<4, 3> for Measurement {
             measurement: "fume_extraction_airflow",
             field: "ok",
             value: TelemetryValue::Bool(self.0.is_ok()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         })
         .unwrap();
 
@@ -54,7 +54,7 @@ impl AsTelemetry<4, 3> for Measurement {
                 measurement: "fume_extraction_airflow",
                 field: "value",
                 value: TelemetryValue::Float32(m.differential_pressure),
-                timestamp_nanoseconds: None,
+                timestamp: None,
             })
             .unwrap();
 
@@ -62,7 +62,7 @@ impl AsTelemetry<4, 3> for Measurement {
                 measurement: "fume_extraction_airflow",
                 field: "sensor_temperature",
                 value: TelemetryValue::Float32(m.temperature),
-                timestamp_nanoseconds: None,
+                timestamp: None,
             })
             .unwrap();
         }

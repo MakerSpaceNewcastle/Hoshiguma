@@ -1,7 +1,5 @@
-use core::{
-    net::{IpAddr, SocketAddr},
-    time::Duration,
-};
+use chrono::{DateTime, TimeZone, Utc};
+use core::net::{IpAddr, SocketAddr};
 use defmt::{error, info};
 use embassy_net::{
     Stack,
@@ -9,10 +7,11 @@ use embassy_net::{
     udp::{PacketMetadata, UdpSocket},
 };
 use sntpc::{NtpContext, NtpTimestampGenerator};
+use sntpc_net_embassy::UdpSocketWrapper;
 
 const NTP_SERVER: &str = "time.cloudflare.com";
 
-pub(crate) async fn get_unix_timestamp_offset(stack: Stack<'_>) -> Result<i64, ()> {
+pub(crate) async fn get_unix_timestamp(stack: Stack<'_>) -> Result<DateTime<Utc>, ()> {
     info!("Syncing time now");
 
     // Create UDP socket
@@ -29,6 +28,7 @@ pub(crate) async fn get_unix_timestamp_offset(stack: Stack<'_>) -> Result<i64, (
         &mut tx_buffer,
     );
     socket.bind(123).unwrap();
+    let socket = UdpSocketWrapper::new(socket);
 
     let context = NtpContext::new(TimestampGen::default());
 
@@ -43,10 +43,23 @@ pub(crate) async fn get_unix_timestamp_offset(stack: Stack<'_>) -> Result<i64, (
             let result = sntpc::get_time(SocketAddr::from((addr, 123)), &socket, context).await;
 
             match result {
-                Ok(time) => {
-                    info!("NTP time response: {:?}", time);
-                    Ok(time.offset)
-                }
+                Ok(time) => match Utc.timestamp_opt(
+                    time.seconds.into(),
+                    sntpc::fraction_to_nanoseconds(time.seconds_fraction),
+                ) {
+                    chrono::offset::LocalResult::Single(time) => {
+                        info!("NTP time response: {:?}", time);
+                        Ok(time)
+                    }
+                    chrono::offset::LocalResult::Ambiguous(_, _) => {
+                        error!("Error converting time: ambiguous");
+                        Err(())
+                    }
+                    chrono::offset::LocalResult::None => {
+                        error!("Error converting time");
+                        Err(())
+                    }
+                },
                 Err(e) => {
                     error!("Error getting time: {:?}", e);
                     Err(())
@@ -61,20 +74,16 @@ pub(crate) async fn get_unix_timestamp_offset(stack: Stack<'_>) -> Result<i64, (
 }
 
 #[derive(Copy, Clone, Default)]
-struct TimestampGen {
-    wall_time: Duration,
-}
+struct TimestampGen {}
 
 impl NtpTimestampGenerator for TimestampGen {
-    fn init(&mut self) {
-        self.wall_time = Duration::ZERO;
-    }
+    fn init(&mut self) {}
 
     fn timestamp_sec(&self) -> u64 {
-        self.wall_time.as_secs()
+        0
     }
 
     fn timestamp_subsec_micros(&self) -> u32 {
-        self.wall_time.subsec_micros()
+        0
     }
 }

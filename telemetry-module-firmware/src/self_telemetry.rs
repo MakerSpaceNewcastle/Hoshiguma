@@ -67,7 +67,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_git_revision",
             field: "value",
             value: TelemetryValue::StaticString(git_version::git_version!()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -75,7 +75,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_boot_reason",
             field: "value",
             value: TelemetryValue::StaticString(crate::boot_reason().telemetry_str()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
     }
@@ -89,7 +89,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_uptime",
             field: "value",
             value: TelemetryValue::U64(Instant::now().as_millis()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -98,7 +98,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_network",
             field: "config_age",
             value: TelemetryValue::U64(link_state.age().as_millis()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -106,7 +106,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=is_ready",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_ISREADY.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -114,7 +114,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=get_time",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_GETTIME.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -122,7 +122,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=strings_metadata",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_STRINGSMETADATA.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -130,7 +130,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=clear_strings",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_CLEARSTRINGS.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -138,7 +138,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=push_string",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_PUSHSTRING.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -146,7 +146,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=data_point",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_DATAPOINT.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -154,7 +154,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=data_point,result=fail,reason=to_line",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_DATAPOINT_FAIL_TOLINE.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -162,7 +162,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_rpc,request=data_point,result=fail,reason=render",
             field: "count",
             value: TelemetryValue::Usize(RPC_REQUEST_DATAPOINT_FAIL_RENDER.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -170,7 +170,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_data_points,state=accepted",
             field: "count",
             value: TelemetryValue::Usize(DATA_POINTS_ACCEPTED.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -178,7 +178,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_data_points,state=discarded",
             field: "count",
             value: TelemetryValue::Usize(DATA_POINTS_DISCARDED.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -186,7 +186,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_data_submissions,result=success",
             field: "count",
             value: TelemetryValue::Usize(TELEGRAF_SUBMIT_SUCCESS.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -194,7 +194,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_data_submissions,result=fail",
             field: "count",
             value: TelemetryValue::Usize(TELEGRAF_SUBMIT_FAIL.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -202,7 +202,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_string_registry",
             field: "size",
             value: TelemetryValue::Usize(STRING_REGISTRY_SIZE.load(Ordering::Relaxed)),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 
@@ -210,7 +210,7 @@ pub(crate) async fn task() {
             measurement: "telemetry_module_string_registry",
             field: "last_modify_age",
             value: TelemetryValue::U64(string_registry_last_modification_age_ms()),
-            timestamp_nanoseconds: None,
+            timestamp: None,
         };
         publish_datapoint!(dp);
 

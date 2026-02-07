@@ -69,7 +69,9 @@ async fn echo_telemetry(serial: &mut CdcAcmClass) -> Result<(), EndpointError> {
 
     loop {
         match sub.next_message().await {
-            WaitResult::Lagged(_) => unreachable!(),
+            WaitResult::Lagged(n) => {
+                warn!("Subscriber lagged, lost {} messages", n);
+            }
             WaitResult::Message(msg) => {
                 serial.write_packet(msg.as_bytes()).await?;
                 serial.write_packet(b"\r\n").await?;
