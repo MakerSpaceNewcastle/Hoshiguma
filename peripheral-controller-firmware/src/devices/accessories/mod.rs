@@ -14,14 +14,14 @@ use crate::{
         communication_status::{CommunicationFailureAction, CommunicationStatusReporter},
         extraction_airflow_sensor::EXTRACTION_AIRFLOW_SENSOR_READING,
     },
-    telemetry::queue_telemetry_event,
+    telemetry::queue_telemetry_data_point,
 };
 use core::time::Duration as CoreDuration;
 use defmt::{debug, unwrap, warn};
 use embassy_futures::select::{Either3, select3};
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Ticker, Timer};
-use hoshiguma_protocol::{
+use hoshiguma_core::{
     accessories::{
         SERIAL_BAUD,
         cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
@@ -30,13 +30,8 @@ use hoshiguma_protocol::{
         },
         rpc::{Request, Response},
     },
-    peripheral_controller::{
-        event::{
-            ControlEvent as SuperControlEvent, EventKind as SuperEventKind,
-            ObservationEvent as SuperObservationEvent,
-        },
-        types::MonitorKind,
-    },
+    telemetry::AsTelemetry,
+    types::MonitorKind,
 };
 use pico_plc_bsp::embassy_rp::{
     bind_interrupts,
@@ -125,62 +120,47 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                             debug!("Got state from cooler: {:?}", state);
                             cooler_comm_status.comm_good().await;
 
-                            coolant_flow
-                                .update_and_async(state.coolant_flow_rate, |value| async {
-                                    coolant_flow_tx.send(value.clone());
-                                    queue_telemetry_event(SuperEventKind::Observation(
-                                        SuperObservationEvent::CoolantFlow(value),
-                                    ))
-                                    .await;
-                                })
-                                .await;
+                            coolant_flow.update_and(state.coolant_flow_rate, |value| {
+                                coolant_flow_tx.send(value.clone());
+                                for dp in value.telemetry() {
+                                    queue_telemetry_data_point(dp);
+                                }
+                            });
 
-                            temperatures
-                                .update_and_async(state.temperatures, |value| async {
-                                    temperatures_tx.send(value.clone());
-                                    queue_telemetry_event(SuperEventKind::Observation(
-                                        SuperObservationEvent::TemperaturesB(value),
-                                    ))
-                                    .await;
-                                })
-                                .await;
+                            temperatures.update_and(state.temperatures, |value| {
+                                temperatures_tx.send(value.clone());
+                                for dp in value.telemetry() {
+                                    queue_telemetry_data_point(dp);
+                                }
+                            });
 
-                            coolant_reservoir_level
-                                .update_and_async(state.coolant_reservoir_level, |value| async {
+                            coolant_reservoir_level.update_and(
+                                state.coolant_reservoir_level,
+                                |value| {
                                     coolant_reservoir_level_tx.send(value.clone());
-                                    queue_telemetry_event(SuperEventKind::Observation(
-                                        SuperObservationEvent::CoolantReservoirLevel(value),
-                                    ))
-                                    .await;
-                                })
-                                .await;
+                                    for dp in value.telemetry() {
+                                        queue_telemetry_data_point(dp);
+                                    }
+                                },
+                            );
 
-                            coolant_pump
-                                .update_and_async(state.coolant_pump, |value| async {
-                                    queue_telemetry_event(SuperEventKind::Control(
-                                        SuperControlEvent::CoolantPump(value),
-                                    ))
-                                    .await
-                                })
-                                .await;
+                            coolant_pump.update_and(state.coolant_pump, |value| {
+                                for dp in value.telemetry() {
+                                    queue_telemetry_data_point(dp);
+                                }
+                            });
 
-                            compressor
-                                .update_and_async(state.compressor, |value| async {
-                                    queue_telemetry_event(SuperEventKind::Control(
-                                        SuperControlEvent::CoolerCompressor(value),
-                                    ))
-                                    .await
-                                })
-                                .await;
+                            compressor.update_and(state.compressor, |value| {
+                                for dp in value.telemetry() {
+                                    queue_telemetry_data_point(dp);
+                                }
+                            });
 
-                            radiator_fan
-                                .update_and_async(state.radiator_fan, |value| async {
-                                    queue_telemetry_event(SuperEventKind::Control(
-                                        SuperControlEvent::CoolerRadiatorFan(value),
-                                    ))
-                                    .await
-                                })
-                                .await;
+                            radiator_fan.update_and(state.radiator_fan, |value| {
+                                for dp in value.telemetry() {
+                                    queue_telemetry_data_point(dp);
+                                }
+                            });
 
                             break 'cooler_comm_retry;
                         }
@@ -224,15 +204,12 @@ pub(crate) async fn task(r: AccessoriesCommunicationResources) {
                             );
                             ext_airflow_comm_status.comm_good().await;
 
-                            ext_airflow_reading
-                                .update_and_async(measurement, |value| async {
-                                    ext_airflow_reading_tx.send(value.clone());
-                                    queue_telemetry_event(SuperEventKind::Observation(
-                                        SuperObservationEvent::ExtractionAirflowMeasurement(value),
-                                    ))
-                                    .await;
-                                })
-                                .await;
+                            ext_airflow_reading.update_and(measurement, |value| {
+                                ext_airflow_reading_tx.send(value.clone());
+                                for dp in value.telemetry() {
+                                    queue_telemetry_data_point(dp);
+                                }
+                            });
 
                             break 'airflow_sensor_comm_retry;
                         }

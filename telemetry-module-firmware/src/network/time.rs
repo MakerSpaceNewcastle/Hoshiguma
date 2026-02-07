@@ -1,6 +1,5 @@
 use core::{
     net::{IpAddr, SocketAddr},
-    sync::atomic::Ordering,
     time::Duration,
 };
 use defmt::{error, info};
@@ -9,16 +8,11 @@ use embassy_net::{
     dns::DnsQueryType,
     udp::{PacketMetadata, UdpSocket},
 };
-use embassy_time::Instant;
-use portable_atomic::{AtomicI128, AtomicU64};
 use sntpc::{NtpContext, NtpTimestampGenerator};
-
-static US_SINCE_UNIX_EPOCH: AtomicI128 = AtomicI128::new(0);
-static US_SINCE_BOOT: AtomicU64 = AtomicU64::new(0);
 
 const NTP_SERVER: &str = "time.cloudflare.com";
 
-pub(super) async fn time_sync(stack: Stack<'_>) {
+pub(crate) async fn get_unix_timestamp_offset(stack: Stack<'_>) -> Result<i64, ()> {
     info!("Syncing time now");
 
     // Create UDP socket
@@ -42,7 +36,7 @@ pub(super) async fn time_sync(stack: Stack<'_>) {
         Ok(ntp_addrs) => {
             if ntp_addrs.is_empty() {
                 error!("Failed to resolve DNS");
-                return;
+                return Err(());
             }
 
             let addr: IpAddr = ntp_addrs[0].into();
@@ -50,35 +44,20 @@ pub(super) async fn time_sync(stack: Stack<'_>) {
 
             match result {
                 Ok(time) => {
-                    info!("{:?}", time);
-
-                    let now = Instant::now().as_micros();
-                    US_SINCE_UNIX_EPOCH.add(time.offset.into(), Ordering::Relaxed);
-                    US_SINCE_BOOT.store(now, Ordering::Relaxed);
-
-                    info!("Wall time: {:?}", wall_time());
+                    info!("NTP time response: {:?}", time);
+                    Ok(time.offset)
                 }
                 Err(e) => {
                     error!("Error getting time: {:?}", e);
+                    Err(())
                 }
             }
         }
-        Err(_) => error!("Failed to resolve DNS"),
+        Err(_) => {
+            error!("Failed to resolve DNS");
+            Err(())
+        }
     }
-}
-
-pub(crate) fn wall_time() -> Option<Duration> {
-    let since_epoch = US_SINCE_UNIX_EPOCH.load(Ordering::Relaxed) as u64;
-    match since_epoch {
-        0 => None,
-        _ => Some(Duration::from_micros(since_epoch) + time_sync_age()),
-    }
-}
-
-pub(crate) fn time_sync_age() -> Duration {
-    let since_boot = US_SINCE_BOOT.load(Ordering::Relaxed);
-    let us_to_add = Instant::now().as_micros() - since_boot;
-    Duration::from_micros(us_to_add)
 }
 
 #[derive(Copy, Clone, Default)]
@@ -88,10 +67,7 @@ struct TimestampGen {
 
 impl NtpTimestampGenerator for TimestampGen {
     fn init(&mut self) {
-        // Use the last synchronised timestamp (which will now be quite old), then the estimated
-        // difference can simply be added to this to make `wall_time()` return the actual wall time
-        // at time of call.
-        self.wall_time = Duration::from_micros(US_SINCE_UNIX_EPOCH.load(Ordering::Relaxed) as u64);
+        self.wall_time = Duration::ZERO;
     }
 
     fn timestamp_sec(&self) -> u64 {

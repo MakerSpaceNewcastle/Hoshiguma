@@ -1,10 +1,7 @@
 use super::{NEW_MONITOR_STATUS, ObservedSeverity};
 use crate::devices::chassis_intrusion_detector::CHASSIS_INTRUSION_CHANGED;
 use defmt::unwrap;
-use hoshiguma_protocol::{
-    peripheral_controller::types::{ChassisIntrusion, MonitorKind},
-    types::Severity,
-};
+use hoshiguma_core::types::{ChassisIntrusion, MonitorKind, Severity};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

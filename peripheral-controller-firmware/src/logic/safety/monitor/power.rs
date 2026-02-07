@@ -1,10 +1,7 @@
 use super::{NEW_MONITOR_STATUS, ObservedSeverity};
 use crate::devices::machine_power_detector::MACHINE_POWER_CHANGED;
 use defmt::unwrap;
-use hoshiguma_protocol::{
-    peripheral_controller::types::{MachinePower, MonitorKind},
-    types::Severity,
-};
+use hoshiguma_core::types::{MachinePower, MonitorKind, Severity};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

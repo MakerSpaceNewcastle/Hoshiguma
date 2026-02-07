@@ -6,8 +6,8 @@ use embassy_rp::{
     peripherals::I2C1,
 };
 use embassy_time::Timer;
-use hoshiguma_protocol::accessories::extraction_airflow_sensor::types::{
-    FallibleMeasurement, Measurement,
+use hoshiguma_core::accessories::extraction_airflow_sensor::types::{
+    Measurement, MeasurementInner,
 };
 use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u8, write_command_u16};
 
@@ -56,14 +56,15 @@ impl Sdp810 {
         Self { i2c }
     }
 
-    pub(crate) async fn get_measurement(&mut self) -> FallibleMeasurement {
+    pub(crate) async fn get_measurement(&mut self) -> Measurement {
         let mut buffer = [0u8; 9];
-        read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer)
+        if read_words_with_crc(&mut self.i2c, DEVICE_ADDRESS, &mut buffer)
             .await
-            .map_err(|_| {
-                warn!("Failed to read measurement data");
-                ()
-            })?;
+            .is_err()
+        {
+            warn!("Failed to read sensor data");
+            return Measurement::new(Err(()));
+        }
         debug!("Got measurement bytes: {}", buffer);
 
         let pressure = i16::from(buffer[0]) << 8 | i16::from(buffer[1]);
@@ -75,13 +76,13 @@ impl Sdp810 {
         let pressure = f32::from(pressure) / f32::from(pressure_scale);
         let temperature = f32::from(temperature) / TEMPERATURE_SCALE_FACTOR;
 
-        let measurement = Measurement {
+        let measurement = MeasurementInner {
             differential_pressure: pressure,
             temperature,
         };
         info!("{}", measurement);
 
-        Ok(measurement)
+        Measurement::new(Ok(measurement))
     }
 }
 

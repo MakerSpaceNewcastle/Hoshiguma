@@ -1,12 +1,10 @@
 use crate::{
-    AirAssistDemandDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_event,
+    AirAssistDemandDetectResources, polled_input::PolledInput,
+    telemetry::queue_telemetry_data_point,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_protocol::peripheral_controller::{
-    event::{EventKind, ObservationEvent},
-    types::AirAssistDemand,
-};
+use hoshiguma_core::{telemetry::AsTelemetry, types::AirAssistDemand};
 use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static AIR_ASSIST_DEMAND_CHANGED: Watch<CriticalSectionRawMutex, AirAssistDemand, 2> =
@@ -30,10 +28,9 @@ pub(crate) async fn task(r: AirAssistDemandDetectResources) {
             Level::High => AirAssistDemand::Demand,
         };
 
-        queue_telemetry_event(EventKind::Observation(ObservationEvent::AirAssistDemand(
-            state.clone(),
-        )))
-        .await;
+        for dp in state.telemetry() {
+            queue_telemetry_data_point(dp);
+        }
 
         tx.send(state);
     }

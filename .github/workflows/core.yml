@@ -1,5 +1,5 @@
 ---
-name: Protocol
+name: Core
 
 on:
   push:
@@ -8,12 +8,12 @@ on:
     paths:
       - '.github/workflows/protocol.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
   pull_request:
     paths:
       - '.github/workflows/protocol.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
 
 jobs:
   library:
@@ -27,13 +27,11 @@ jobs:
       - name: Clippy
         run: |
           set -x
-          cd ./protocol
+          cd ./core
           nix develop --command cargo clippy -- -Dwarnings
 
       - name: Tests
         run: |
           set -x
-          cd ./protocol
+          cd ./core
           nix develop --command cargo test
-
-      # Will be built as part of other jobs so no need to do that here.

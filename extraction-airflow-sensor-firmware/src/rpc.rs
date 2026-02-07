@@ -6,7 +6,9 @@ use embassy_rp::{
     peripherals::UART0,
     uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
-use hoshiguma_protocol::accessories::{
+use embassy_time::Instant;
+use git_version::git_version;
+use hoshiguma_core::accessories::{
     SERIAL_BAUD,
     extraction_airflow_sensor::rpc::{Request as SensorRequest, Response as SensorResponse},
     rpc::{Request, Response},
@@ -42,9 +44,14 @@ pub(crate) async fn task(r: CommunicationResources, mut airflow_sensor: crate::s
         match server.wait_for_request(CoreDuration::from_secs(5)).await {
             Ok(Request::ExtractionAirflowSensor(request)) => {
                 let response = match request {
-                    SensorRequest::Ping(i) => SensorResponse::Ping(i),
-                    SensorRequest::GetSystemInformation => {
-                        SensorResponse::GetSystemInformation(crate::system_information())
+                    SensorRequest::GetUptime => {
+                        SensorResponse::GetUptime(Instant::now().as_millis())
+                    }
+                    SensorRequest::GetBootReason => {
+                        SensorResponse::GetBootReason(crate::boot_reason())
+                    }
+                    SensorRequest::GetGitRevision => {
+                        SensorResponse::GetGitRevision(git_version!().try_into().unwrap())
                     }
                     SensorRequest::GetMeasurement => {
                         SensorResponse::GetMeasurement(airflow_sensor.get_measurement().await)

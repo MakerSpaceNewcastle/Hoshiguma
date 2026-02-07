@@ -1,12 +1,9 @@
 use crate::{
-    MachineRunDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_event,
+    MachineRunDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_data_point,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_protocol::peripheral_controller::{
-    event::{EventKind, ObservationEvent},
-    types::MachineRun,
-};
+use hoshiguma_core::{telemetry::AsTelemetry, types::MachineRun};
 use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static MACHINE_RUNNING_CHANGED: Watch<CriticalSectionRawMutex, MachineRun, 4> =
@@ -30,10 +27,9 @@ pub(crate) async fn task(r: MachineRunDetectResources) {
             Level::High => MachineRun::Running,
         };
 
-        queue_telemetry_event(EventKind::Observation(ObservationEvent::MachineRun(
-            state.clone(),
-        )))
-        .await;
+        for dp in state.telemetry() {
+            queue_telemetry_data_point(dp);
+        }
 
         tx.send(state);
     }

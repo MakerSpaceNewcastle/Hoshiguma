@@ -14,8 +14,8 @@ use devices::{
     temperature_sensors::TemperatureSensors,
 };
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Instant, Timer};
-use hoshiguma_protocol::types::{BootReason, SystemInformation};
+use embassy_time::{Duration, Timer};
+use hoshiguma_core::types::BootReason;
 use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -84,7 +84,8 @@ async fn main(spawner: Spawner) {
     let p = PicoPlc::default();
     let r = split_resources!(p);
 
-    info!("{}", system_information());
+    info!("Version: {}", git_version::git_version!());
+    info!("Boot reason: {}", boot_reason());
 
     // Unused IO
     let _in2 = Input::new(p.IN_2, Pull::Down);
@@ -145,14 +146,6 @@ async fn watchdog_feed_task(r: StatusResources) {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
-}
-
-fn system_information() -> SystemInformation {
-    SystemInformation {
-        git_revision: git_version::git_version!().try_into().unwrap(),
-        last_boot_reason: boot_reason(),
-        uptime_milliseconds: Instant::now().as_millis(),
-    }
 }
 
 fn boot_reason() -> BootReason {

@@ -5,18 +5,15 @@ use crate::{
         machine_power_detector::MACHINE_POWER_CHANGED,
     },
     logic::safety::monitor::MONITORS_CHANGED,
-    telemetry::queue_telemetry_event,
+    telemetry::queue_telemetry_data_point,
 };
 use defmt::{info, unwrap};
 use embassy_futures::select::{Either3, select3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
-use hoshiguma_protocol::{
+use hoshiguma_core::{
     accessories::cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
-    peripheral_controller::{
-        event::EventKind,
-        types::{CoolingDemand, CoolingEnabled, MachinePower, MonitorKind},
-    },
-    types::Severity,
+    telemetry::AsTelemetry,
+    types::{CoolingDemand, CoolingEnable, MachinePower, MonitorKind, Severity},
 };
 
 pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();
@@ -36,7 +33,7 @@ pub(crate) async fn task() {
     let mut external_demand = CoolingDemand::Idle;
     let mut comms_is_ok = false;
 
-    let mut enabled = ObservedValue::new(CoolingEnabled::Inhibit);
+    let mut enabled = ObservedValue::new(CoolingEnable::Inhibit);
     let mut demand = ObservedValue::new(CoolingDemand::Idle);
 
     loop {
@@ -53,12 +50,13 @@ pub(crate) async fn task() {
                 enabled
                     .update_and_async(
                         match power {
-                            MachinePower::On => CoolingEnabled::Enable,
-                            MachinePower::Off => CoolingEnabled::Inhibit,
+                            MachinePower::On => CoolingEnable::Enable,
+                            MachinePower::Off => CoolingEnable::Inhibit,
                         },
                         |enabled| async {
-                            queue_telemetry_event(EventKind::CoolingEnableChanged(enabled.clone()))
-                                .await;
+                            for dp in enabled.telemetry() {
+                                queue_telemetry_data_point(dp);
+                            }
                             send_cooler_enable_command(enabled, &cooler_command_tx).await;
                         },
                     )
@@ -110,25 +108,27 @@ async fn set_demand<const A: usize, const B: usize, const C: usize>(
 
     demand
         .update_and_async(new_demand.clone(), |demand| async {
-            queue_telemetry_event(EventKind::CoolingDemandChanged(demand.clone())).await;
+            for dp in demand.telemetry() {
+                queue_telemetry_data_point(dp);
+            }
             send_cooler_demand_command(demand, cooler_command_tx).await;
         })
         .await;
 }
 
 async fn send_cooler_enable_command<const CAP: usize, const SUBS: usize, const PUBS: usize>(
-    enabled: CoolingEnabled,
+    enabled: CoolingEnable,
     tx: &Publisher<'_, CriticalSectionRawMutex, CoolerControlCommand, CAP, SUBS, PUBS>,
 ) {
     tx.publish(CoolerControlCommand::CoolantPump(match enabled {
-        CoolingEnabled::Inhibit => CoolantPumpState::Idle,
-        CoolingEnabled::Enable => CoolantPumpState::Run,
+        CoolingEnable::Inhibit => CoolantPumpState::Idle,
+        CoolingEnable::Enable => CoolantPumpState::Run,
     }))
     .await;
 
     tx.publish(CoolerControlCommand::RadiatorFan(match enabled {
-        CoolingEnabled::Inhibit => RadiatorFanState::Idle,
-        CoolingEnabled::Enable => RadiatorFanState::Run,
+        CoolingEnable::Inhibit => RadiatorFanState::Idle,
+        CoolingEnable::Enable => RadiatorFanState::Run,
     }))
     .await;
 }

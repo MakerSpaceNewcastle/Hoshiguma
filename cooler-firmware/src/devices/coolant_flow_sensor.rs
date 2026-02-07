@@ -4,7 +4,7 @@ use defmt::info;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Ticker};
-use hoshiguma_protocol::accessories::cooler::types::CoolantFlow;
+use hoshiguma_core::accessories::cooler::types::CoolantFlow;
 use pico_plc_bsp::embassy_rp::{
     gpio::Pull,
     pwm::{Config as PwmConfig, InputMode, Pwm},

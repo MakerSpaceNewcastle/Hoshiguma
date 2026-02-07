@@ -2,7 +2,7 @@ use crate::logic::safety::monitor::{NEW_MONITOR_STATUS, ObservedSeverity};
 use defmt::{Format, unwrap, warn};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher};
 use embassy_time::{Duration, Instant, Timer};
-use hoshiguma_protocol::{peripheral_controller::types::MonitorKind, types::Severity};
+use hoshiguma_core::types::{MonitorKind, Severity};
 
 enum CommunicationStatus {
     Ok { last: Instant },
@@ -15,7 +15,7 @@ pub(super) struct CommunicationStatusReporter {
     monitor: MonitorKind,
     warn_timeout: Duration,
     critical_timeout: Duration,
-    monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 9>,
+    monitor_tx: Publisher<'static, CriticalSectionRawMutex, (MonitorKind, Severity), 8, 1, 10>,
 }
 
 impl CommunicationStatusReporter {

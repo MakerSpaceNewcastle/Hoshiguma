@@ -1,12 +1,10 @@
 use crate::{
-    ChassisIntrusionDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_event,
+    ChassisIntrusionDetectResources, polled_input::PolledInput,
+    telemetry::queue_telemetry_data_point,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
-use hoshiguma_protocol::peripheral_controller::{
-    event::{EventKind, ObservationEvent},
-    types::ChassisIntrusion,
-};
+use hoshiguma_core::{telemetry::AsTelemetry, types::ChassisIntrusion};
 use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static CHASSIS_INTRUSION_CHANGED: Watch<CriticalSectionRawMutex, ChassisIntrusion, 1> =
@@ -30,10 +28,9 @@ pub(crate) async fn task(r: ChassisIntrusionDetectResources) {
             Level::High => ChassisIntrusion::Normal,
         };
 
-        queue_telemetry_event(EventKind::Observation(ObservationEvent::ChassisIntrusion(
-            state.clone(),
-        )))
-        .await;
+        for dp in state.telemetry() {
+            queue_telemetry_data_point(dp);
+        }
 
         tx.send(state);
     }

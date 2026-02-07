@@ -1,10 +1,7 @@
-use crate::{StatusLampResources, telemetry::queue_telemetry_event};
+use crate::StatusLampResources;
 use defmt::unwrap;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::peripheral_controller::{
-    event::{ControlEvent, EventKind},
-    types::StatusLamp,
-};
+use hoshiguma_core::types::StatusLamp;
 use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct StatusLampOutput {
@@ -55,16 +52,10 @@ pub(crate) async fn task(r: StatusLampResources) {
     let mut rx = unwrap!(STATUS_LAMP.receiver());
 
     loop {
-        // Wait for a new setting
         let setting = rx.changed().await;
 
-        // Send telemetry update
-        queue_telemetry_event(EventKind::Control(ControlEvent::StatusLamp(
-            setting.clone(),
-        )))
-        .await;
+        // FIXME: add telemetry back in
 
-        // Set relay output
         output.set(setting);
     }
 }

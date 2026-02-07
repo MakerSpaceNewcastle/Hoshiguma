@@ -17,9 +17,6 @@ const LONG_PUSH_THRESHOLD: Duration = Duration::from_secs(5);
 
 #[embassy_executor::task]
 pub(super) async fn task(r: crate::ButtonResources) {
-    #[cfg(feature = "trace")]
-    crate::trace::name_task("ui button").await;
-
     let mut button = Input::new(r.a_pin, Pull::Up);
     let tx = UI_INPUTS.publisher().unwrap();
 

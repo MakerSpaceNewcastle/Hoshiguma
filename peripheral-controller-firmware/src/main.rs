@@ -7,17 +7,18 @@ mod devices;
 mod logic;
 mod maybe_timer;
 mod polled_input;
+mod self_telemetry;
 mod telemetry;
 #[cfg(feature = "trace")]
 mod trace;
 
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
-use defmt::info;
+use defmt::{info, warn};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_time::{Duration, Instant, Ticker, Timer};
-use hoshiguma_protocol::types::{BootReason, SystemInformation};
+use hoshiguma_core::types::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use pico_plc_bsp::{
@@ -150,7 +151,8 @@ fn main() -> ! {
     let p = PicoPlc::default();
     let r = split_resources!(p);
 
-    info!("{}", system_information());
+    info!("Version: {}", git_version::git_version!());
+    info!("Boot reason: {}", boot_reason());
 
     // Unused IO
     let _in0 = Input::new(p.IN_0, Pull::Down);
@@ -206,6 +208,10 @@ fn main() -> ! {
     trace::identify_core_0_executor(executor_0.id() as u32);
     let spawner = executor_0.spawner();
 
+    // Telemetry reporting
+    spawner.must_spawn(self_telemetry::task());
+    spawner.must_spawn(telemetry::task(r.telemetry));
+
     spawner.must_spawn(cli::task(r.usb, spawner));
 
     spawner.must_spawn(logic::status_lamp::task());
@@ -244,9 +250,6 @@ fn main() -> ! {
     // Cooler control tasks
     spawner.must_spawn(logic::cooling::control::task());
     spawner.must_spawn(logic::cooling::demand::task());
-
-    // Telemetry reporting
-    spawner.must_spawn(telemetry::task(r.telemetry));
 
     // Task reporting
     #[cfg(feature = "trace")]
@@ -290,7 +293,7 @@ async fn watchdog_feed_task(r: StatusResources) {
         let end = Instant::now();
         let duration = end - start;
         if duration > Duration::from_millis(1050) {
-            defmt::warn!(
+            warn!(
                 "WDT feed loop took a suspicious amount of time: {}",
                 duration
             );
@@ -302,14 +305,6 @@ async fn watchdog_feed_task(r: StatusResources) {
 async fn dummy_panic() {
     embassy_time::Timer::after_secs(5).await;
     panic!("oh dear, how sad. nevermind...");
-}
-
-fn system_information() -> SystemInformation {
-    SystemInformation {
-        git_revision: git_version::git_version!().try_into().unwrap(),
-        last_boot_reason: boot_reason(),
-        uptime_milliseconds: Instant::now().as_millis(),
-    }
 }
 
 fn boot_reason() -> BootReason {

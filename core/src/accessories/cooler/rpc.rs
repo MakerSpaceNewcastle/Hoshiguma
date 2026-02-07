@@ -1,12 +1,13 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState, State};
-use crate::types::SystemInformation;
+use crate::types::{BootReason, GitRevisionString};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Request {
-    Ping(u32),
-    GetSystemInformation,
+    GetUptime,
+    GetBootReason,
+    GetGitRevision,
 
     GetState,
 
@@ -18,8 +19,9 @@ pub enum Request {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Response {
-    Ping(u32),
-    GetSystemInformation(SystemInformation),
+    GetUptime(u64),
+    GetBootReason(BootReason),
+    GetGitRevision(GitRevisionString),
 
     GetState(State),
 

@@ -3,7 +3,7 @@ use crate::devices::{
     coolant_reservoir_level_sensor::CoolantReservoirLevelSensor, radiator_fan::RadiatorFan,
     temperature_sensors::TemperatureSensors,
 };
-use hoshiguma_protocol::accessories::cooler::types::{
+use hoshiguma_core::accessories::cooler::types::{
     CompressorState, CoolantPumpState, RadiatorFanState, State,
 };
 

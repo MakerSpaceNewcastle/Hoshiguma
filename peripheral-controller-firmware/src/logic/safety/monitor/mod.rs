@@ -8,7 +8,7 @@ pub(crate) mod temperatures_b;
 
 use crate::{
     changed::{Changed, ObservedValue, checked_set},
-    telemetry::queue_telemetry_event,
+    telemetry::queue_telemetry_data_point,
 };
 use defmt::{debug, info, unwrap, warn};
 use embassy_sync::{
@@ -16,12 +16,9 @@ use embassy_sync::{
     pubsub::{PubSubChannel, WaitResult},
     watch::Watch,
 };
-use hoshiguma_protocol::{
-    peripheral_controller::{
-        event::EventKind,
-        types::{MonitorKind, Monitors},
-    },
-    types::{Severity, TemperatureReading},
+use hoshiguma_core::{
+    telemetry::AsTelemetry,
+    types::{MonitorKind, Monitors, Severity, TemperatureReading},
 };
 
 pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
@@ -29,7 +26,7 @@ pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     (MonitorKind, Severity),
     8,
     1,
-    9,
+    10,
 > = PubSubChannel::new();
 
 pub(crate) static MONITORS_CHANGED: Watch<CriticalSectionRawMutex, Monitors, 3> = Watch::new();
@@ -50,7 +47,10 @@ pub(crate) async fn observation_task() {
                 if checked_set(severity, new_status.1) == Changed::Yes {
                     info!("Monitors changed: {}", monitors);
                     tx.send(monitors.clone());
-                    queue_telemetry_event(EventKind::MonitorsChanged(monitors.clone())).await;
+
+                    for dp in monitors.telemetry() {
+                        queue_telemetry_data_point(dp);
+                    }
                 }
             }
             WaitResult::Lagged(msg_count) => {

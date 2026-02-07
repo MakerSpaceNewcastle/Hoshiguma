@@ -1,5 +1,5 @@
 use crate::CompressorResources;
-use hoshiguma_protocol::accessories::cooler::types::CompressorState;
+use hoshiguma_core::accessories::cooler::types::CompressorState;
 use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct Compressor {

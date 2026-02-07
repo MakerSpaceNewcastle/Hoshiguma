@@ -8,13 +8,13 @@ on:
     paths:
       - '.github/workflows/cooler-firmware.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'cooler-firmware/**'
   pull_request:
     paths:
       - '.github/workflows/cooler-firmware.yml'
       - 'flake.*'
-      - 'protocol/**'
+      - 'core/**'
       - 'cooler-firmware/**'
 
 jobs:

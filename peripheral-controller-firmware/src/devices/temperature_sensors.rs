@@ -1,20 +1,17 @@
 use super::TemperaturesExt;
-use crate::{OnewireResources, telemetry::queue_telemetry_event};
+use crate::{OnewireResources, telemetry::queue_telemetry_data_point};
 use defmt::{info, warn};
 use ds18b20::{Ds18b20, Resolution};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_protocol::{
-    peripheral_controller::{
-        event::{EventKind, ObservationEvent},
-        types::Temperatures,
-    },
-    types::TemperatureReading,
+use hoshiguma_core::{
+    telemetry::AsTelemetry,
+    types::{MachineTemperatures, TemperatureReading},
 };
 use one_wire_bus::{Address, OneWire};
 use pico_plc_bsp::embassy_rp::gpio::{Level, OutputOpenDrain};
 
-impl TemperaturesExt for Temperatures {
+impl TemperaturesExt for MachineTemperatures {
     fn any_failed_sensors(&self) -> bool {
         let sensors = [
             &self.onboard,
@@ -28,7 +25,8 @@ impl TemperaturesExt for Temperatures {
     }
 }
 
-pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, Temperatures, 5> = Watch::new();
+pub(crate) static TEMPERATURES_READ: Watch<CriticalSectionRawMutex, MachineTemperatures, 5> =
+    Watch::new();
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: OnewireResources) {
@@ -74,7 +72,7 @@ pub(crate) async fn task(r: OnewireResources) {
                 .map_err(|_| ())
         };
 
-        let readings = Temperatures {
+        let readings = MachineTemperatures {
             onboard: read_sensor(&onboard_sensor),
             electronics_bay_top: read_sensor(&electronics_bay_top),
             laser_chamber: read_sensor(&laser_chamber_sensor),
@@ -82,10 +80,9 @@ pub(crate) async fn task(r: OnewireResources) {
             coolant_return: read_sensor(&coolant_return_sensor),
         };
 
-        queue_telemetry_event(EventKind::Observation(ObservationEvent::TemperaturesA(
-            readings.clone(),
-        )))
-        .await;
+        for dp in readings.telemetry() {
+            queue_telemetry_data_point(dp);
+        }
 
         tx.send(readings);
 

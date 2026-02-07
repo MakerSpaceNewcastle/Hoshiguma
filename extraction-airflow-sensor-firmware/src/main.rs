@@ -14,8 +14,8 @@ use embassy_rp::{
     peripherals,
     watchdog::Watchdog,
 };
-use embassy_time::{Duration, Instant, Timer};
-use hoshiguma_protocol::types::{BootReason, SystemInformation};
+use embassy_time::{Duration, Timer};
+use hoshiguma_core::types::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
@@ -63,7 +63,8 @@ async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
-    info!("{}", system_information());
+    info!("Version: {}", git_version::git_version!());
+    info!("Boot reason: {}", boot_reason());
 
     let airflow_sensor = sdp810::Sdp810::new(r.sdp810).await;
 
@@ -82,14 +83,6 @@ async fn watchdog_feed_task(r: StatusResources) -> ! {
         watchdog.feed();
         onboard_led.toggle();
         Timer::after_millis(500).await;
-    }
-}
-
-fn system_information() -> SystemInformation {
-    SystemInformation {
-        git_revision: git_version::git_version!().try_into().unwrap(),
-        last_boot_reason: boot_reason(),
-        uptime_milliseconds: Instant::now().as_millis(),
     }
 }
 

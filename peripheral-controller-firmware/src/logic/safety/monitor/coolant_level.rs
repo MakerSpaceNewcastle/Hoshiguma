@@ -1,9 +1,9 @@
 use super::{NEW_MONITOR_STATUS, ObservedSeverity};
 use crate::devices::accessories::cooler::COOLANT_RESERVOIR_LEVEL_CHANGED;
 use defmt::unwrap;
-use hoshiguma_protocol::{
-    accessories::cooler::types::CoolantReservoirLevel, peripheral_controller::types::MonitorKind,
-    types::Severity,
+use hoshiguma_core::{
+    accessories::cooler::types::CoolantReservoirLevel,
+    types::{MonitorKind, Severity},
 };
 
 #[embassy_executor::task]

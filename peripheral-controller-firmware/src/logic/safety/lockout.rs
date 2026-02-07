@@ -4,16 +4,13 @@ use crate::{
         laser_enable::LASER_ENABLE, machine_enable::MACHINE_ENABLE,
         machine_run_detector::MACHINE_RUNNING_CHANGED,
     },
-    telemetry::queue_telemetry_event,
+    telemetry::queue_telemetry_data_point,
 };
 use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_protocol::{
-    peripheral_controller::{
-        event::EventKind,
-        types::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun},
-    },
-    types::Severity,
+use hoshiguma_core::{
+    telemetry::AsTelemetry,
+    types::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun, Severity},
 };
 
 pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
@@ -59,7 +56,9 @@ pub(crate) async fn alarm_evaluation_task() {
         info!("Machine operation lockout: {}", lockout);
 
         machine_lockout_tx.send(lockout.clone());
-        queue_telemetry_event(EventKind::LockoutChanged(lockout)).await;
+        for dp in lockout.telemetry() {
+            queue_telemetry_data_point(dp);
+        }
     }
 }
 
