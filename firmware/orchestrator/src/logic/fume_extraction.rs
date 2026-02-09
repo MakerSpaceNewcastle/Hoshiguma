@@ -1,135 +1,69 @@
-use crate::{
-    devices::{
-        fume_extraction_fan::FUME_EXTRACTION_FAN,
-        fume_extraction_mode_switch::FUME_EXTRACTION_MODE_CHANGED,
-        machine_power_detector::MACHINE_POWER_CHANGED,
-        machine_run_detector::MACHINE_RUNNING_CHANGED,
-    },
-    maybe_timer::MaybeTimer,
+use crate::devices::local::{
+    ac_bus_power_detector::ac_bus_power_rx, machine_run_detector::machine_run_rx,
 };
-use defmt::{Format, debug, info, unwrap};
-use embassy_time::{Duration, Instant};
-use hoshiguma_core::types::{FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun};
+use embassy_executor::Spawner;
+use embassy_futures::select::{Either3, select3};
+use hoshiguma_api::FumeExtractionFan;
+use hoshiguma_state_machines::{
+    StateMachineRun,
+    fume_extraction::{
+        InputChannel, InputMessage, OutputChannel, OutputMessage, StateMachineCommunicator,
+        StateMachineRunner,
+    },
+};
 
-#[derive(Clone, Format)]
-enum FumeExtractionAutomaticState {
-    Idle,
-    RunOn(Instant),
-    Demand,
+static SM_INPUT: InputChannel = InputChannel::new();
+static SM_OUTPUT: OutputChannel = OutputChannel::new();
+
+pub(crate) fn init(spawner: Spawner) {
+    let (runner, communicator) =
+        hoshiguma_state_machines::fume_extraction::new(&SM_INPUT, &SM_OUTPUT);
+
+    spawner.spawn(runner_task(runner).unwrap());
+    spawner.spawn(communication_task(communicator).unwrap());
 }
-
-impl From<&FumeExtractionAutomaticState> for FumeExtractionFan {
-    fn from(state: &FumeExtractionAutomaticState) -> Self {
-        match state {
-            FumeExtractionAutomaticState::Idle => Self::Idle,
-            FumeExtractionAutomaticState::RunOn(_) => Self::Run,
-            FumeExtractionAutomaticState::Demand => Self::Run,
-        }
-    }
-}
-
-#[derive(Clone, Format)]
-struct FumeExtractionState {
-    mode: FumeExtractionMode,
-    auto: FumeExtractionAutomaticState,
-}
-
-impl Default for FumeExtractionState {
-    fn default() -> Self {
-        Self {
-            mode: FumeExtractionMode::Automatic,
-            auto: FumeExtractionAutomaticState::Idle,
-        }
-    }
-}
-
-impl From<&FumeExtractionState> for FumeExtractionFan {
-    fn from(state: &FumeExtractionState) -> Self {
-        match state.mode {
-            FumeExtractionMode::Automatic => (&state.auto).into(),
-            FumeExtractionMode::OverrideRun => Self::Run,
-        }
-    }
-}
-
-const TIMEOUT: Duration = Duration::from_secs(45);
 
 #[embassy_executor::task]
-pub(crate) async fn task() {
+async fn runner_task(mut runner: StateMachineRunner<'static>) -> ! {
     #[cfg(feature = "trace")]
-    crate::trace::name_task("fume extract logic").await;
+    crate::trace::name_task("fume extraction sm runner").await;
 
-    let mut state = FumeExtractionState::default();
+    runner.run().await
+}
 
-    let mut machine_power_rx = unwrap!(MACHINE_POWER_CHANGED.receiver());
-    let mut machine_run_rx = unwrap!(MACHINE_RUNNING_CHANGED.receiver());
-    let mut mode_rx = unwrap!(FUME_EXTRACTION_MODE_CHANGED.receiver());
-    let fan_tx = FUME_EXTRACTION_FAN.sender();
+#[embassy_executor::task]
+async fn communication_task(mut communicator: StateMachineCommunicator<'static>) -> ! {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("fume extraction sm comm").await;
 
-    let mut machine_power = MachinePower::Off;
+    let mut ac_bus_power_rx = ac_bus_power_rx();
+    let mut machine_run_rx = machine_run_rx();
+
+    let fume_extraction_fan_tx = FUME_EXTRACTION_FAN.sender();
 
     loop {
-        let run_on_timer =
-            MaybeTimer::at(if let FumeExtractionAutomaticState::RunOn(t) = state.auto {
-                Some(t)
-            } else {
-                None
-            });
-
-        let new_state = {
-            use embassy_futures::select::{Either4, select4};
-
-            match select4(
-                machine_power_rx.changed(),
-                machine_run_rx.changed(),
-                mode_rx.changed(),
-                run_on_timer,
-            )
-            .await
-            {
-                Either4::First(power) => {
-                    machine_power = power;
-                    state.clone()
-                }
-                Either4::Second(run_state) => FumeExtractionState {
-                    mode: state.mode.clone(),
-                    auto: match run_state {
-                        MachineRun::Idle => match state.auto {
-                            FumeExtractionAutomaticState::Idle => {
-                                FumeExtractionAutomaticState::Idle
-                            }
-                            FumeExtractionAutomaticState::RunOn(t) => {
-                                FumeExtractionAutomaticState::RunOn(t)
-                            }
-                            FumeExtractionAutomaticState::Demand => {
-                                FumeExtractionAutomaticState::RunOn(Instant::now() + TIMEOUT)
-                            }
-                        },
-                        MachineRun::Running => FumeExtractionAutomaticState::Demand,
-                    },
-                },
-                Either4::Third(mode) => FumeExtractionState {
-                    mode,
-                    auto: state.auto.clone(),
-                },
-                Either4::Fourth(()) => {
-                    debug!("Run on timer expired");
-                    FumeExtractionState {
-                        mode: state.mode.clone(),
-                        auto: FumeExtractionAutomaticState::Idle,
-                    }
-                }
+        match select3(
+            communicator.receive_output(),
+            ac_bus_power_rx.changed(),
+            machine_run_rx.changed(),
+        )
+        .await
+        {
+            Either3::First(OutputMessage::ExtractionFan(state)) => {
+                fume_extraction_fan_tx.send(state);
             }
-        };
-
-        info!("Fume extraction fan state {} -> {}", state, new_state);
-
-        // Turn off demand relay if the machine is not powered.
-        fan_tx.send(match machine_power {
-            MachinePower::Off => FumeExtractionFan::Idle,
-            MachinePower::On => (&new_state).into(),
-        });
-
-        state = new_state;
+            Either3::Second(state) => {
+                communicator
+                    .send_input(InputMessage::AcBusPower(state))
+                    .await;
+            }
+            Either3::Third(state) => {
+                communicator
+                    .send_input(InputMessage::MachineRun(state))
+                    .await;
+            }
+        }
     }
 }
+
+crate::variable_watch!(fume_extraction_fan, FumeExtractionFan, 2);

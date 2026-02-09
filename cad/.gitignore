@@ -1,3 +1,6 @@
+out/
+third-party/
+
 # FreeCAD
 *.FCStd1
 *.FCBak

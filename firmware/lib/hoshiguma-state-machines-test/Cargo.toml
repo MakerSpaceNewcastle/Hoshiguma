@@ -1,0 +1,39 @@
+[package]
+name = "hoshiguma-state-machines-test"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2024"
+license = "MIT"
+
+[[bin]]
+name = "hoshiguma-state-machines-test"
+test = false
+bench = false
+
+[dependencies]
+cortex-m-rt = "0.7.5"
+defmt = "1.0.1"
+defmt-rtt = "1.0.0"
+embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "executor-interrupt", "defmt"] }
+embassy-futures = "0.1.2"
+embassy-rp = { version = "0.10.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp2040"] }
+embassy-sync = "0.8.0"
+embassy-time = "0.5.1"
+heapless = "0.9.3"
+hoshiguma-api = { path = "../hoshiguma-api", default-features = false }
+hoshiguma-state-machines = { path = "../hoshiguma-state-machines" }
+panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+strum = { version = "0.28.0", default-features = false }
+
+[profile.release]
+debug = 2
+lto = true
+opt-level = 'z'
+
+[profile.dev]
+debug = 2
+lto = true
+opt-level = "z"
+
+[lints.rust]
+unused_crate_dependencies = "deny"

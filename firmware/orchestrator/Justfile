@@ -1,0 +1,13 @@
+default: build
+
+build:
+    cargo build --release
+
+run:
+    cargo run --release
+
+run-trace:
+    cargo run --release -F trace -F panic-probe
+
+attach:
+    probe-rs attach --chip RP2040 ./target/thumbv6m-none-eabi/release/hoshiguma-orchestrator

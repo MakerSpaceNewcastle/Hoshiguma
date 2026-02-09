@@ -1,90 +1,68 @@
-use crate::{
-    devices::{
-        air_assist_demand_detector::AIR_ASSIST_DEMAND_CHANGED, air_assist_pump::AIR_ASSIST_PUMP,
-        machine_power_detector::MACHINE_POWER_CHANGED,
-    },
-    maybe_timer::MaybeTimer,
+use crate::devices::local::{
+    ac_bus_power_detector::ac_bus_power_rx, air_assist_demand_detector::air_assist_demand_rx,
 };
-use defmt::{Format, debug, info, unwrap};
-use embassy_time::{Duration, Instant};
-use hoshiguma_core::types::{AirAssistDemand, AirAssistPump, MachinePower};
+use embassy_executor::Spawner;
+use embassy_futures::select::{Either3, select3};
+use hoshiguma_api::AirAssistPump;
+use hoshiguma_state_machines::{
+    StateMachineRun,
+    air_assist::{
+        InputChannel, InputMessage, OutputChannel, OutputMessage, StateMachineCommunicator,
+        StateMachineRunner,
+    },
+};
 
-#[derive(Clone, Format)]
-enum AirAssistState {
-    Idle,
-    RunOn(Instant),
-    Demand,
+static SM_INPUT: InputChannel = InputChannel::new();
+static SM_OUTPUT: OutputChannel = OutputChannel::new();
+
+pub(crate) fn init(spawner: Spawner) {
+    let (runner, communicator) = hoshiguma_state_machines::air_assist::new(&SM_INPUT, &SM_OUTPUT);
+
+    spawner.spawn(runner_task(runner).unwrap());
+    spawner.spawn(communication_task(communicator).unwrap());
 }
 
-impl From<&AirAssistState> for AirAssistPump {
-    fn from(state: &AirAssistState) -> Self {
-        match state {
-            AirAssistState::Idle => Self::Idle,
-            AirAssistState::RunOn(_) => Self::Run,
-            AirAssistState::Demand => Self::Run,
+#[embassy_executor::task]
+async fn runner_task(mut runner: StateMachineRunner<'static>) -> ! {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("air assist sm runner").await;
+
+    runner.run().await
+}
+
+#[embassy_executor::task]
+async fn communication_task(mut communicator: StateMachineCommunicator<'static>) -> ! {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("air assist sm comm").await;
+
+    let mut ac_bus_power_rx = ac_bus_power_rx();
+    let mut air_assist_demand_rx = air_assist_demand_rx();
+
+    let pump_tx = AIR_ASSIST_PUMP.sender();
+
+    loop {
+        match select3(
+            communicator.receive_output(),
+            ac_bus_power_rx.changed(),
+            air_assist_demand_rx.changed(),
+        )
+        .await
+        {
+            Either3::First(OutputMessage::AirAssistPump(state)) => {
+                pump_tx.send(state);
+            }
+            Either3::Second(state) => {
+                communicator
+                    .send_input(InputMessage::AcBusPower(state))
+                    .await;
+            }
+            Either3::Third(state) => {
+                communicator
+                    .send_input(InputMessage::AirAssistDemand(state))
+                    .await;
+            }
         }
     }
 }
 
-const TIMEOUT: Duration = Duration::from_secs(1);
-
-#[embassy_executor::task]
-pub(crate) async fn task() {
-    #[cfg(feature = "trace")]
-    crate::trace::name_task("air assist logic").await;
-
-    let mut state = AirAssistState::Idle;
-
-    let mut machine_power_rx = unwrap!(MACHINE_POWER_CHANGED.receiver());
-    let mut demand_rx = unwrap!(AIR_ASSIST_DEMAND_CHANGED.receiver());
-    let pump_tx = AIR_ASSIST_PUMP.sender();
-
-    let mut machine_power = MachinePower::Off;
-
-    loop {
-        let run_on_timer = MaybeTimer::at(if let AirAssistState::RunOn(t) = state {
-            Some(t)
-        } else {
-            None
-        });
-
-        let new_state = {
-            use embassy_futures::select::{Either3, select3};
-
-            match select3(
-                machine_power_rx.changed(),
-                demand_rx.changed(),
-                run_on_timer,
-            )
-            .await
-            {
-                Either3::First(power) => {
-                    machine_power = power;
-                    state.clone()
-                }
-                Either3::Second(demand) => match demand {
-                    AirAssistDemand::Idle => match state {
-                        AirAssistState::Idle => AirAssistState::Idle,
-                        AirAssistState::RunOn(t) => AirAssistState::RunOn(t),
-                        AirAssistState::Demand => AirAssistState::RunOn(Instant::now() + TIMEOUT),
-                    },
-                    AirAssistDemand::Demand => AirAssistState::Demand,
-                },
-                Either3::Third(()) => {
-                    debug!("Run on timer expired");
-                    AirAssistState::Idle
-                }
-            }
-        };
-
-        info!("Air assist state {} -> {}", state, new_state);
-
-        // Turn off demand relay if the machine is not powered.
-        pump_tx.send(match machine_power {
-            MachinePower::Off => AirAssistPump::Idle,
-            MachinePower::On => (&new_state).into(),
-        });
-
-        state = new_state;
-    }
-}
+crate::variable_watch!(air_assist_pump, AirAssistPump, 1);

@@ -3,7 +3,7 @@ use defmt::{Format, info};
 use embassy_executor::raw::task_from_waker;
 use embassy_sync::blocking_mutex::CriticalSectionMutex;
 use embassy_time::{Duration, Instant, Ticker};
-use heapless::{FnvIndexMap, String};
+use heapless::{String, index_map::FnvIndexMap};
 use portable_atomic::AtomicU32;
 
 #[derive(Clone, Debug, Format)]
@@ -71,9 +71,9 @@ impl TaskInfo {
     }
 }
 
-static TASKS_CORE_0: CriticalSectionMutex<RefCell<FnvIndexMap<u32, TaskInfo, 32>>> =
+static TASKS_CORE_0: CriticalSectionMutex<RefCell<FnvIndexMap<u32, TaskInfo, 64>>> =
     CriticalSectionMutex::new(RefCell::new(FnvIndexMap::new()));
-static TASKS_CORE_1: CriticalSectionMutex<RefCell<FnvIndexMap<u32, TaskInfo, 32>>> =
+static TASKS_CORE_1: CriticalSectionMutex<RefCell<FnvIndexMap<u32, TaskInfo, 64>>> =
     CriticalSectionMutex::new(RefCell::new(FnvIndexMap::new()));
 
 static CORE_0_EXECUTOR_ID: AtomicU32 = AtomicU32::new(0);
@@ -152,6 +152,9 @@ unsafe extern "Rust" fn _embassy_trace_task_exec_end(executor_id: u32, task_id: 
 }
 
 #[unsafe(no_mangle)]
+unsafe extern "Rust" fn _embassy_trace_task_end(_executor_id: u32, _task_id: u32) {}
+
+#[unsafe(no_mangle)]
 unsafe extern "Rust" fn _embassy_trace_poll_start(_executor_id: u32) {}
 
 #[unsafe(no_mangle)]
@@ -166,9 +169,9 @@ pub(crate) fn identify_core_1_executor(executor_id: u32) {
 }
 
 pub(crate) async fn name_task(name: &'static str) {
-    assert!(name.len() <= 20, "Task name too long");
+    assert!(name.len() <= 30, "Task name too long");
 
-    let task_id: u32 = poll_fn(|cx| Poll::Ready(task_from_waker(cx.waker()).as_id())).await;
+    let task_id: u32 = poll_fn(|cx| Poll::Ready(task_from_waker(cx.waker()).id())).await;
 
     for task_list in [&TASKS_CORE_0, &TASKS_CORE_1] {
         task_list.lock(|tasks| {
@@ -181,57 +184,50 @@ pub(crate) async fn name_task(name: &'static str) {
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
-    name_task("task rprt").await;
+    name_task("task report").await;
 
     let mut ticker = Ticker::every(Duration::from_secs(15));
 
     let mut table_line_buffer = String::<120>::new();
 
-    let mut last_report_time_core_0 = Instant::now();
-    let mut last_report_time_core_1 = Instant::now();
-
     loop {
-        ticker.next().await;
-
-        let (core_0_tasks, core_0_ticks) = TASKS_CORE_0.lock(|tasks| {
+        let core_0_tasks = TASKS_CORE_0.lock(|tasks| {
             let now = Instant::now();
-            let ticks = (now.saturating_duration_since(last_report_time_core_0)).as_ticks();
             let sample = tasks.borrow().clone();
             for task in tasks.borrow_mut().values_mut() {
                 task.reset_counters(now);
             }
-            last_report_time_core_0 = now;
-            (sample, ticks)
+            sample
         });
 
-        let (core_1_tasks, core_1_ticks) = TASKS_CORE_1.lock(|tasks| {
+        let core_1_tasks = TASKS_CORE_1.lock(|tasks| {
             let now = Instant::now();
-            let ticks = (now.saturating_duration_since(last_report_time_core_1)).as_ticks();
             let sample = tasks.borrow().clone();
             for task in tasks.borrow_mut().values_mut() {
                 task.reset_counters(now);
             }
-            last_report_time_core_1 = now;
-            (sample, ticks)
+            sample
         });
 
-        info!("│Task                │Core│State│Idle  │Run   │Wait  │#Wakes│");
-        info!("├────────────────────┼────┼─────┼──────┼──────┼──────┼──────┤");
+        info!("│Task                          │Core│State│Idle  │Run   │Wait  │#Wakes│");
+        info!("├──────────────────────────────┼────┼─────┼──────┼──────┼──────┼──────┤");
 
         for task in core_0_tasks.values() {
-            print_task_line(task, Core::Core0, core_0_ticks, &mut table_line_buffer);
+            print_task_line(task, Core::Core0, &mut table_line_buffer);
         }
 
         for task in core_1_tasks.values() {
-            print_task_line(task, Core::Core1, core_1_ticks, &mut table_line_buffer);
+            print_task_line(task, Core::Core1, &mut table_line_buffer);
         }
+
+        ticker.next().await;
     }
 }
 
-fn print_task_line(task: &TaskInfo, core: Core, core_ticks: u64, buffer: &mut String<120>) {
+fn print_task_line(task: &TaskInfo, core: Core, buffer: &mut String<120>) {
     buffer
         .write_fmt(format_args!(
-            "│{:<20}│{}│{}│{:.4}│{:.4}│{:.4}│{:>6}│",
+            "│{:<30}│{}│{}│{:>6}│{:>6}│{:>6}│{:>6}│",
             task.name(),
             match core {
                 Core::Core0 => "0   ",
@@ -242,9 +238,9 @@ fn print_task_line(task: &TaskInfo, core: Core, core_ticks: u64, buffer: &mut St
                 TaskState::Running => "Run  ",
                 TaskState::Waiting => "Wait ",
             },
-            task.total_idle.as_ticks() as f32 / core_ticks as f32,
-            task.total_running.as_ticks() as f32 / core_ticks as f32,
-            task.total_waiting.as_ticks() as f32 / core_ticks as f32,
+            task.total_idle.as_millis(),
+            task.total_running.as_millis(),
+            task.total_waiting.as_millis(),
             task.total_wakes
         ))
         .unwrap();

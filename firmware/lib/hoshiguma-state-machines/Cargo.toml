@@ -1,0 +1,19 @@
+[package]
+name = "hoshiguma-state-machines"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+defmt = "1.1.0"
+embassy-futures = "0.1.2"
+embassy-sync = "0.8.0"
+embassy-time = "0.5.1"
+heapless = "0.9.3"
+hoshiguma-api = { path = "../hoshiguma-api", default-features = false }
+hoshiguma-common = { path = "../hoshiguma-common" }
+strum = { version = "0.28.0", default-features = false }
+
+[lints.rust]
+unused_crate_dependencies = "deny"

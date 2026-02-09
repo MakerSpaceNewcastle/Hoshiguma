@@ -1,0 +1,46 @@
+OUT_DIR := "./out"
+THIRD_PARTY_DIR := "./third-party"
+
+[parallel]
+default: (stl "airflow_metering_leak") \
+         (stl "airflow_static_port") \
+         (stl "alignment_laser_mount") \
+         (dxf "cooler_connector_blank") \
+         (dxf "cooler_connector_rj45") \
+         (stl "cooler_pico-plc_mount") \
+         (stl "cooler_pipe_mount") \
+         (stl "front_panel/lower") \
+         (stl "front_panel/ruida_clip") \
+         (stl "front_panel/upper") \
+         (dxf "manual_focus_tool") \
+         (dxf "rear_connector_panel") \
+         (stl "rear_sensor_board_case/box") \
+         (dxf "rear_sensor_board_case/lid") \
+         (stl "ruida_controller_din_mount") \
+         (stl "side_connector_blanking_plate") \
+         (stl "stepper_driver_din_mount")
+
+dependencies:
+    mkdir -p "{{THIRD_PARTY_DIR}}"
+
+    if [ ! -d "{{THIRD_PARTY_DIR}}/threads-scad" ]; then \
+        git clone "https://github.com/rcolyer/threads-scad" "{{THIRD_PARTY_DIR}}/threads-scad"; \
+        git -C "{{THIRD_PARTY_DIR}}/threads-scad" checkout "5f25c7c52b3c59339960185b19f28ef2a1a1e693"; \
+    fi
+
+    if [ ! -d "{{THIRD_PARTY_DIR}}/SCAD_Lib" ]; then \
+        git clone "https://github.com/DanNixon/SCAD_Lib" "{{THIRD_PARTY_DIR}}/SCAD_Lib"; \
+        git -C "{{THIRD_PARTY_DIR}}/SCAD_Lib" checkout "5f1376045233f56996e4676769979bd5ab3ea55c"; \
+    fi
+
+dxf FILE: dependencies
+    mkdir -p $(dirname {{OUT_DIR}}/{{FILE}}.dxf)
+    openscad -o {{OUT_DIR}}/{{FILE}}.dxf {{FILE}}.scad
+
+stl FILE: dependencies
+    mkdir -p $(dirname {{OUT_DIR}}/{{FILE}}.dxf)
+    openscad -o {{OUT_DIR}}/{{FILE}}.stl {{FILE}}.scad
+
+clean:
+    rm -rf {{OUT_DIR}}
+    rm -rf {{THIRD_PARTY_DIR}}
