@@ -1,6 +1,9 @@
 [formatter.typos]
 command = "typos"
 options = ["--write-changes", "--force-exclude"]
+excludes = [
+  "cad/third-party/*",
+]
 includes = ["*"]
 
 [formatter.markdown]

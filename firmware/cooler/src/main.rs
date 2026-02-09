@@ -1,60 +1,65 @@
 #![no_std]
 #![no_main]
 
+mod api;
 mod devices;
-mod machine;
-mod rpc;
+mod network;
 
+use crate::api::NUM_LISTENERS;
 use assign_resources::assign_resources;
 use defmt::info;
 use defmt_rtt as _;
-use devices::{
-    compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
-    coolant_reservoir_level_sensor::CoolantReservoirLevelSensor, radiator_fan::RadiatorFan,
-    temperature_sensors::TemperatureSensors,
-};
 use embassy_executor::Spawner;
+use embassy_futures::select::{Either, select};
 use embassy_rp::{
     Peri,
     gpio::{Level, Output},
-    peripherals::{self},
+    peripherals,
     watchdog::Watchdog,
 };
-use embassy_time::{Duration, Timer};
-use hoshiguma_core::types::BootReason;
-use machine::Machine;
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_time::{Duration, Instant, Ticker, Timer};
+use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
+use static_cell::StaticCell;
 
 assign_resources! {
     status: StatusResources {
         watchdog: WATCHDOG,
-        led: PIN_25,
+        led: PIN_19,
+    },
+    ethernet: EthernetResources {
+        pio: PIO0,
+        mosi: PIN_23,
+        miso: PIN_22,
+        sck: PIN_21,
+        tx_dma: DMA_CH0,
+        rx_dma: DMA_CH1,
+        cs: PIN_20,
+        int: PIN_24,
+        reset: PIN_25,
     },
     onewire: OnewireResources {
-        pin: PIN_22,
+        pio: PIO1,
+        pin: PIN_28,
     },
-    flow_sensor: FlowSensorResources {
-        pwm: PWM_SLICE7,
-        pin: PIN_15,
-    },
-    coolant_reservoir_level: CoolantReservoirLevelSensorResources {
-        low: PIN_14,
+    coolant_rate_sensors: CoolantRateSensorResources {
+        flow_pwm: PWM_SLICE2,
+        flow_pin: PIN_5, // Input 1
+
+        return_pwm: PWM_SLICE3,
+        return_pin: PIN_7, // Input 3
     },
     compressor: CompressorResources {
-        relay: PIN_7,
+        relay: PIN_13, // Relay 6
     },
     coolant_pump: CoolantPumpResources {
-        relay: PIN_6,
+        relay: PIN_14, // Relay 7
     },
     radiator_fan: RadiatorFanResources {
-        relay: PIN_16,
-    },
-    communication: ControlCommunicationResources {
-        uart: UART0,
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
+        relay: PIN_15, // Relay 8
     },
 }
 
@@ -70,7 +75,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {
         // Keep feeding the watchdog so that we do not quickly reset.
         // Panics should be properly investigated.
-        watchdog.feed();
+        watchdog.feed(Duration::from_millis(100));
 
         // Blink the on-board LED pretty fast
         led.toggle();
@@ -87,52 +92,104 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    // Outputs
-    let coolant_pump = CoolantPump::new(r.coolant_pump);
-    let compressor = Compressor::new(r.compressor);
-    let radiator_fan = RadiatorFan::new(r.radiator_fan);
+    let net_stack = network::init(spawner, r.ethernet).await;
 
-    // Inputs
-    let coolant_reservoir_level_sensor =
-        CoolantReservoirLevelSensor::new(r.coolant_reservoir_level);
-    let coolant_flow_sensor = CoolantFlowSensor::new(&spawner, r.flow_sensor);
-    let temperature_sensors = TemperatureSensors::new(&spawner, r.onewire);
+    static COMPRESSOR_COMM: StaticCell<[devices::compressor::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let compressor_comm = COMPRESSOR_COMM.init(Default::default());
+    let compressor_comm_b = compressor_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::compressor::task(r.compressor, compressor_comm_b).unwrap());
 
-    let machine = Machine {
-        coolant_pump,
-        compressor,
-        radiator_fan,
-        coolant_reservoir_level_sensor,
-        coolant_flow_sensor,
-        temperature_sensors,
-    };
+    static COOLANT_PUMP_COMM: StaticCell<[devices::coolant_pump::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
+    let coolant_pump_comm_b = coolant_pump_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm_b).unwrap());
 
-    spawner.must_spawn(watchdog_feed_task(r.status));
+    static COOLANT_FLOW_RATE_COMM: StaticCell<
+        [devices::coolant_rate_sensors::Channel; NUM_LISTENERS],
+    > = StaticCell::new();
+    let coolant_flow_rate_comm = COOLANT_FLOW_RATE_COMM.init(Default::default());
+    let coolant_flow_rate_comm_b = coolant_flow_rate_comm.each_ref().map(|comm| comm.side_b());
+    static COOLANT_RETURN_RATE_COMM: StaticCell<
+        [devices::coolant_rate_sensors::Channel; NUM_LISTENERS],
+    > = StaticCell::new();
+    let coolant_return_rate_comm = COOLANT_RETURN_RATE_COMM.init(Default::default());
+    let coolant_return_rate_comm_b = coolant_return_rate_comm
+        .each_ref()
+        .map(|comm| comm.side_b());
+    devices::coolant_rate_sensors::start(
+        spawner,
+        r.coolant_rate_sensors,
+        coolant_flow_rate_comm_b,
+        coolant_return_rate_comm_b,
+    );
 
-    spawner.must_spawn(rpc::task(r.communication, machine));
+    static RADIATOR_FAN_COMM: StaticCell<[devices::radiator_fan::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let radiator_fan_comm = RADIATOR_FAN_COMM.init(Default::default());
+    let radiator_fan_comm_b = radiator_fan_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm_b).unwrap());
 
-    #[cfg(feature = "test-panic-on-core-0")]
-    spawner.must_spawn(dummy_panic());
+    static TEMPERATURES_COMM: StaticCell<[devices::temperature_sensors::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let temperatures_comm = TEMPERATURES_COMM.init(Default::default());
+    let temperatures_comm_b = temperatures_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm_b).unwrap());
+
+    for idx in 0..NUM_LISTENERS {
+        let comm = DeviceCommunicator {
+            compressor: compressor_comm[idx].side_a(),
+            coolant_pump: coolant_pump_comm[idx].side_a(),
+            coolant_flow_rate: coolant_flow_rate_comm[idx].side_a(),
+            coolant_return_rate: coolant_return_rate_comm[idx].side_a(),
+            radiator_fan: radiator_fan_comm[idx].side_a(),
+            temperatures: temperatures_comm[idx].side_a(),
+        };
+        spawner.spawn(api::task(net_stack, idx, comm).unwrap());
+    }
+
+    spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }
+
+struct DeviceCommunicator {
+    compressor: devices::compressor::TheirChannelSide,
+    coolant_pump: devices::coolant_pump::TheirChannelSide,
+    coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,
+    coolant_return_rate: devices::coolant_rate_sensors::TheirChannelSide,
+    radiator_fan: devices::radiator_fan::TheirChannelSide,
+    temperatures: devices::temperature_sensors::TheirChannelSide,
+}
+
+static COMM_GOOD_INDICATOR: Channel<CriticalSectionRawMutex, (), 8> = Channel::new();
 
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(600));
+    watchdog.start(Duration::from_secs(5));
+
+    let mut tick = Ticker::every(Duration::from_secs(1));
 
     loop {
-        watchdog.feed();
-        onboard_led.toggle();
-        Timer::after_millis(500).await;
-    }
-}
+        match select(tick.next(), COMM_GOOD_INDICATOR.receive()).await {
+            Either::First(_) => {
+                if Instant::now() < Instant::from_secs(60) {
+                    watchdog.feed(Duration::from_secs(2));
+                    continue;
+                }
+            }
+            Either::Second(_) => {
+                watchdog.feed(Duration::from_secs(5));
 
-#[embassy_executor::task]
-async fn dummy_panic() {
-    embassy_time::Timer::after_secs(5).await;
-    panic!("oh dear, how sad. nevermind...");
+                // Blink the LED
+                onboard_led.set_high();
+                Timer::after_millis(10).await;
+                onboard_led.set_low();
+            }
+        }
+    }
 }
 
 fn boot_reason() -> BootReason {

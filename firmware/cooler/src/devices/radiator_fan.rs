@@ -1,28 +1,73 @@
-use crate::RadiatorFanResources;
+use crate::{RadiatorFanResources, api::NUM_LISTENERS};
+use defmt::{Format, warn};
 use embassy_rp::gpio::{Level, Output};
-use hoshiguma_core::accessories::cooler::types::RadiatorFanState;
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_time::{Duration, with_timeout};
+use hoshiguma_api::cooler::RadiatorFanState;
+use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) struct RadiatorFan {
-    output: Output<'static>,
+pub(crate) type Channel = BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response>;
+
+#[derive(Clone, Format)]
+pub(crate) enum Request {
+    Get,
+    Set(RadiatorFanState),
+}
+#[derive(Clone, Format)]
+pub(crate) struct Response(RadiatorFanState);
+
+pub(crate) type TheirChannelSide = <Channel as BiDirectionalChannelSides>::SideA;
+pub(crate) type MyChannelSide = <Channel as BiDirectionalChannelSides>::SideB;
+
+pub(crate) trait RadiatorFanInterfaceChannel {
+    async fn set(&mut self, state: RadiatorFanState) -> Result<RadiatorFanState, ()>;
+    async fn get(&mut self) -> Result<RadiatorFanState, ()>;
 }
 
-impl RadiatorFan {
-    pub(crate) fn new(r: RadiatorFanResources) -> Self {
-        let output = Output::new(r.relay, Level::Low);
-        Self { output }
+impl RadiatorFanInterfaceChannel for TheirChannelSide {
+    async fn set(&mut self, state: RadiatorFanState) -> Result<RadiatorFanState, ()> {
+        self.send(Request::Set(state)).await;
+
+        if self.get().await? == state {
+            Ok(state)
+        } else {
+            warn!("Response mismatch");
+            Err(())
+        }
     }
 
-    pub(crate) fn set(&mut self, state: RadiatorFanState) {
-        self.output.set_level(match state {
-            RadiatorFanState::Idle => Level::Low,
-            RadiatorFanState::Run => Level::High,
-        });
-    }
+    async fn get(&mut self) -> Result<RadiatorFanState, ()> {
+        self.send(Request::Get).await;
 
-    pub(crate) fn get(&mut self) -> RadiatorFanState {
-        match self.output.get_output_level() {
+        match with_timeout(Duration::from_millis(200), self.receive()).await {
+            Ok(response) => Ok(response.0),
+            Err(_) => {
+                warn!("Timeout");
+                Err(())
+            }
+        }
+    }
+}
+
+#[embassy_executor::task]
+pub(crate) async fn task(r: RadiatorFanResources, comm: [MyChannelSide; NUM_LISTENERS]) -> ! {
+    let mut output = Output::new(r.relay, Level::Low);
+
+    loop {
+        let rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.receive());
+        let (msg, idx) = embassy_futures::select::select_array(rx_futures).await;
+
+        if let Request::Set(state) = msg {
+            output.set_level(match state {
+                RadiatorFanState::Idle => Level::Low,
+                RadiatorFanState::Run => Level::High,
+            });
+        }
+
+        let state = match output.get_output_level() {
             Level::Low => RadiatorFanState::Idle,
             Level::High => RadiatorFanState::Run,
-        }
+        };
+        comm[idx].send(Response(state)).await;
     }
 }
