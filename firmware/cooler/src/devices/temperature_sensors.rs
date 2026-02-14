@@ -3,11 +3,11 @@ use core::cell::RefCell;
 use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_executor::Spawner;
+use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Delay, Duration, Ticker, Timer};
 use hoshiguma_core::{accessories::cooler::types::Temperatures, types::TemperatureReading};
 use one_wire_bus::{Address, OneWire};
-use pico_plc_bsp::embassy_rp::gpio::{Level, OutputOpenDrain};
 
 static READING: Mutex<CriticalSectionRawMutex, RefCell<Temperatures>> =
     Mutex::new(RefCell::new(Temperatures {

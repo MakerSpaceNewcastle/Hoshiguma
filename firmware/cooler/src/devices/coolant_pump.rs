@@ -1,6 +1,6 @@
 use crate::CoolantPumpResources;
+use embassy_rp::gpio::{Level, Output};
 use hoshiguma_core::accessories::cooler::types::CoolantPumpState;
-use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct CoolantPump {
     output: Output<'static>,
