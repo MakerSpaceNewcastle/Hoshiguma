@@ -1268,7 +1268,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hoshiguma-telemetry-module"
+name = "hoshiguma-telemetry-bridge"
 version = "0.1.0"
 dependencies = [
  "assign-resources",

@@ -9,7 +9,6 @@ license = "MIT"
 default = []
 panic-probe = ["dep:panic-probe"]
 test-panic-on-core-0 = []
-test-panic-on-core-1 = []
 
 [dependencies]
 assign-resources = "0.5.0"
@@ -22,7 +21,7 @@ embassy-futures = "0.1.2"
 embassy-sync = "0.7.2"
 embassy-time = { version = "0.5.0", features = ["defmt"] }
 git-version = "0.3.5"
-hoshiguma-core = { path = "../core", default-features = false, features = ["no-std"] }
+hoshiguma-core = { path = "../lib/core", default-features = false, features = ["no-std"] }
 one-wire-bus = "0.1.1"
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 pico-plc-bsp = { git = "https://github.com/DanNixon/pico-plc", features = ["rp2040"] }

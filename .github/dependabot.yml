@@ -8,11 +8,11 @@ updates:
 
   - package-ecosystem: cargo
     directories:
-      - cooler-firmware
-      - extraction-airflow-sensor-firmware
-      - peripheral-controller-firmware
-      - protocol
-      - telemetry-module-firmware
+      - firmware/lib/core
+      - firmware/cooler
+      - firmware/extraction-airflow-sensor-
+      - firmware/orchestrator
+      - firmware/telemetry-bridge
     schedule:
       interval: quarterly
     groups:
