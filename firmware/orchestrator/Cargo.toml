@@ -27,7 +27,7 @@ panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 embassy-sync = { version = "0.7.2", features = ["defmt"] }
 embassy-futures = "0.1.2"
 embassy-time-driver = "0.2.0"
-portable-atomic = { version = "1.13.0", features = ["critical-section"] }
+portable-atomic = { version = "1.13.1", features = ["critical-section"] }
 static_cell = "2.1.0"
 
 one-wire-bus = "0.1.1"
@@ -35,7 +35,7 @@ ds18b20 = "0.1.1"
 
 git-version = "0.3.5"
 
-teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
+teeny-rpc = { version = "0.1.2", default-features = false, features = ["no-std"] }
 hoshiguma-core = { path = "../lib/core", default-features = false, features = ["no-std"] }
 
 heapless = { version = "0.9.1", features = ["defmt"] }
