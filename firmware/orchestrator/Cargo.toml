@@ -1,5 +1,5 @@
 [package]
-name = "hoshiguma-periperal-controller"
+name = "hoshiguma-orchestrator"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
@@ -36,7 +36,7 @@ ds18b20 = "0.1.1"
 git-version = "0.3.5"
 
 teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
-hoshiguma-core = { path = "../core", default-features = false, features = ["no-std"] }
+hoshiguma-core = { path = "../lib/core", default-features = false, features = ["no-std"] }
 
 heapless = { version = "0.9.1", features = ["defmt"] }
 embassy-usb = "0.5.1"

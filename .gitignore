@@ -1,9 +1,1 @@
-# Rust
-**/target
-
-# FreeCAD
-*.FCStd1
-*.FCBak
-
-# direnv
 .direnv

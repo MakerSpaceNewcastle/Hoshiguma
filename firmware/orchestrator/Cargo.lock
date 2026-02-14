@@ -810,7 +810,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hoshiguma-periperal-controller"
+name = "hoshiguma-orchestrator"
 version = "0.1.0"
 dependencies = [
  "assign-resources",

@@ -1,0 +1,77 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  formatting:
+    name: Formatting
+    runs-on: ubuntu-slim
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Format
+        run: nix develop --command treefmt --fail-on-change
+
+  libraries:
+    name: Libraries
+    needs:
+      - formatting
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        crate:
+          - core
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Clippy
+        run: |
+          set -x
+          cd ./firmware/lib/${{ matrix.crate }}
+          nix develop --command cargo clippy -- -Dwarnings
+
+      - name: Tests
+        run: |
+          set -x
+          cd ./firmware/lib/${{ matrix.crate }}
+          nix develop --command cargo test
+
+  firmware:
+    name: Firmware
+    needs:
+      - libraries
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        crate:
+          - cooler
+          - extraction-airflow-sensor
+          - orchestrator
+          - telemetry-bridge
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Clippy
+        run: |
+          set -x
+          cd ./firmware/${{ matrix.crate }}
+          nix develop --command cargo clippy -- -Dwarnings
+
+      - name: Build
+        run: |
+          set -x
+          cd ./firmware/${{ matrix.crate }}
+          nix develop --command cargo build --release
