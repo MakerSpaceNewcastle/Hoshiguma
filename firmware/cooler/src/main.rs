@@ -14,18 +14,18 @@ use devices::{
     temperature_sensors::TemperatureSensors,
 };
 use embassy_executor::Spawner;
+use embassy_rp::{
+    Peri,
+    gpio::{Level, Output},
+    peripherals::{self},
+    watchdog::Watchdog,
+};
 use embassy_time::{Duration, Timer};
 use hoshiguma_core::types::BootReason;
 use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use pico_plc_bsp::{
-    embassy_rp::{
-        gpio::{Input, Level, Output, Pull},
-        watchdog::Watchdog,
-    },
-    peripherals::{self, Peri, PicoPlc},
-};
+use portable_atomic as _;
 
 assign_resources! {
     status: StatusResources {
@@ -33,35 +33,35 @@ assign_resources! {
         led: PIN_25,
     },
     onewire: OnewireResources {
-        pin: ONEWIRE,
+        pin: PIN_22,
     },
     flow_sensor: FlowSensorResources {
         pwm: PWM_SLICE7,
-        pin: IN_0,
+        pin: PIN_15,
     },
     coolant_reservoir_level: CoolantReservoirLevelSensorResources {
-        low: IN_1,
+        low: PIN_14,
     },
     compressor: CompressorResources {
-        relay: RELAY_0,
+        relay: PIN_7,
     },
     coolant_pump: CoolantPumpResources {
-        relay: RELAY_1,
+        relay: PIN_6,
     },
     radiator_fan: RadiatorFanResources {
-        relay: RELAY_2,
+        relay: PIN_16,
     },
     communication: ControlCommunicationResources {
         uart: UART0,
-        tx_pin: IO_0,
-        rx_pin: IO_1,
+        tx_pin: PIN_0,
+        rx_pin: PIN_1,
     },
 }
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
-    let p = unsafe { PicoPlc::steal() };
+    let p = unsafe { embassy_rp::Peripherals::steal() };
     let r = split_resources!(p);
 
     let mut watchdog = Watchdog::new(r.status.watchdog);
@@ -81,24 +81,11 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    let p = PicoPlc::default();
+    let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
-
-    // Unused IO
-    let _in2 = Input::new(p.IN_2, Pull::Down);
-    let _in3 = Input::new(p.IN_3, Pull::Down);
-    let _in4 = Input::new(p.IN_4, Pull::Down);
-    let _in5 = Input::new(p.IN_5, Pull::Down);
-    let _in6 = Input::new(p.IN_6, Pull::Down);
-    let _in7 = Input::new(p.IN_7, Pull::Down);
-    let _relay3 = Output::new(p.RELAY_3, Level::Low);
-    let _relay4 = Output::new(p.RELAY_4, Level::Low);
-    let _relay5 = Output::new(p.RELAY_5, Level::Low);
-    let _relay6 = Output::new(p.RELAY_6, Level::Low);
-    let _relay7 = Output::new(p.RELAY_7, Level::Low);
 
     // Outputs
     let coolant_pump = CoolantPump::new(r.coolant_pump);
@@ -149,7 +136,7 @@ async fn dummy_panic() {
 }
 
 fn boot_reason() -> BootReason {
-    let reason = pico_plc_bsp::embassy_rp::pac::WATCHDOG.reason().read();
+    let reason = embassy_rp::pac::WATCHDOG.reason().read();
 
     if reason.force() {
         BootReason::WatchdogForced
