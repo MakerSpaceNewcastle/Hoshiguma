@@ -6,6 +6,11 @@ use crate::{
 use chrono::{DateTime, TimeDelta, Utc};
 use core::{sync::atomic::Ordering, time::Duration};
 use defmt::{debug, error, info, unwrap, warn};
+use embassy_rp::{
+    bind_interrupts,
+    peripherals::UART0,
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
+};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Instant, Timer};
 use hoshiguma_core::{
@@ -16,11 +21,6 @@ use hoshiguma_core::{
     },
     time::NtpSyncedTime,
     types::{MonitorKind, Severity},
-};
-use pico_plc_bsp::embassy_rp::{
-    bind_interrupts,
-    peripherals::UART0,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{

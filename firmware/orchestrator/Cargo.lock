@@ -822,6 +822,7 @@ dependencies = [
  "ds18b20",
  "embassy-executor",
  "embassy-futures",
+ "embassy-rp",
  "embassy-sync",
  "embassy-time",
  "embassy-time-driver",
@@ -831,7 +832,6 @@ dependencies = [
  "hoshiguma-core",
  "one-wire-bus",
  "panic-probe",
- "pico-plc-bsp",
  "portable-atomic",
  "static_cell",
  "teeny-rpc",
@@ -1065,16 +1065,6 @@ name = "pico-args"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5be167a7af36ee22fe3115051bc51f6e6c7054c9348e28deb4f49bd6f705a315"
-
-[[package]]
-name = "pico-plc-bsp"
-version = "0.1.0"
-source = "git+https://github.com/DanNixon/pico-plc#858373b3598c8b32888e172455651fdd23ce4415"
-dependencies = [
- "embassy-rp",
- "one-wire-bus",
- "portable-atomic",
-]
 
 [[package]]
 name = "pio"
