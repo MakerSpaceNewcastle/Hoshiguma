@@ -1,7 +1,7 @@
 use crate::{MachineEnableResources, telemetry::queue_telemetry_data_point};
+use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_core::{telemetry::AsTelemetry, types::MachineEnable};
-use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct MachineEnableOutput {
     relay: Output<'static>,

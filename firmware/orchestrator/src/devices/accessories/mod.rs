@@ -19,6 +19,11 @@ use crate::{
 use core::time::Duration as CoreDuration;
 use defmt::{debug, unwrap, warn};
 use embassy_futures::select::{Either3, select3};
+use embassy_rp::{
+    bind_interrupts,
+    peripherals::UART1,
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
+};
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Ticker, Timer};
 use hoshiguma_core::{
@@ -32,11 +37,6 @@ use hoshiguma_core::{
     },
     telemetry::AsTelemetry,
     types::MonitorKind,
-};
-use pico_plc_bsp::embassy_rp::{
-    bind_interrupts,
-    peripherals::UART1,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{client::Client, transport::embedded::EioTransport};

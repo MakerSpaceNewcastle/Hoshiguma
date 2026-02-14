@@ -17,18 +17,17 @@ use core::sync::atomic::Ordering;
 use defmt::{info, warn};
 use defmt_rtt as _;
 use embassy_executor::raw::Executor;
+use embassy_rp::{
+    Peri,
+    gpio::{Input, Level, Output, Pull},
+    multicore::{Stack, spawn_core1},
+    peripherals,
+    watchdog::Watchdog,
+};
 use embassy_time::{Duration, Instant, Ticker, Timer};
 use hoshiguma_core::types::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
-use pico_plc_bsp::{
-    embassy_rp::{
-        gpio::{Input, Level, Output, Pull},
-        multicore::{Stack, spawn_core1},
-        watchdog::Watchdog,
-    },
-    peripherals::{self, Peri, PicoPlc},
-};
 use portable_atomic::AtomicBool;
 use static_cell::StaticCell;
 
@@ -41,55 +40,55 @@ assign_resources! {
         usb: USB,
     },
     onewire: OnewireResources {
-        pin: ONEWIRE,
+        pin: PIN_22,
     },
     status_lamp: StatusLampResources {
-        red: RELAY_0,
-        amber: RELAY_1,
-        green: RELAY_2,
+        red: PIN_7,
+        amber: PIN_6,
+        green: PIN_16,
     },
     machine_power_detect: MachinePowerDetectResources {
-        detect: IN_7,
+        detect: PIN_8,
     },
     chassis_intrusion_detect: ChassisIntrusionDetectResources {
-        detect: IN_6,
+        detect: PIN_9,
     },
     air_assist_demand_detect: AirAssistDemandDetectResources {
-        detect: IN_4,
+        detect: PIN_11,
     },
     machine_run_detect: MachineRunDetectResources {
-        detect: IN_3,
+        detect: PIN_12,
     },
     fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
-        switch: IN_5,
+        switch: PIN_10,
     },
     access_control: AccessControlResources {
-        detect: IN_2,
+        detect: PIN_13,
     },
     air_assist_pump: AirAssistPumpResources {
-        relay: RELAY_6,
+        relay: PIN_20,
     },
     fume_extraction_fan: FumeExtractionFanResources {
-        relay: RELAY_7,
+        relay: PIN_21,
     },
     laser_enable: LaserEnableResources {
-        relay: RELAY_4,
+        relay: PIN_18,
     },
     machine_enable: MachineEnableResources {
-        relay: RELAY_3,
+        relay: PIN_17,
     },
     machine_power: MachinePowerResources {
-        relay: RELAY_5,
+        relay: PIN_19,
     },
     telemetry: TelemetryResources {
         uart: UART0,
-        tx_pin: IO_0,
-        rx_pin: IO_1,
+        tx_pin: PIN_0,
+        rx_pin: PIN_1,
     },
     accessories_bus: AccessoriesCommunicationResources {
         uart: UART1,
-        tx_pin: IO_4,
-        rx_pin: IO_5,
+        tx_pin: PIN_4,
+        rx_pin: PIN_5,
     },
 }
 
@@ -104,7 +103,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
     // Flag the panic, indicating that executors should stop scheduling work
     PANIC_HALT.store(true, Ordering::Relaxed);
 
-    let p = unsafe { PicoPlc::steal() };
+    let p = unsafe { embassy_rp::Peripherals::steal() };
     let r = split_resources!(p);
 
     // Disable the machine and laser
@@ -148,15 +147,11 @@ static PANIC_HALT: AtomicBool = AtomicBool::new(false);
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
-    let p = PicoPlc::default();
+    let p = embassy_rp::init(Default::default());
     let r = split_resources!(p);
 
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
-
-    // Unused IO
-    let _in0 = Input::new(p.IN_0, Pull::Down);
-    let _in1 = Input::new(p.IN_1, Pull::Down);
 
     // Safety critical things go on core 1
     spawn_core1(
@@ -308,7 +303,7 @@ async fn dummy_panic() {
 }
 
 fn boot_reason() -> BootReason {
-    let reason = pico_plc_bsp::embassy_rp::pac::WATCHDOG.reason().read();
+    let reason = embassy_rp::pac::WATCHDOG.reason().read();
 
     if reason.force() {
         BootReason::WatchdogForced

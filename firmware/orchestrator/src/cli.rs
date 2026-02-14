@@ -1,16 +1,16 @@
 use crate::UsbResources;
 use defmt::{Format, debug, info, warn};
 use embassy_executor::Spawner;
+use embassy_rp::{bind_interrupts, peripherals::USB, usb::InterruptHandler};
 use embassy_usb::{UsbDevice, driver::EndpointError};
 use heapless::Vec;
-use pico_plc_bsp::embassy_rp::{bind_interrupts, peripherals::USB, usb::InterruptHandler};
 use static_cell::StaticCell;
 
 bind_interrupts!(struct Irqs {
     USBCTRL_IRQ => InterruptHandler<USB>;
 });
 
-type Driver = pico_plc_bsp::embassy_rp::usb::Driver<'static, USB>;
+type Driver = embassy_rp::usb::Driver<'static, USB>;
 type CdcAcmClass = embassy_usb::class::cdc_acm::CdcAcmClass<'static, Driver>;
 
 #[embassy_executor::task]

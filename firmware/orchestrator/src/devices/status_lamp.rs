@@ -1,8 +1,8 @@
 use crate::StatusLampResources;
 use defmt::unwrap;
+use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_core::types::StatusLamp;
-use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct StatusLampOutput {
     red: Output<'static>,

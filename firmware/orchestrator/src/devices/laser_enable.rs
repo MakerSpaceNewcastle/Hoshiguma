@@ -1,7 +1,7 @@
 use crate::{LaserEnableResources, telemetry::queue_telemetry_data_point};
+use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use hoshiguma_core::{telemetry::AsTelemetry, types::LaserEnable};
-use pico_plc_bsp::embassy_rp::gpio::{Level, Output};
 
 pub(crate) struct LaserEnableOutput {
     relay: Output<'static>,

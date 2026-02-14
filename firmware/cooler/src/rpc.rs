@@ -2,17 +2,17 @@ use crate::{ControlCommunicationResources, machine::Machine};
 use core::time::Duration as CoreDuration;
 use defmt::{debug, warn};
 use embassy_futures::select::{Either, select};
+use embassy_rp::{
+    bind_interrupts,
+    peripherals::UART0,
+    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
+};
 use embassy_time::{Duration, Instant, Ticker};
 use git_version::git_version;
 use hoshiguma_core::accessories::{
     SERIAL_BAUD,
     cooler::rpc::{Request as CoolerRequest, Response as CoolerResponse},
     rpc::{Request, Response},
-};
-use pico_plc_bsp::embassy_rp::{
-    bind_interrupts,
-    peripherals::UART0,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
 };
 use static_cell::StaticCell;
 use teeny_rpc::{server::Server, transport::embedded::EioTransport};

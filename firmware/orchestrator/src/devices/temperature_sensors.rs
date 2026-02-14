@@ -2,6 +2,7 @@ use super::TemperaturesExt;
 use crate::{OnewireResources, telemetry::queue_telemetry_data_point};
 use defmt::{info, warn};
 use ds18b20::{Ds18b20, Resolution};
+use embassy_rp::gpio::{Level, OutputOpenDrain};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Delay, Duration, Ticker, Timer};
 use hoshiguma_core::{
@@ -9,7 +10,6 @@ use hoshiguma_core::{
     types::{MachineTemperatures, TemperatureReading},
 };
 use one_wire_bus::{Address, OneWire};
-use pico_plc_bsp::embassy_rp::gpio::{Level, OutputOpenDrain};
 
 impl TemperaturesExt for MachineTemperatures {
     fn any_failed_sensors(&self) -> bool {
