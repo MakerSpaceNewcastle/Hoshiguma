@@ -16,7 +16,7 @@ use panic_probe as _;
 use peek_o_display_bsp::{
     PeekODisplay,
     display::Rotation,
-    embassy_rp::gpio::{Level, Output},
+    embassy_rp::gpio::{Input, Level, Output, Pull},
     touch::Calibration,
 };
 
@@ -34,30 +34,34 @@ async fn main(_spawner: Spawner) {
 
     display.clear(Rgb666::BLACK).unwrap();
 
-    let mut ticker = Ticker::every(Duration::from_hz(100));
-
     let mut last = (0i32, 0i32);
 
     let mut led = Output::new(p.PIN_19, Level::Low);
 
     touch.read();
 
+    let access_control_signal = Input::new(p.PIN_28, Pull::None);
+
+    // let mut ticker = Ticker::every(Duration::from_hz(100));
+    let mut ticker = Ticker::every(Duration::from_hz(10));
     loop {
         ticker.next().await;
 
-        let irq_level = touch_irq.get_level();
-        led.set_level(irq_level);
+        led.set_level(access_control_signal.get_level());
 
-        if irq_level == Level::Low
-            && let Some(point) = touch.read()
-        {
-            info!("touch at : {},{}", point.0, point.1);
+        // let irq_level = touch_irq.get_level();
+        // led.set_level(irq_level);
 
-            draw_cursor(&mut display, last, Rgb666::BLACK, Rgb666::BLACK);
-            draw_cursor(&mut display, point, Rgb666::RED, Rgb666::GREEN);
+        // if irq_level == Level::Low
+        //     && let Some(point) = touch.read()
+        // {
+        //     info!("touch at : {},{}", point.0, point.1);
 
-            last = point;
-        }
+        //     draw_cursor(&mut display, last, Rgb666::BLACK, Rgb666::BLACK);
+        //     draw_cursor(&mut display, point, Rgb666::RED, Rgb666::GREEN);
+
+        //     last = point;
+        // }
     }
 }
 
