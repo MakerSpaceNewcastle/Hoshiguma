@@ -2,10 +2,10 @@ use crate::{
     ChassisIntrusionDetectResources, polled_input::PolledInput,
     telemetry::queue_telemetry_data_point,
 };
+use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Duration;
 use hoshiguma_core::{telemetry::AsTelemetry, types::ChassisIntrusion};
-use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static CHASSIS_INTRUSION_CHANGED: Watch<CriticalSectionRawMutex, ChassisIntrusion, 1> =
     Watch::new();

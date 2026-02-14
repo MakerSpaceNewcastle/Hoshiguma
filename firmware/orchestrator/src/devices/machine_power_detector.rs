@@ -1,10 +1,10 @@
 use crate::{
     MachinePowerDetectResources, polled_input::PolledInput, telemetry::queue_telemetry_data_point,
 };
+use embassy_rp::gpio::{Input, Level, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::{Duration, Timer};
 use hoshiguma_core::{telemetry::AsTelemetry, types::MachinePower};
-use pico_plc_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 pub(crate) static MACHINE_POWER_CHANGED: Watch<CriticalSectionRawMutex, MachinePower, 5> =
     Watch::new();
