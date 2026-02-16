@@ -36,7 +36,7 @@ reqwless = { version = "0.14.0", features = ["defmt", "alloc"] }
 sntpc = { version = "0.8.1", default-features = false, features = ["defmt"] }
 sntpc-net-embassy = { version = "0.8.0", default-features = false, features = ["defmt"] }
 static_cell = "2.1.0"
-teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
+teeny-rpc = { version = "0.1.2", default-features = false, features = ["no-std"] }
 
 [profile.release]
 debug = 2
