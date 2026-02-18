@@ -1,0 +1,17 @@
+- cooler -telem-> telem bridge
+- cooler -get time-> telem bridge
+- orch -command-> cooler
+- cooler -temperatures-> orch
+
+- sensor board -telem-> telem bridge
+- sensor board -get time-> telem bridge
+- orch -light state-> sensor board
+- sensor board -temperatures-> orch
+- sensor board -airflow sensor-> orch
+
+- hmi -telem-> telem bridge
+- hmi -get time-> telem bridge
+- hmi -user auth-> orch
+
+- orch -telem-> telem bridge
+- orch -get time-> telem bridge
