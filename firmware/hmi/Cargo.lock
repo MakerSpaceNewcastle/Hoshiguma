@@ -27,6 +27,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assign-resources"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "840ad5d907de7448d88a3f22b4a7b5d326c6eb3deeb9f94cfaaec7354a80b305"
+
+[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -683,6 +689,7 @@ dependencies = [
 name = "hoshiguma-hmi"
 version = "0.1.0"
 dependencies = [
+ "assign-resources",
  "cortex-m-rt",
  "defmt 1.0.1",
  "defmt-rtt",

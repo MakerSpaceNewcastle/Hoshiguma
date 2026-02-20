@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use assign_resources::assign_resources;
 use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
@@ -17,8 +18,15 @@ use peek_o_display_bsp::{
     PeekODisplay,
     display::Rotation,
     embassy_rp::gpio::{Input, Level, Output, Pull},
+    peripherals::{self, Peri},
     touch::Calibration,
 };
+
+assign_resources! {
+    led: LedResources {
+        led: PIN_25,
+    },
+}
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
