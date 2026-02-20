@@ -1,0 +1,30 @@
+[package]
+name = "hoshiguma-cooler-api"
+version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
+edition = "2024"
+license = "MIT"
+
+[features]
+default = ["std"]
+
+std = [
+  "chrono/std",
+  "serde/std",
+]
+
+no-std = [
+  "dep:defmt",
+  "chrono/defmt",
+  "heapless/defmt",
+]
+
+[dependencies]
+chrono = { version = "0.4.43", default-features = false, features = ["serde"] }
+defmt = { version = "1.0.1", optional = true }
+heapless = { version = "0.9.2", features = ["serde"] }
+hoshiguma-telemetry = { path = "../hoshiguma-telemetry" }
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+
+[lints.rust]
+unused_crate_dependencies = "deny"
