@@ -24,7 +24,11 @@ use peek_o_display_bsp::{
 
 assign_resources! {
     led: LedResources {
-        led: PIN_25,
+        led: PIN_19,
+    },
+    access_control: AccessControlResources {
+        granted: PIN_28,
+        denied: PIN_27,
     },
 }
 
@@ -32,6 +36,7 @@ assign_resources! {
 async fn main(_spawner: Spawner) {
     let board = PeekODisplay::default();
     let p = board.peripherals();
+    let r = split_resources!(p);
 
     let spi = board.board_spi();
 
@@ -44,11 +49,11 @@ async fn main(_spawner: Spawner) {
 
     let mut last = (0i32, 0i32);
 
-    let mut led = Output::new(p.PIN_19, Level::Low);
+    let mut led = Output::new(r.led.led, Level::Low);
 
     touch.read();
 
-    let access_control_signal = Input::new(p.PIN_28, Pull::None);
+    let access_control_signal = Input::new(r.access_control.granted, Pull::None);
 
     // let mut ticker = Ticker::every(Duration::from_hz(100));
     let mut ticker = Ticker::every(Duration::from_hz(10));
