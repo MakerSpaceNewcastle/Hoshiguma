@@ -129,88 +129,62 @@ mod tests {
 
     #[test]
     fn to_influx_line_usize_no_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one"]).unwrap();
-
         let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
+            measurement: "zero",
+            field: "one",
             value: TelemetryValue::Usize(42),
             timestamp: None,
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<32>()
-            .unwrap();
+        let s = p.to_influx_line_string::<32>().unwrap();
 
         assert_eq!(s, "zero one=42");
     }
 
     #[test]
     fn to_influx_line_f32_no_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one"]).unwrap();
-
         let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
+            measurement: "zero",
+            field: "one",
             value: TelemetryValue::Float32(3.14),
             timestamp: None,
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<32>()
-            .unwrap();
+        let s = p.to_influx_line_string::<32>().unwrap();
 
         assert_eq!(s, "zero one=3.14");
     }
 
     #[test]
-    fn to_influx_line_reg_str_no_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one", "two"]).unwrap();
-
-        let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
-            value: TelemetryValue::StaticString(2),
+    fn to_influx_line_str_no_timestamp() {
+        let p = TelemetryDataPoint::<&str> {
+            measurement: "zero",
+            field: "one",
+            value: TelemetryValue::String("two"),
             timestamp: None,
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<32>()
-            .unwrap();
+        let s = p.to_influx_line_string::<32>().unwrap();
 
         assert_eq!(s, "zero one=\"two\"");
     }
 
     #[test]
-    fn to_influx_line_str_no_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one"]).unwrap();
-
-        let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
-            value: TelemetryValue::DynamicString("nope".try_into().unwrap()),
+    fn to_influx_line_heapless_string_no_timestamp() {
+        let p = TelemetryDataPoint::<String<12>> {
+            measurement: "zero",
+            field: "one",
+            value: TelemetryValue::String("two".try_into().unwrap()),
             timestamp: None,
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<32>()
-            .unwrap();
+        let s = p.to_influx_line_string::<32>().unwrap();
 
-        assert_eq!(s, "zero one=\"nope\"");
+        assert_eq!(s, "zero one=\"two\"");
     }
 
     #[test]
     fn to_influx_line_usize_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one"]).unwrap();
-
         let t = NaiveDate::from_ymd_opt(2026, 2, 7)
             .unwrap()
             .and_hms_opt(11, 39, 40)
@@ -218,25 +192,19 @@ mod tests {
             .and_utc();
 
         let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
+            measurement: "zero",
+            field: "one",
             value: TelemetryValue::Usize(42),
             timestamp: Some(t),
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<48>()
-            .unwrap();
+        let s = p.to_influx_line_string::<48>().unwrap();
 
         assert_eq!(s, "zero one=42 1770464380000000000");
     }
 
     #[test]
     fn to_influx_line_f32_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one"]).unwrap();
-
         let t = NaiveDate::from_ymd_opt(2026, 2, 7)
             .unwrap()
             .and_hms_opt(11, 39, 40)
@@ -244,70 +212,54 @@ mod tests {
             .and_utc();
 
         let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
+            measurement: "zero",
+            field: "one",
             value: TelemetryValue::Float32(3.14),
             timestamp: Some(t),
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<48>()
-            .unwrap();
+        let s = p.to_influx_line_string::<48>().unwrap();
 
         assert_eq!(s, "zero one=3.14 1770464380000000000");
     }
 
     #[test]
-    fn to_influx_line_reg_str_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one", "two"]).unwrap();
-
+    fn to_influx_line_str_timestamp() {
         let t = NaiveDate::from_ymd_opt(2026, 2, 7)
             .unwrap()
             .and_hms_opt(11, 39, 40)
             .unwrap()
             .and_utc();
 
-        let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
-            value: TelemetryValue::StaticString(2),
+        let p = TelemetryDataPoint::<&str> {
+            measurement: "zero",
+            field: "one",
+            value: TelemetryValue::String("two"),
             timestamp: Some(t),
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<48>()
-            .unwrap();
+        let s = p.to_influx_line_string::<48>().unwrap();
 
         assert_eq!(s, "zero one=\"two\" 1770464380000000000");
     }
 
     #[test]
-    fn to_influx_line_str_timestamp() {
-        let sr = StringRegistry::<8, 32>::from_slice(&["zero", "one"]).unwrap();
-
+    fn to_influx_line_heapless_string_timestamp() {
         let t = NaiveDate::from_ymd_opt(2026, 2, 7)
             .unwrap()
             .and_hms_opt(11, 39, 40)
             .unwrap()
             .and_utc();
 
-        let p = TelemetryDataPoint::<usize> {
-            measurement: 0,
-            field: 1,
-            value: TelemetryValue::DynamicString("nope".try_into().unwrap()),
+        let p = TelemetryDataPoint::<String<12>> {
+            measurement: "zero",
+            field: "one",
+            value: TelemetryValue::String("two".try_into().unwrap()),
             timestamp: Some(t),
         };
 
-        let s = p
-            .to_rendered_data_point(&sr)
-            .unwrap()
-            .to_influx_line_string::<48>()
-            .unwrap();
+        let s = p.to_influx_line_string::<48>().unwrap();
 
-        assert_eq!(s, "zero one=\"nope\" 1770464380000000000");
+        assert_eq!(s, "zero one=\"two\" 1770464380000000000");
     }
 }
