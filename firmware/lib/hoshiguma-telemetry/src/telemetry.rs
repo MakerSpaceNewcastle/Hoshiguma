@@ -3,9 +3,8 @@ use core::fmt::{Display, Write};
 use heapless::{String, Vec};
 use serde::{Deserialize, Serialize};
 
-pub trait AsTelemetry<const STRINGS: usize, const MAX_ITEMS: usize> {
-    fn strings() -> [&'static str; STRINGS];
-    fn telemetry(&self) -> Vec<StaticTelemetryDataPoint, MAX_ITEMS>;
+pub trait AsTelemetry<StringType, const MAX_ITEMS: usize> {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<StringType>, MAX_ITEMS>;
 }
 
 pub trait TelemetryStrValue {
@@ -22,9 +21,7 @@ pub struct TelemetryDataPoint<StringType> {
     pub timestamp: Option<DateTime<Utc>>,
 }
 
-pub type StaticTelemetryDataPoint = TelemetryDataPoint<&'static str>;
-
-impl StaticTelemetryDataPoint {
+impl<StringType> TelemetryDataPoint<StringType> {
     pub fn to_influx_line_string<const INFLUX_LINE_CAPACITY: usize>(
         &self,
     ) -> Result<String<INFLUX_LINE_CAPACITY>> {
@@ -50,50 +47,8 @@ impl StaticTelemetryDataPoint {
                 },
                 self.timestamp,
             ),
-            TelemetryValue::StaticString(value) => {
+            TelemetryValue::String(value) => {
                 format_influx_line_str(self.measurement, self.field, value, self.timestamp)
-            }
-            TelemetryValue::DynamicString(value) => {
-                format_influx_line_str(self.measurement, self.field, value, self.timestamp)
-            }
-        }
-    }
-}
-
-pub type RenderedTelemetryDataPoint<const REGISTERED_STRING_CAPACITY: usize> =
-    TelemetryDataPoint<String<REGISTERED_STRING_CAPACITY>>;
-
-impl<const SL: usize> RenderedTelemetryDataPoint<SL> {
-    pub fn to_influx_line_string<const INFLUX_LINE_CAPACITY: usize>(
-        self,
-    ) -> Result<String<INFLUX_LINE_CAPACITY>> {
-        match &self.value {
-            TelemetryValue::Usize(value) => {
-                format_influx_line(&self.measurement, &self.field, value, self.timestamp)
-            }
-            TelemetryValue::U64(value) => {
-                format_influx_line(&self.measurement, &self.field, value, self.timestamp)
-            }
-            TelemetryValue::Float32(value) => {
-                format_influx_line(&self.measurement, &self.field, value, self.timestamp)
-            }
-            TelemetryValue::Float64(value) => {
-                format_influx_line(&self.measurement, &self.field, value, self.timestamp)
-            }
-            TelemetryValue::Bool(value) => format_influx_line_str(
-                &self.measurement,
-                &self.field,
-                match value {
-                    true => "true",
-                    false => "false",
-                },
-                self.timestamp,
-            ),
-            TelemetryValue::StaticString(value) => {
-                format_influx_line_str(&self.measurement, &self.field, value, self.timestamp)
-            }
-            TelemetryValue::DynamicString(value) => {
-                format_influx_line_str(&self.measurement, &self.field, value, self.timestamp)
             }
         }
     }
@@ -107,8 +62,7 @@ pub enum TelemetryValue<StringType> {
     Float32(f32),
     Float64(f64),
     Bool(bool),
-    StaticString(StringType),
-    DynamicString(String<24>),
+    String(StringType),
 }
 
 fn format_influx_timestamp(timestamp: Option<DateTime<Utc>>) -> Result<String<20>> {
