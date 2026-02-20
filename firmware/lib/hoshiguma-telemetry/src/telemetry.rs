@@ -14,14 +14,14 @@ pub trait TelemetryStrValue {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct TelemetryDataPoint<StringType> {
-    pub measurement: StringType,
-    pub field: StringType,
+    pub measurement: &'static str,
+    pub field: &'static str,
     pub value: TelemetryValue<StringType>,
     #[serde(with = "ts_nanoseconds_option")]
     pub timestamp: Option<DateTime<Utc>>,
 }
 
-impl<StringType> TelemetryDataPoint<StringType> {
+impl<StringType: Display> TelemetryDataPoint<StringType> {
     pub fn to_influx_line_string<const INFLUX_LINE_CAPACITY: usize>(
         &self,
     ) -> Result<String<INFLUX_LINE_CAPACITY>> {
@@ -95,10 +95,10 @@ fn format_influx_line<const LEN: usize, T: Display>(
     Ok(line_str)
 }
 
-fn format_influx_line_str<const LEN: usize>(
+fn format_influx_line_str<const LEN: usize, T: Display>(
     measurement: &str,
     field: &str,
-    value: &str,
+    value: T,
     timestamp: Option<DateTime<Utc>>,
 ) -> Result<String<LEN>> {
     let timestamp = format_influx_timestamp(timestamp)?;
