@@ -68,21 +68,12 @@ pub enum CoolantPumpState {
     Run,
 }
 
-impl AsTelemetry<4, 1> for CoolantPumpState {
-    fn strings() -> [&'static str; 4] {
-        [
-            "coolant_pump",
-            "value",
-            Self::Idle.telemetry_str(),
-            Self::Run.telemetry_str(),
-        ]
-    }
-
-    fn telemetry(&self) -> Vec<StaticTelemetryDataPoint, 1> {
-        Vec::from_array([StaticTelemetryDataPoint {
+impl AsTelemetry<&str, 1> for CoolantPumpState {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+        Vec::from_array([TelemetryDataPoint {
             measurement: "coolant_pump",
             field: "value",
-            value: TelemetryValue::StaticString(self.telemetry_str()),
+            value: TelemetryValue::String(self.telemetry_str()),
             timestamp: None,
         }])
     }
@@ -104,21 +95,12 @@ pub enum CompressorState {
     Run,
 }
 
-impl AsTelemetry<4, 1> for CompressorState {
-    fn strings() -> [&'static str; 4] {
-        [
-            "cooler_compressor",
-            "value",
-            Self::Idle.telemetry_str(),
-            Self::Run.telemetry_str(),
-        ]
-    }
-
-    fn telemetry(&self) -> Vec<StaticTelemetryDataPoint, 1> {
-        Vec::from_array([StaticTelemetryDataPoint {
+impl AsTelemetry<&str, 1> for CompressorState {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+        Vec::from_array([TelemetryDataPoint {
             measurement: "cooler_compressor",
             field: "value",
-            value: TelemetryValue::StaticString(self.telemetry_str()),
+            value: TelemetryValue::String(self.telemetry_str()),
             timestamp: None,
         }])
     }
@@ -140,21 +122,12 @@ pub enum RadiatorFanState {
     Run,
 }
 
-impl AsTelemetry<4, 1> for RadiatorFanState {
-    fn strings() -> [&'static str; 4] {
-        [
-            "cooler_radiator_fan",
-            "value",
-            Self::Idle.telemetry_str(),
-            Self::Run.telemetry_str(),
-        ]
-    }
-
-    fn telemetry(&self) -> Vec<StaticTelemetryDataPoint, 1> {
-        Vec::from_array([StaticTelemetryDataPoint {
+impl AsTelemetry<&str, 1> for RadiatorFanState {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+        Vec::from_array([TelemetryDataPoint {
             measurement: "cooler_radiator_fan",
             field: "value",
-            value: TelemetryValue::StaticString(self.telemetry_str()),
+            value: TelemetryValue::String(self.telemetry_str()),
             timestamp: None,
         }])
     }
@@ -176,21 +149,12 @@ pub enum CoolantReservoirLevel {
     Low,
 }
 
-impl AsTelemetry<4, 1> for CoolantReservoirLevel {
-    fn strings() -> [&'static str; 4] {
-        [
-            "coolant_reservoir_level",
-            "value",
-            Self::Normal.telemetry_str(),
-            Self::Low.telemetry_str(),
-        ]
-    }
-
-    fn telemetry(&self) -> Vec<StaticTelemetryDataPoint, 1> {
-        Vec::from_array([StaticTelemetryDataPoint {
+impl AsTelemetry<&str, 1> for CoolantReservoirLevel {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+        Vec::from_array([TelemetryDataPoint {
             measurement: "coolant_reservoir_level",
             field: "value",
-            value: TelemetryValue::StaticString(self.telemetry_str()),
+            value: TelemetryValue::String(self.telemetry_str()),
             timestamp: None,
         }])
     }
@@ -226,13 +190,9 @@ impl CoolantFlow {
     }
 }
 
-impl AsTelemetry<3, 1> for CoolantFlow {
-    fn strings() -> [&'static str; 3] {
-        ["coolant_rate", "flow", "return"]
-    }
-
-    fn telemetry(&self) -> Vec<StaticTelemetryDataPoint, 1> {
-        Vec::from_array([StaticTelemetryDataPoint {
+impl AsTelemetry<&str, 1> for CoolantFlow {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+        Vec::from_array([TelemetryDataPoint {
             measurement: "coolant_rate",
             field: "flow",
             value: TelemetryValue::Float64(**self),
