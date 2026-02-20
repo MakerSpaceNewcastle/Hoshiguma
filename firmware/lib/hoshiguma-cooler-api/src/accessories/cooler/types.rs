@@ -29,7 +29,7 @@ pub struct Temperatures {
 }
 
 impl AsTelemetry<&str, 8> for Temperatures {
-    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 8> {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&'static str>, 8> {
         let mut v = Vec::new();
 
         for (name, reading) in [
@@ -69,7 +69,7 @@ pub enum CoolantPumpState {
 }
 
 impl AsTelemetry<&str, 1> for CoolantPumpState {
-    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&'static str>, 1> {
         Vec::from_array([TelemetryDataPoint {
             measurement: "coolant_pump",
             field: "value",
@@ -96,7 +96,7 @@ pub enum CompressorState {
 }
 
 impl AsTelemetry<&str, 1> for CompressorState {
-    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&'static str>, 1> {
         Vec::from_array([TelemetryDataPoint {
             measurement: "cooler_compressor",
             field: "value",
@@ -123,7 +123,7 @@ pub enum RadiatorFanState {
 }
 
 impl AsTelemetry<&str, 1> for RadiatorFanState {
-    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&'static str>, 1> {
         Vec::from_array([TelemetryDataPoint {
             measurement: "cooler_radiator_fan",
             field: "value",
@@ -149,8 +149,8 @@ pub enum CoolantReservoirLevel {
     Low,
 }
 
-impl AsTelemetry<&str, 1> for CoolantReservoirLevel {
-    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+impl AsTelemetry<&'static str, 1> for CoolantReservoirLevel {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&'static str>, 1> {
         Vec::from_array([TelemetryDataPoint {
             measurement: "coolant_reservoir_level",
             field: "value",
@@ -190,8 +190,8 @@ impl CoolantFlow {
     }
 }
 
-impl AsTelemetry<&str, 1> for CoolantFlow {
-    fn telemetry(&self) -> Vec<TelemetryDataPoint<&str>, 1> {
+impl AsTelemetry<&'static str, 1> for CoolantFlow {
+    fn telemetry(&self) -> Vec<TelemetryDataPoint<&'static str>, 1> {
         Vec::from_array([TelemetryDataPoint {
             measurement: "coolant_rate",
             field: "flow",
