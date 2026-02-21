@@ -1,4 +1,5 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState, State};
+use crate::ResponsePayload;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -13,8 +14,10 @@ pub enum Request {
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub struct Response(Result<Option<ResponseData>, ()>);
 
-impl Response {
-    pub const ID: &[u8; 4] = b"c00l";
+impl ResponsePayload for Response {
+    fn id() -> &'static [u8; 4] {
+        b"c00l"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
