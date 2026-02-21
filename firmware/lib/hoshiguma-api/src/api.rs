@@ -9,20 +9,33 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn get_payload<T>(&mut self) -> Result<T, ()>
+    pub fn get_payload<T>(&mut self) -> Result<T, ResponseError>
     where
         T: ResponsePayload + DeserializeOwned,
     {
         if self.id != *T::id() {
-            return Err(());
+            return Err(ResponseError::IdMismatch);
         }
 
-        let payload = postcard::from_bytes_cobs(&mut self.data).unwrap();
-
-        Ok(payload)
+        postcard::from_bytes_cobs(&mut self.data).map_err(|_| ResponseError::Deserialize)
     }
 }
 
 pub trait ResponsePayload {
     fn id() -> &'static [u8; 4];
+}
+
+pub enum ResponseError {
+    IdMismatch,
+    Deserialize,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn arse() {
+        todo!()
+    }
 }
