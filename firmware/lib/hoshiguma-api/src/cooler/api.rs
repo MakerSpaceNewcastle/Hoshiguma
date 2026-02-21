@@ -4,8 +4,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Request {
-    GetState,
-
     SetRadiatorFan(RadiatorFanState),
     SetCompressor(CompressorState),
     SetCoolantPump(CoolantPumpState),
@@ -13,10 +11,14 @@ pub enum Request {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
-pub enum Response {
-    GetState(State),
+pub struct Response(Result<Option<ResponseData>, ()>);
 
-    SetRadiatorFan,
-    SetCompressor,
-    SetCoolantPump,
+impl Response {
+    pub const ID: &[u8; 4] = b"c00l";
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+pub enum ResponseData {
+    GetState(State),
 }

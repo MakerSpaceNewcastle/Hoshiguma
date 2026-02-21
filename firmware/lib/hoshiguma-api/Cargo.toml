@@ -1,12 +1,14 @@
 [package]
-name = "hoshiguma-cooler-api"
+name = "hoshiguma-api"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
 license = "MIT"
 
 [features]
-default = ["std"]
+# default = ["std"]
+default = ["std", "device-cooler"]
+device-cooler = []
 
 std = [
   "serde/std",
