@@ -1,5 +1,5 @@
 use heapless::Vec;
-use serde::de::DeserializeOwned;
+use serde::{Serialize, de::DeserializeOwned};
 
 pub const RESPONSE_PAYLOAD_CAPACITY: usize = 200;
 
@@ -9,6 +9,24 @@ pub struct Response {
 }
 
 impl Response {
+    pub fn new<T>(payload: &T) -> Result<Self, ()>
+    where
+        T: ResponsePayload + Serialize,
+    {
+        let mut buffer = [0u8; RESPONSE_PAYLOAD_CAPACITY];
+
+        let data = postcard::to_slice_cobs(payload, buffer.as_mut_slice()).map_err(|e| {
+            println!("{e}");
+            ()
+        })?;
+        let data = Vec::from_slice(&data).unwrap();
+
+        Ok(Self {
+            id: T::id().clone(),
+            data,
+        })
+    }
+
     pub fn get_payload<T>(&mut self) -> Result<T, ResponseError>
     where
         T: ResponsePayload + DeserializeOwned,
@@ -25,6 +43,8 @@ pub trait ResponsePayload {
     fn id() -> &'static [u8; 4];
 }
 
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ResponseError {
     IdMismatch,
     Deserialize,
@@ -33,9 +53,24 @@ pub enum ResponseError {
 #[cfg(test)]
 mod test {
     use super::*;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
+    struct DummyPayload {
+        value: u8,
+    }
+
+    impl ResponsePayload for DummyPayload {
+        fn id() -> &'static [u8; 4] {
+            b"test"
+        }
+    }
 
     #[test]
-    fn arse() {
-        todo!()
+    fn round_trip() {
+        let payload = DummyPayload { value: 42 };
+        let mut response = Response::new(&payload).unwrap();
+        let payload_2 = response.get_payload().unwrap();
+        assert_eq!(payload, payload_2);
     }
 }
