@@ -73,4 +73,12 @@ mod test {
         let payload_2 = response.get_payload().unwrap();
         assert_eq!(payload, payload_2);
     }
+
+    #[test]
+    fn incorrect_id() {
+        let payload = DummyPayload { value: 42 };
+        let mut response = Response::new(&payload).unwrap();
+        response.id = b"arse".to_owned();
+        assert!(response.get_payload::<DummyPayload>().is_err());
+    }
 }

@@ -1,4 +1,4 @@
-use super::types::{CompressorState, CoolantPumpState, RadiatorFanState, State};
+use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
 use crate::ResponsePayload;
 use serde::{Deserialize, Serialize};
 
@@ -8,6 +8,9 @@ pub enum Request {
     SetRadiatorFan(RadiatorFanState),
     SetCompressor(CompressorState),
     SetCoolantPump(CoolantPumpState),
+
+    GetTemperatures,
+    GetCoolantFlow,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -23,5 +26,6 @@ impl ResponsePayload for Response {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ResponseData {
-    GetState(State),
+    Tempreatures,
+    CoolantFlow,
 }

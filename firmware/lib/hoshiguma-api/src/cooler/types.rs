@@ -1,3 +1,4 @@
+use crate::TemperatureReading;
 use core::ops::Deref;
 use heapless::Vec;
 use hoshiguma_telemetry::{AsTelemetry, TelemetryDataPoint, TelemetryStrValue, TelemetryValue};
@@ -14,8 +15,6 @@ pub struct State {
     pub coolant_flow_rate: CoolantFlow,
     pub temperatures: Temperatures,
 }
-
-pub type TemperatureReading = Result<f32, ()>;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
