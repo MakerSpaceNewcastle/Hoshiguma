@@ -1,10 +1,14 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
 use crate::ResponsePayload;
+use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Request {
+    GetGitRevision,
+    GetUptime,
+    GetBootReason,
     GetRadiatorFanState,
     SetRadiatorFanState(RadiatorFanState),
     GetCompressorState,
@@ -29,10 +33,13 @@ impl ResponsePayload for Response {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ResponseData {
-    RadiatorFanState,
-    CompressorState,
-    CoolantPumpState,
-    Tempreatures,
-    CoolantFlowRate,
-    CoolantReturnRate,
+    GitRevision(crate::GitRevisionString),
+    Uptime(Duration),
+    BootReason(crate::BootReason),
+    RadiatorFanState(super::RadiatorFanState),
+    CompressorState(super::CompressorState),
+    CoolantPumpState(super::CoolantPumpState),
+    Tempreatures(super::TemperatureReadings),
+    CoolantFlowRate(super::CoolantRate),
+    CoolantReturnRate(super::CoolantRate),
 }
