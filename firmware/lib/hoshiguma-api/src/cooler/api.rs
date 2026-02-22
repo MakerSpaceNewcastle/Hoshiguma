@@ -5,12 +5,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum Request {
-    SetRadiatorFan(RadiatorFanState),
-    SetCompressor(CompressorState),
-    SetCoolantPump(CoolantPumpState),
-
+    GetRadiatorFanState,
+    SetRadiatorFanState(RadiatorFanState),
+    GetCompressorState,
+    SetCompressorState(CompressorState),
+    GetCoolantPumpState,
+    SetCoolantPumpState(CoolantPumpState),
     GetTemperatures,
-    GetCoolantFlow,
+    GetCoolantFlowRate,
+    GetCoolantReturnRate,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,6 +29,10 @@ impl ResponsePayload for Response {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "no-std", derive(defmt::Format))]
 pub enum ResponseData {
+    RadiatorFanState,
+    CompressorState,
+    CoolantPumpState,
     Tempreatures,
-    CoolantFlow,
+    CoolantFlowRate,
+    CoolantReturnRate,
 }
