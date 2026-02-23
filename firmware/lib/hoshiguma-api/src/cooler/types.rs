@@ -4,8 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub type TemperatureReadings = crate::TemperatureReadings<8>;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CoolantPumpState {
     Idle,
     Run,
@@ -20,8 +19,7 @@ impl TelemetryStrValue for CoolantPumpState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CompressorState {
     Idle,
     Run,
@@ -36,8 +34,7 @@ impl TelemetryStrValue for CompressorState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum RadiatorFanState {
     Idle,
     Run,
@@ -53,8 +50,7 @@ impl TelemetryStrValue for RadiatorFanState {
 }
 
 /// The rate of flow of coolant in litres per minute.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CoolantRate(f64);
 
 impl Deref for CoolantRate {

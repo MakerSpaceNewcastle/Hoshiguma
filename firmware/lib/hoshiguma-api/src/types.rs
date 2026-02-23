@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub type GitRevisionString = String<20>;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BootReason {
     Normal,
     WatchdogTimeout,
@@ -14,8 +13,7 @@ pub enum BootReason {
 pub type TemperatureReading = Result<f32, ()>;
 
 // TODO
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TemperatureReadings<const MAX_SENSORS: usize> {
     readings: Vec<(u32, TemperatureReading), MAX_SENSORS>,
 }

@@ -40,8 +40,7 @@ pub trait ResponsePayload {
     fn id() -> &'static [u8; 4];
 }
 
-#[derive(Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, PartialEq, Eq)]
 pub enum ResponseError {
     IdMismatch,
     Deserialize,
