@@ -10,8 +10,7 @@ use defmt::info;
 use defmt_rtt as _;
 use devices::{
     compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
-    coolant_reservoir_level_sensor::CoolantReservoirLevelSensor, radiator_fan::RadiatorFan,
-    temperature_sensors::TemperatureSensors,
+    radiator_fan::RadiatorFan, temperature_sensors::TemperatureSensors,
 };
 use embassy_executor::Spawner;
 use embassy_rp::{
@@ -21,7 +20,7 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Timer};
-use hoshiguma_core::types::BootReason;
+use hoshiguma_api::BootReason;
 use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -38,9 +37,6 @@ assign_resources! {
     flow_sensor: FlowSensorResources {
         pwm: PWM_SLICE7,
         pin: PIN_15,
-    },
-    coolant_reservoir_level: CoolantReservoirLevelSensorResources {
-        low: PIN_14,
     },
     compressor: CompressorResources {
         relay: PIN_7,
@@ -93,8 +89,6 @@ async fn main(spawner: Spawner) {
     let radiator_fan = RadiatorFan::new(r.radiator_fan);
 
     // Inputs
-    let coolant_reservoir_level_sensor =
-        CoolantReservoirLevelSensor::new(r.coolant_reservoir_level);
     let coolant_flow_sensor = CoolantFlowSensor::new(&spawner, r.flow_sensor);
     let temperature_sensors = TemperatureSensors::new(&spawner, r.onewire);
 
@@ -102,7 +96,6 @@ async fn main(spawner: Spawner) {
         coolant_pump,
         compressor,
         radiator_fan,
-        coolant_reservoir_level_sensor,
         coolant_flow_sensor,
         temperature_sensors,
     };

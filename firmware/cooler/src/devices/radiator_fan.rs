@@ -1,6 +1,6 @@
 use crate::RadiatorFanResources;
 use embassy_rp::gpio::{Level, Output};
-use hoshiguma_core::accessories::cooler::types::RadiatorFanState;
+use hoshiguma_api::cooler::RadiatorFanState;
 
 pub(crate) struct RadiatorFan {
     output: Output<'static>,

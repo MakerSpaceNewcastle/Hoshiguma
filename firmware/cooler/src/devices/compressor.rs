@@ -1,6 +1,6 @@
 use crate::CompressorResources;
 use embassy_rp::gpio::{Level, Output};
-use hoshiguma_core::accessories::cooler::types::CompressorState;
+use hoshiguma_api::cooler::CompressorState;
 
 pub(crate) struct Compressor {
     output: Output<'static>,
