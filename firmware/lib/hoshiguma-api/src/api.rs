@@ -15,10 +15,7 @@ impl Response {
     {
         let mut buffer = [0u8; RESPONSE_PAYLOAD_CAPACITY];
 
-        let data = postcard::to_slice_cobs(payload, buffer.as_mut_slice()).map_err(|e| {
-            println!("{e}");
-            ()
-        })?;
+        let data = postcard::to_slice_cobs(payload, buffer.as_mut_slice()).map_err(|e| ())?;
         let data = Vec::from_slice(&data).unwrap();
 
         Ok(Self {
