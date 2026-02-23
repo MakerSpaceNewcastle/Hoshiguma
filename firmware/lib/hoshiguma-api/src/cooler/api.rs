@@ -3,8 +3,7 @@ use crate::ResponsePayload;
 use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Request {
     GetGitRevision,
     GetUptime,
@@ -20,8 +19,7 @@ pub enum Request {
     GetCoolantReturnRate,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Response(Result<Option<ResponseData>, ()>);
 
 impl ResponsePayload for Response {
@@ -30,8 +28,7 @@ impl ResponsePayload for Response {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {
     GitRevision(crate::GitRevisionString),
     Uptime(Duration),
