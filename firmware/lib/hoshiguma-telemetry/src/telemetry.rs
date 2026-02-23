@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc, serde::ts_nanoseconds_option};
 use core::fmt::{Display, Write};
+use defmt as _;
 use heapless::{String, Vec};
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +13,7 @@ pub trait TelemetryStrValue {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[cfg_attr(not(feature = "std"), derive(defmt::Format))]
 pub struct TelemetryDataPoint<StringType> {
     pub measurement: &'static str,
     pub field: &'static str,
@@ -55,7 +56,7 @@ impl<StringType: Display> TelemetryDataPoint<StringType> {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[cfg_attr(not(feature = "std"), derive(defmt::Format))]
 pub enum TelemetryValue<StringType> {
     Usize(usize),
     U64(u64),
@@ -115,7 +116,7 @@ fn format_influx_line_str<const LEN: usize, T: Display>(
 pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "no-std", derive(defmt::Format))]
+#[cfg_attr(not(feature = "std"), derive(defmt::Format))]
 pub enum Error {
     FormatError,
     MissingString(&'static str),
