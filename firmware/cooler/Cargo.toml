@@ -32,7 +32,6 @@ one-wire-bus = "0.1.1"
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 portable-atomic = { version = "1.10.0", default-features = false, features = ["critical-section"] }
 static_cell = "2.1.0"
-teeny-rpc = { version = "0.1.1", default-features = false, features = ["no-std"] }
 
 [profile.release]
 debug = 2

@@ -29,7 +29,7 @@ use portable_atomic as _;
 assign_resources! {
     status: StatusResources {
         watchdog: WATCHDOG,
-        led: PIN_25,
+        led: PIN_19,
     },
     onewire: OnewireResources {
         pin: PIN_22,
@@ -45,12 +45,18 @@ assign_resources! {
         relay: PIN_6,
     },
     radiator_fan: RadiatorFanResources {
-        relay: PIN_16,
+        relay: PIN_5, // Jumpered from IO pins
     },
-    communication: ControlCommunicationResources {
-        uart: UART0,
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
+    ethernet: EthernetResources {
+        pio: PIO0,
+        mosi: PIN_23,
+        miso: PIN_22,
+        sck: PIN_21,
+        tx_dma: DMA_CH0,
+        rx_dma: DMA_CH1,
+        cs: PIN_20,
+        int: PIN_24,
+        reset: PIN_25,
     },
 }
 
