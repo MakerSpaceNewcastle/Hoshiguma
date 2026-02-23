@@ -5,6 +5,11 @@ authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
 license = "MIT"
 
+[[bin]]
+name = "hoshiguma-cooler"
+test = false
+bench = false
+
 [features]
 default = []
 panic-probe = ["dep:panic-probe"]

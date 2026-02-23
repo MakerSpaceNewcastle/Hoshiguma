@@ -2,7 +2,7 @@ use core::ops::Deref;
 use hoshiguma_telemetry::TelemetryStrValue;
 use serde::{Deserialize, Serialize};
 
-pub type TemperatureReadings = crate::TemperatureReadings<8>;
+pub type OnewireTemperatureSensorReadings = crate::OnewireTemperatureSensorReadings<8>;
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CoolantPumpState {

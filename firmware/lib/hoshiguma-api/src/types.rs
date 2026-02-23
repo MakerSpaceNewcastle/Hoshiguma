@@ -1,3 +1,4 @@
+use getset::Getters;
 use heapless::{String, Vec};
 use serde::{Deserialize, Serialize};
 
@@ -10,10 +11,15 @@ pub enum BootReason {
     WatchdogForced,
 }
 
-pub type TemperatureReading = Result<f32, ()>;
+pub type OnewireAddress = u64;
 
-// TODO
+#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize, Getters)]
+pub struct OnewireTemperatureSensorReading {
+    device: OnewireAddress,
+    reading: Result<f32, ()>,
+}
+
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub struct TemperatureReadings<const MAX_SENSORS: usize> {
-    readings: Vec<(u32, TemperatureReading), MAX_SENSORS>,
+pub struct OnewireTemperatureSensorReadings<const MAX_SENSORS: usize> {
+    readings: Vec<OnewireTemperatureSensorReading, MAX_SENSORS>,
 }
