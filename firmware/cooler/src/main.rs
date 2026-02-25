@@ -3,7 +3,6 @@
 
 mod devices;
 mod machine;
-mod rpc;
 
 use assign_resources::assign_resources;
 use defmt::info;
@@ -32,7 +31,7 @@ assign_resources! {
         led: PIN_19,
     },
     onewire: OnewireResources {
-        pin: PIN_22,
+        pin: PIN_26,
     },
     flow_sensor: FlowSensorResources {
         pwm: PWM_SLICE7,
@@ -107,8 +106,6 @@ async fn main(spawner: Spawner) {
     };
 
     spawner.must_spawn(watchdog_feed_task(r.status));
-
-    spawner.must_spawn(rpc::task(r.communication, machine));
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.must_spawn(dummy_panic());
