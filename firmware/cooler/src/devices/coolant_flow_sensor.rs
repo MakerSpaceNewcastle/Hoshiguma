@@ -8,7 +8,7 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Ticker};
-use hoshiguma_core::accessories::cooler::types::CoolantFlow;
+use hoshiguma_api::cooler::CoolantRate;
 
 static READING: Mutex<CriticalSectionRawMutex, RefCell<CoolantFlow>> =
     Mutex::new(RefCell::new(CoolantFlow::ZERO));

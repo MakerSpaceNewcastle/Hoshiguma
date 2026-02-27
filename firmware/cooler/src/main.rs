@@ -31,20 +31,20 @@ assign_resources! {
         led: PIN_19,
     },
     onewire: OnewireResources {
-        pin: PIN_26,
+        pin: PIN_28,
     },
     flow_sensor: FlowSensorResources {
         pwm: PWM_SLICE7,
-        pin: PIN_15,
+        pin: PIN_5,
     },
     compressor: CompressorResources {
-        relay: PIN_7,
+        relay: PIN_8,
     },
     coolant_pump: CoolantPumpResources {
-        relay: PIN_6,
+        relay: PIN_9,
     },
     radiator_fan: RadiatorFanResources {
-        relay: PIN_5, // Jumpered from IO pins
+        relay: PIN_10,
     },
     ethernet: EthernetResources {
         pio: PIO0,
