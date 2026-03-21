@@ -35,7 +35,7 @@ async fn task(r: OnewireResources) {
     let onboard_sensor = Ds18b20::new::<()>(Address(7949810265475014952)).unwrap();
     let internal_ambient_sensor = Ds18b20::new::<()>(Address(6676982032140362024)).unwrap();
     let coolant_pump_motor_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
-    let reservoir_sensor = Ds18b20::new::<()>(Address(1945555040219935784)).unwrap();
+    let reservoir_sensor = Ds18b20::new::<()>(Address(2522015792501619496)).unwrap();
 
     loop {
         ticker.next().await;
