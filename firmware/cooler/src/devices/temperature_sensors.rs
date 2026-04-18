@@ -1,21 +1,10 @@
 use crate::OnewireResources;
-use core::cell::RefCell;
 use defmt::info;
 use ds18b20::{Ds18b20, Resolution};
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Level, OutputOpenDrain};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Delay, Duration, Ticker, Timer};
-use hoshiguma_core::{accessories::cooler::types::Temperatures, types::TemperatureReading};
 use one_wire_bus::{Address, OneWire};
-
-static READING: Mutex<CriticalSectionRawMutex, RefCell<Temperatures>> =
-    Mutex::new(RefCell::new(Temperatures {
-        onboard: Err(()),
-        internal_ambient: Err(()),
-        coolant_pump_motor: Err(()),
-        reservoir: Err(()),
-    }));
 
 #[embassy_executor::task]
 async fn task(r: OnewireResources) {
@@ -32,10 +21,10 @@ async fn task(r: OnewireResources) {
 
     let mut ticker = Ticker::every(Duration::from_secs(10));
 
-    let onboard_sensor = Ds18b20::new::<()>(Address(7949810265475014952)).unwrap();
-    let internal_ambient_sensor = Ds18b20::new::<()>(Address(6676982032140362024)).unwrap();
-    let coolant_pump_motor_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
-    let reservoir_sensor = Ds18b20::new::<()>(Address(1945555040219935784)).unwrap();
+    // let onboard_sensor = Ds18b20::new::<()>(Address(7949810265475014952)).unwrap();
+    // let internal_ambient_sensor = Ds18b20::new::<()>(Address(6676982032140362024)).unwrap();
+    // let coolant_pump_motor_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
+    // let reservoir_sensor = Ds18b20::new::<()>(Address(1945555040219935784)).unwrap();
 
     loop {
         ticker.next().await;
@@ -44,23 +33,23 @@ async fn task(r: OnewireResources) {
 
         Timer::after_millis(Resolution::Bits12.max_measurement_time_millis() as u64).await;
 
-        let mut read_sensor = |sensor: &Ds18b20| -> TemperatureReading {
-            sensor
-                .read_data(&mut bus, &mut Delay)
-                .map(|r| r.temperature)
-                .map_err(|_| ())
-        };
+        // let mut read_sensor = |sensor: &Ds18b20| -> OnewireTemperatureSensorReading {
+        //     sensor
+        //         .read_data(&mut bus, &mut Delay)
+        //         .map(|r| r.temperature)
+        //         .map_err(|_| ())
+        // };
 
-        let readings = Temperatures {
-            onboard: read_sensor(&onboard_sensor),
-            internal_ambient: read_sensor(&internal_ambient_sensor),
-            coolant_pump_motor: read_sensor(&coolant_pump_motor_sensor),
-            reservoir: read_sensor(&reservoir_sensor),
-        };
+        // let readings = Temperatures {
+        //     onboard: read_sensor(&onboard_sensor),
+        //     internal_ambient: read_sensor(&internal_ambient_sensor),
+        //     coolant_pump_motor: read_sensor(&coolant_pump_motor_sensor),
+        //     reservoir: read_sensor(&reservoir_sensor),
+        // };
 
-        info!("{}", readings);
+        // info!("{}", readings);
 
-        READING.lock().await.replace(readings);
+        // TODO
     }
 }
 
@@ -72,7 +61,6 @@ impl TemperatureSensors {
         Self {}
     }
 
-    pub(crate) async fn get(&self) -> Temperatures {
-        READING.lock().await.borrow().clone()
-    }
+    // pub(crate) async fn get(&self) -> Temperatures {
+    // }
 }
