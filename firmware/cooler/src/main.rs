@@ -88,21 +88,12 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    // Outputs
-    let coolant_pump = CoolantPump::new(r.coolant_pump);
-    let compressor = Compressor::new(r.compressor);
-    let radiator_fan = RadiatorFan::new(r.radiator_fan);
-
-    // Inputs
-    let coolant_flow_sensor = CoolantFlowSensor::new(&spawner, r.flow_sensor);
-    let temperature_sensors = TemperatureSensors::new(&spawner, r.onewire);
-
     let machine = Machine {
-        coolant_pump,
-        compressor,
-        radiator_fan,
-        coolant_flow_sensor,
-        temperature_sensors,
+        coolant_pump: CoolantPump::new(r.coolant_pump),
+        compressor: Compressor::new(r.compressor),
+        radiator_fan: RadiatorFan::new(r.radiator_fan),
+        coolant_flow_sensor: CoolantFlowSensor::new(&spawner, r.flow_sensor),
+        temperature_sensors: TemperatureSensors::new(&spawner, r.onewire),
     };
 
     spawner.must_spawn(watchdog_feed_task(r.status));

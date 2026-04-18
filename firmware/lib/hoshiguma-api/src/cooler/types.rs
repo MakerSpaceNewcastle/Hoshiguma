@@ -1,5 +1,4 @@
 use core::ops::Deref;
-use hoshiguma_telemetry::TelemetryStrValue;
 use serde::{Deserialize, Serialize};
 
 pub type OnewireTemperatureSensorReadings = crate::OnewireTemperatureSensorReadings<8>;
@@ -10,43 +9,16 @@ pub enum CoolantPumpState {
     Run,
 }
 
-impl TelemetryStrValue for CoolantPumpState {
-    fn telemetry_str(&self) -> &'static str {
-        match self {
-            Self::Idle => "idle",
-            Self::Run => "run",
-        }
-    }
-}
-
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CompressorState {
     Idle,
     Run,
 }
 
-impl TelemetryStrValue for CompressorState {
-    fn telemetry_str(&self) -> &'static str {
-        match self {
-            Self::Idle => "idle",
-            Self::Run => "run",
-        }
-    }
-}
-
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum RadiatorFanState {
     Idle,
     Run,
-}
-
-impl TelemetryStrValue for RadiatorFanState {
-    fn telemetry_str(&self) -> &'static str {
-        match self {
-            Self::Idle => "idle",
-            Self::Run => "run",
-        }
-    }
 }
 
 /// The rate of flow of coolant in litres per minute.
