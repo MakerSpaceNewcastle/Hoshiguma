@@ -3,6 +3,7 @@
 
 mod devices;
 mod machine;
+mod network;
 
 use assign_resources::assign_resources;
 use defmt::info;

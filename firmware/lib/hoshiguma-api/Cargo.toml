@@ -10,7 +10,6 @@ default = ["std", "device-cooler"]
 device-cooler = []
 
 std = [
-  "hoshiguma-telemetry/std",
   "postcard/use-std",
   "serde/std",
 ]
