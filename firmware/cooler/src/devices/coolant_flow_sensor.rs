@@ -10,8 +10,8 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Ticker};
 use hoshiguma_api::cooler::CoolantRate;
 
-static READING: Mutex<CriticalSectionRawMutex, RefCell<CoolantFlow>> =
-    Mutex::new(RefCell::new(CoolantFlow::ZERO));
+static READING: Mutex<CriticalSectionRawMutex, RefCell<CoolantRate>> =
+    Mutex::new(RefCell::new(CoolantRate::ZERO));
 
 const PULSES_PER_LITRE: f64 = 400.0;
 const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
@@ -49,7 +49,7 @@ async fn task(r: FlowSensorResources) {
             pulses, litres, seconds, litres_per_minute
         );
 
-        let flow = CoolantFlow::new(litres_per_minute);
+        let flow = CoolantRate::new(litres_per_minute);
 
         READING.lock().await.replace(flow);
     }
@@ -63,7 +63,7 @@ impl CoolantFlowSensor {
         Self {}
     }
 
-    pub(crate) async fn get(&self) -> CoolantFlow {
+    pub(crate) async fn get(&self) -> CoolantRate {
         READING.lock().await.borrow().clone()
     }
 }

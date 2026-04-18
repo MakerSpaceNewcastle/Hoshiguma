@@ -1,25 +1,57 @@
+use core::net::Ipv4Addr;
+
+use crate::EthernetResources;
 use defmt::{info, warn};
+use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
+use embassy_executor::Spawner;
+use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4};
+use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
+    bind_interrupts,
     clocks::RoscRng,
     gpio::{Input, Level, Output, Pull},
-    spi::Spi,
+    peripherals::PIO0,
+    pio::Pio,
+    pio_programs::spi::Spi,
+    spi::Config as SpiConfig,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::Duration;
+use embedded_io_async::Write;
+use heapless::Vec;
 use static_cell::StaticCell;
 
-async fn arse() -> ! {
+bind_interrupts!(struct Irqs {
+    PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
+});
+
+#[embassy_executor::task]
+pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
     let mut rng = RoscRng;
 
     let mut spi_cfg = SpiConfig::default();
-    spi_cfg.frequency = 50_000_000;
-    let (miso, mosi, clk) = (p.PIN_16, p.PIN_19, p.PIN_18);
-    let spi = Spi::new(p.SPI0, clk, mosi, miso, p.DMA_CH0, p.DMA_CH1, spi_cfg);
-    let cs = Output::new(p.PIN_17, Level::High);
-    let w5500_int = Input::new(p.PIN_21, Pull::Up);
-    let w5500_reset = Output::new(p.PIN_20, Level::High);
+    spi_cfg.frequency = 12_500_000;
+
+    let Pio {
+        mut common, sm0, ..
+    } = Pio::new(r.pio, Irqs);
+
+    let spi = Spi::new(
+        &mut common,
+        sm0,
+        r.sck,
+        r.mosi,
+        r.miso,
+        r.tx_dma,
+        r.rx_dma,
+        spi_cfg,
+    );
+    let cs = Output::new(r.cs, Level::High);
+    let w5500_int = Input::new(r.int, Pull::Up);
+    let w5500_reset = Output::new(r.reset, Level::High);
+
     static SPI: StaticCell<
-        Mutex<CriticalSectionRawMutex, Spi<'static, SPI0, embassy_rp::spi::Async>>,
+        Mutex<CriticalSectionRawMutex, Spi<'static, PIO0, 0, embassy_rp::spi::Async>>,
     > = StaticCell::new();
     let spi = SPI.init(Mutex::new(spi));
 
@@ -44,20 +76,19 @@ async fn arse() -> ! {
         seed,
     );
 
-    // Launch network task
-    spawner.must_spawn(net_task(runner));
+    stack.set_config_v4(ConfigV4::Static(StaticConfigV4 {
+        address: Ipv4Cidr::new(Ipv4Addr::new(10, 69, 69, 4), 24),
+        gateway: Some(Ipv4Addr::new(10, 69, 69, 1)),
+        dns_servers: Vec::new(),
+    }));
 
-    info!("Waiting for DHCP...");
-    let cfg = wait_for_config(stack).await;
-    let local_addr = cfg.address.address();
-    info!("IP address: {:?}", local_addr);
+    spawner.must_spawn(net_task(runner));
 
     spawner.must_spawn(listen_task(stack, 0, 1234));
     spawner.must_spawn(listen_task(stack, 1, 1234));
 
     loop {
-        Timer::after_secs(1).await;
-        led.toggle();
+        embassy_time::Timer::after_secs(10).await;
     }
 }
 
@@ -66,7 +97,12 @@ async fn ethernet_task(
     runner: Runner<
         'static,
         W5500,
-        SpiDevice<'static, CriticalSectionRawMutex, Spi<'static, SPI0, Async>, Output<'static>>,
+        SpiDevice<
+            'static,
+            CriticalSectionRawMutex,
+            Spi<'static, PIO0, 0, embassy_rp::spi::Async>,
+            Output<'static>,
+        >,
         Input<'static>,
         Output<'static>,
     >,

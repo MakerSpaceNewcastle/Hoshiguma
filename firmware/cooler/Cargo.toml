@@ -21,12 +21,17 @@ cortex-m-rt = "0.7.3"
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 ds18b20 = "0.1.1"
+embassy-embedded-hal = { version = "0.5.0", features = ["defmt"] }
 embassy-executor = { version = "0.9.1", features = ["arch-cortex-m", "executor-thread", "defmt"] }
 embassy-futures = "0.1.2"
+embassy-net = { version = "0.8.0", features = ["defmt", "dhcpv4", "medium-ethernet", "proto-ipv4", "tcp", "udp"] }
+embassy-net-wiznet = { version = "0.2.1", features = ["defmt"] }
 embassy-rp = { version = "0.9.0", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl", "rp2040"] }
 embassy-sync = "0.7.2"
 embassy-time = { version = "0.5.0", features = ["defmt"] }
+embedded-io-async = "0.7.0"
 git-version = "0.3.5"
+heapless = "0.8.0"
 hoshiguma-api = { path = "../lib/hoshiguma-api", default-features = false, features = ["device-cooler"] }
 one-wire-bus = "0.1.1"
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }

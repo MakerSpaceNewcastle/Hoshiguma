@@ -97,6 +97,8 @@ async fn main(spawner: Spawner) {
         temperature_sensors: TemperatureSensors::new(&spawner, r.onewire),
     };
 
+    spawner.must_spawn(network::task(spawner, r.ethernet));
+
     spawner.must_spawn(watchdog_feed_task(r.status));
 
     #[cfg(feature = "test-panic-on-core-0")]
