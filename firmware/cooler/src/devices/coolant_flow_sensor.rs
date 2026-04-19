@@ -18,13 +18,13 @@ const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
 
 #[embassy_executor::task]
 async fn task(r: FlowSensorResources) {
-    let pwm = Pwm::new_input(
-        r.pwm,
-        r.pin,
-        Pull::Down,
-        InputMode::RisingEdge,
-        PwmConfig::default(),
-    );
+    // let pwm = Pwm::new_input(
+    //     r.pwm,
+    //     r.pin,
+    //     Pull::Down,
+    //     InputMode::RisingEdge,
+    //     PwmConfig::default(),
+    // );
     let mut ticker = Ticker::every(MEASUREMENT_INTERVAL);
 
     let mut total_pulses = 0u64;
@@ -32,26 +32,26 @@ async fn task(r: FlowSensorResources) {
     loop {
         ticker.next().await;
 
-        // Read pulses since last sample
-        let pulses = pwm.counter();
-        pwm.set_counter(0);
+        // // Read pulses since last sample
+        // let pulses = pwm.counter();
+        // pwm.set_counter(0);
 
-        // Keep a running total of pulses for calibration purposes
-        total_pulses = total_pulses.wrapping_add(pulses.into());
-        info!("Total pulses since boot: {}", total_pulses);
+        // // Keep a running total of pulses for calibration purposes
+        // total_pulses = total_pulses.wrapping_add(pulses.into());
+        // info!("Total pulses since boot: {}", total_pulses);
 
-        let litres = pulses as f64 / PULSES_PER_LITRE;
-        let seconds = MEASUREMENT_INTERVAL.as_secs() as f64;
-        let litres_per_minute = (litres / seconds) * 60.0;
+        // let litres = pulses as f64 / PULSES_PER_LITRE;
+        // let seconds = MEASUREMENT_INTERVAL.as_secs() as f64;
+        // let litres_per_minute = (litres / seconds) * 60.0;
 
-        info!(
-            "Flow: {} pulses, {} litres, in {} seconds, {} L/min",
-            pulses, litres, seconds, litres_per_minute
-        );
+        // info!(
+        //     "Flow: {} pulses, {} litres, in {} seconds, {} L/min",
+        //     pulses, litres, seconds, litres_per_minute
+        // );
 
-        let flow = CoolantRate::new(litres_per_minute);
+        // let flow = CoolantRate::new(litres_per_minute);
 
-        READING.lock().await.replace(flow);
+        // READING.lock().await.replace(flow);
     }
 }
 

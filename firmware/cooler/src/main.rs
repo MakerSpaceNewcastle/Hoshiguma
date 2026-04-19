@@ -19,12 +19,14 @@ use embassy_rp::{
     peripherals::{self},
     watchdog::Watchdog,
 };
+use embassy_sync::blocking_mutex::raw::{CriticalSectionRawMutex, RawMutex};
 use embassy_time::{Duration, Timer};
 use hoshiguma_api::BootReason;
 use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
+use static_cell::StaticCell;
 
 assign_resources! {
     status: StatusResources {
@@ -97,25 +99,46 @@ async fn main(spawner: Spawner) {
         temperature_sensors: TemperatureSensors::new(&spawner, r.onewire),
     };
 
+    static CUNT: StaticCell<BiDirectionalChannel<CriticalSectionRawMutex, usize, 8, 4, 4>> =
+        StaticCell::new();
+    let cunt = CUNT.init(BiDirectionalChannel::new());
+
+    let mut side_a_1 = cunt.side_a();
+    let side_b_1 = cunt.side_b();
+
     spawner.must_spawn(network::task(spawner, r.ethernet));
 
-    spawner.must_spawn(watchdog_feed_task(r.status));
+    spawner.must_spawn(watchdog_feed_task(r.status, side_b_1));
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.must_spawn(dummy_panic());
+
+    loop {
+        match side_a_1.inbox.next_message().await {
+            embassy_sync::pubsub::WaitResult::Lagged(_) => todo!(),
+            embassy_sync::pubsub::WaitResult::Message(i) => info!("fucking i = {}", i),
+        }
+    }
 }
 
 #[embassy_executor::task]
-async fn watchdog_feed_task(r: StatusResources) {
+async fn watchdog_feed_task(
+    r: StatusResources,
+    chan: Side<'static, CriticalSectionRawMutex, usize, 8, 4, 4>,
+) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
     watchdog.start(Duration::from_millis(600));
 
+    let mut i = 0_usize;
     loop {
         watchdog.feed();
         onboard_led.toggle();
         Timer::after_millis(500).await;
+
+        chan.outbox.publish(i).await;
+        i = i.wrapping_add(1);
     }
 }
 
@@ -135,4 +158,52 @@ fn boot_reason() -> BootReason {
     } else {
         BootReason::Normal
     }
+}
+
+pub struct BiDirectionalChannel<
+    M: RawMutex,
+    T: Clone,
+    const CAP: usize,
+    const NUM_A: usize,
+    const NUM_B: usize,
+> {
+    a_to_b: embassy_sync::pubsub::PubSubChannel<M, T, CAP, NUM_B, NUM_A>,
+    b_to_a: embassy_sync::pubsub::PubSubChannel<M, T, CAP, NUM_A, NUM_B>,
+}
+
+impl<M: RawMutex, T: Clone, const CAP: usize, const NUM_A: usize, const NUM_B: usize>
+    BiDirectionalChannel<M, T, CAP, NUM_A, NUM_B>
+{
+    pub const fn new() -> Self {
+        Self {
+            a_to_b: embassy_sync::pubsub::PubSubChannel::new(),
+            b_to_a: embassy_sync::pubsub::PubSubChannel::new(),
+        }
+    }
+
+    pub fn side_a<'a>(&'a self) -> Side<'a, M, T, CAP, NUM_A, NUM_B> {
+        Side {
+            outbox: self.a_to_b.publisher().unwrap(),
+            inbox: self.b_to_a.subscriber().unwrap(),
+        }
+    }
+
+    pub fn side_b<'a>(&'a self) -> Side<'a, M, T, CAP, NUM_B, NUM_A> {
+        Side {
+            outbox: self.b_to_a.publisher().unwrap(),
+            inbox: self.a_to_b.subscriber().unwrap(),
+        }
+    }
+}
+
+pub struct Side<
+    'a,
+    M: RawMutex,
+    T: Clone,
+    const CAP: usize,
+    const NUM_US: usize,
+    const NUM_THEM: usize,
+> {
+    outbox: embassy_sync::pubsub::Publisher<'a, M, T, CAP, NUM_THEM, NUM_US>,
+    inbox: embassy_sync::pubsub::Subscriber<'a, M, T, CAP, NUM_US, NUM_THEM>,
 }
