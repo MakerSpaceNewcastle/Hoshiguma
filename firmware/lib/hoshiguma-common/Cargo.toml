@@ -1,17 +1,9 @@
 [package]
-name = "hoshiguma-telemetry"
+name = "hoshiguma-common"
 version = "0.1.0"
 authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
 license = "MIT"
-
-[features]
-default = ["std"]
-
-std = [
-  "chrono/std",
-  "serde/std",
-]
 
 [dependencies]
 chrono = { version = "0.4.43", default-features = false, features = ["defmt", "serde"] }
