@@ -21,6 +21,8 @@ use embedded_io_async::Write;
 use heapless::Vec;
 use static_cell::StaticCell;
 
+const COOLER_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 4);
+
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
 });
@@ -77,7 +79,7 @@ pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
     );
 
     stack.set_config_v4(ConfigV4::Static(StaticConfigV4 {
-        address: Ipv4Cidr::new(Ipv4Addr::new(10, 69, 69, 4), 24),
+        address: Ipv4Cidr::new(COOLER_IP_ADDRESS, 24),
         gateway: Some(Ipv4Addr::new(10, 69, 69, 1)),
         dns_servers: Vec::new(),
     }));
