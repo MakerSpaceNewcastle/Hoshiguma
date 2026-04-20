@@ -1,10 +1,9 @@
-use core::net::Ipv4Addr;
-
 use crate::{EthernetResources, MachineControl};
+use core::net::Ipv4Addr;
 use defmt::{info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
-use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4};
+use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
     bind_interrupts,
@@ -16,9 +15,10 @@ use embassy_rp::{
     spi::Config as SpiConfig,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
-use embassy_time::Duration;
+use embassy_time::{Duration, Instant};
 use embedded_io_async::Write;
 use heapless::Vec;
+use hoshiguma_api::cooler::{Request, Response, ResponseData};
 use static_cell::StaticCell;
 
 const COOLER_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 4);
@@ -128,45 +128,72 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 async fn listen_task(stack: Stack<'static>, id: u8, port: u16, machine: MachineControl) {
-    // TODO
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
+
     let mut buf = [0; 4096];
+
     loop {
-        let mut socket = embassy_net::tcp::TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
         socket.set_timeout(Some(Duration::from_secs(10)));
 
-        info!("SOCKET {}: Listening on TCP:{}...", id, port);
+        info!("socket {}: Listening on TCP:{}...", id, port);
         if let Err(e) = socket.accept(port).await {
-            warn!("accept error: {:?}", e);
+            warn!("socket {}: accept error: {:?}", id, e);
             continue;
         }
         info!(
-            "SOCKET {}: Received connection from {:?}",
+            "socket {}: connection from {:?}",
             id,
             socket.remote_endpoint()
         );
 
         loop {
+            // TODO
             let n = match socket.read(&mut buf).await {
                 Ok(0) => {
-                    warn!("read EOF");
+                    warn!("socket {}: read EOF", id);
                     break;
                 }
                 Ok(n) => n,
                 Err(e) => {
-                    warn!("SOCKET {}: {:?}", id, e);
+                    warn!("socket {}: {:?}", id, e);
                     break;
                 }
             };
-            info!(
-                "SOCKET {}: rxd {}",
-                id,
-                core::str::from_utf8(&buf[..n]).unwrap()
-            );
 
-            if let Err(e) = socket.write_all(&buf[..n]).await {
-                warn!("write error: {:?}", e);
+            let received = &mut buf[..n];
+            info!("socket {}: received {} bytes", id, received.len());
+
+            let request = match postcard::from_bytes_cobs::<Request>(received) {
+                Ok(req) => req,
+                Err(e) => {
+                    warn!("socket {}: failed to parse request", id);
+                    continue;
+                }
+            };
+
+            let response: Response = match request {
+                Request::GetGitRevision => todo!(),
+                Request::GetUptime => Response(Ok(Some(ResponseData::Uptime(
+                    Instant::now().duration_since(Instant::MIN).into(),
+                )))),
+                Request::GetBootReason => todo!(),
+                Request::GetRadiatorFanState => todo!(),
+                Request::SetRadiatorFanState(radiator_fan_state) => todo!(),
+                Request::GetCompressorState => todo!(),
+                Request::SetCompressorState(compressor_state) => todo!(),
+                Request::GetCoolantPumpState => todo!(),
+                Request::SetCoolantPumpState(coolant_pump_state) => todo!(),
+                Request::GetTemperatures => todo!(),
+                Request::GetCoolantFlowRate => todo!(),
+                Request::GetCoolantReturnRate => todo!(),
+            };
+
+            let response_bytes = postcard::to_slice(&response, &mut buf).unwrap();
+
+            if let Err(e) = socket.write_all(&response_bytes).await {
+                warn!("socket {}: write error: {:?}", id, e);
                 break;
             }
         }

@@ -20,7 +20,7 @@ pub enum Request {
 }
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Response(Result<Option<ResponseData>, ()>);
+pub struct Response(pub Result<Option<ResponseData>, ()>);
 
 impl ResponsePayload for Response {
     fn id() -> &'static [u8; 4] {

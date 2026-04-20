@@ -7,8 +7,8 @@ use std::{
 fn main() {
     let mut stream = TcpStream::connect("127.0.0.1:8080").unwrap();
 
-    let request = hoshiguma_api::cooler::Request::GetTemperatures;
-    let response: hoshiguma_api::cooler::Response = send_command(&mut stream, request);
+    let response: hoshiguma_api::cooler::Response =
+        send_command(&mut stream, hoshiguma_api::cooler::Request::GetTemperatures);
     println!("Response: {:?}", response);
 }
 
