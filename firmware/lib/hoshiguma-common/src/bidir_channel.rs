@@ -3,6 +3,11 @@ use embassy_sync::{
     pubsub::{PubSubChannel, Publisher, Subscriber},
 };
 
+pub trait BiDirectionalChannelSide {
+    type SideA;
+    type SideB;
+}
+
 pub struct BiDirectionalChannel<
     M: RawMutex,
     AToB: Clone,
@@ -13,6 +18,19 @@ pub struct BiDirectionalChannel<
 > {
     a_to_b: PubSubChannel<M, AToB, CAP, NUM_B, NUM_A>,
     b_to_a: PubSubChannel<M, BToA, CAP, NUM_A, NUM_B>,
+}
+
+impl<
+    M: RawMutex + 'static,
+    AToB: Clone + 'static,
+    BToA: Clone + 'static,
+    const CAP: usize,
+    const NUM_A: usize,
+    const NUM_B: usize,
+> BiDirectionalChannelSide for BiDirectionalChannel<M, AToB, BToA, CAP, NUM_A, NUM_B>
+{
+    type SideA = Side<'static, M, BToA, AToB, CAP, NUM_A, NUM_B>;
+    type SideB = Side<'static, M, AToB, BToA, CAP, NUM_B, NUM_A>;
 }
 
 impl<
