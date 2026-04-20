@@ -1,4 +1,4 @@
-use crate::{EthernetResources, MachineControl};
+use crate::{EthernetResources, MachineControl, devices::compressor::CompressorControlChannel};
 use core::net::Ipv4Addr;
 use defmt::{info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
@@ -127,7 +127,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 }
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: u8, port: u16, machine: MachineControl) {
+async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: MachineControl) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
@@ -173,22 +173,31 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, machine: MachineC
                 }
             };
 
-            let response: Response = match request {
-                Request::GetGitRevision => todo!(),
-                Request::GetUptime => Response(Ok(Some(ResponseData::Uptime(
+            // TODO: error handling
+            let response = match request {
+                Request::GetGitRevision => Some(ResponseData::GitRevision(
+                    git_version::git_version!().try_into().unwrap(),
+                )),
+                Request::GetUptime => Some(ResponseData::Uptime(
                     Instant::now().duration_since(Instant::MIN).into(),
-                )))),
-                Request::GetBootReason => todo!(),
+                )),
+                Request::GetBootReason => Some(ResponseData::BootReason(crate::boot_reason())),
                 Request::GetRadiatorFanState => todo!(),
-                Request::SetRadiatorFanState(radiator_fan_state) => todo!(),
-                Request::GetCompressorState => todo!(),
-                Request::SetCompressorState(compressor_state) => todo!(),
+                Request::SetRadiatorFanState(state) => todo!(),
+                Request::GetCompressorState => Some(ResponseData::CompressorState(
+                    machine.compressor.get().await.unwrap(),
+                )),
+                Request::SetCompressorState(state) => Some(ResponseData::CompressorState(
+                    machine.compressor.set(state).await.unwrap(),
+                )),
+
                 Request::GetCoolantPumpState => todo!(),
-                Request::SetCoolantPumpState(coolant_pump_state) => todo!(),
+                Request::SetCoolantPumpState(state) => todo!(),
                 Request::GetTemperatures => todo!(),
                 Request::GetCoolantFlowRate => todo!(),
                 Request::GetCoolantReturnRate => todo!(),
             };
+            let response = Response(Ok(response));
 
             let response_bytes = postcard::to_slice(&response, &mut buf).unwrap();
 
