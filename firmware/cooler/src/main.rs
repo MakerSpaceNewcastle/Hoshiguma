@@ -21,6 +21,8 @@ use panic_probe as _;
 use portable_atomic as _;
 use static_cell::StaticCell;
 
+use crate::network::NUM_LISTENERS;
+
 assign_resources! {
     status: StatusResources {
         watchdog: WATCHDOG,
@@ -90,46 +92,48 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    static COMPRESSOR_COMM: StaticCell<devices::compressor::Channel> = StaticCell::new();
+    static COMPRESSOR_COMM: StaticCell<[devices::compressor::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
     let compressor_comm = COMPRESSOR_COMM.init(Default::default());
-    spawner.spawn(devices::compressor::task(r.compressor, compressor_comm.side_b()).unwrap());
+    let compressor_comm_b = compressor_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::compressor::task(r.compressor, compressor_comm_b).unwrap());
 
-    static COOLANT_PUMP_COMM: StaticCell<devices::coolant_pump::Channel> = StaticCell::new();
-    let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
-    spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm.side_b()).unwrap());
+    // static COOLANT_PUMP_COMM: StaticCell<devices::coolant_pump::Channel> = StaticCell::new();
+    // let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
+    // spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm.side_b()).unwrap());
 
-    static COOLANT_FLOW_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
-        StaticCell::new();
-    let coolant_flow_rate_comm = COOLANT_FLOW_RATE_COMM.init(Default::default());
-    static COOLANT_RETURN_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
-        StaticCell::new();
-    let coolant_return_rate_comm = COOLANT_RETURN_RATE_COMM.init(Default::default());
-    devices::coolant_rate_sensors::start(
-        spawner,
-        r.coolant_rate_sensors,
-        coolant_flow_rate_comm.side_b(),
-        coolant_return_rate_comm.side_b(),
-    );
+    // static COOLANT_FLOW_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
+    //     StaticCell::new();
+    // let coolant_flow_rate_comm = COOLANT_FLOW_RATE_COMM.init(Default::default());
+    // static COOLANT_RETURN_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
+    //     StaticCell::new();
+    // let coolant_return_rate_comm = COOLANT_RETURN_RATE_COMM.init(Default::default());
+    // devices::coolant_rate_sensors::start(
+    //     spawner,
+    //     r.coolant_rate_sensors,
+    //     coolant_flow_rate_comm.side_b(),
+    //     coolant_return_rate_comm.side_b(),
+    // );
 
-    static RADIATOR_FAN_COMM: StaticCell<devices::radiator_fan::Channel> = StaticCell::new();
-    let radiator_fan_comm = RADIATOR_FAN_COMM.init(Default::default());
-    spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm.side_b()).unwrap());
+    // static RADIATOR_FAN_COMM: StaticCell<devices::radiator_fan::Channel> = StaticCell::new();
+    // let radiator_fan_comm = RADIATOR_FAN_COMM.init(Default::default());
+    // spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm.side_b()).unwrap());
 
-    static TEMPERATURES_COMM: StaticCell<devices::temperature_sensors::Channel> = StaticCell::new();
-    let temperatures_comm = TEMPERATURES_COMM.init(Default::default());
-    spawner
-        .spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm.side_b()).unwrap());
+    // static TEMPERATURES_COMM: StaticCell<devices::temperature_sensors::Channel> = StaticCell::new();
+    // let temperatures_comm = TEMPERATURES_COMM.init(Default::default());
+    // spawner
+    //     .spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm.side_b()).unwrap());
 
     let mut machine_control = heapless::Vec::new();
-    for _ in 0..network::NUM_LISTENERS {
+    for i in 0..network::NUM_LISTENERS {
         if machine_control
             .push(MachineControl {
-                compressor: compressor_comm.side_a(),
-                coolant_pump: coolant_pump_comm.side_a(),
-                coolant_flow_rate: coolant_flow_rate_comm.side_a(),
-                coolant_return_rate: coolant_return_rate_comm.side_a(),
-                radiator_fan: radiator_fan_comm.side_a(),
-                temperatures: temperatures_comm.side_a(),
+                compressor: compressor_comm[i].side_a(),
+                // coolant_pump: coolant_pump_comm.side_a(),
+                // coolant_flow_rate: coolant_flow_rate_comm.side_a(),
+                // coolant_return_rate: coolant_return_rate_comm.side_a(),
+                // radiator_fan: radiator_fan_comm.side_a(),
+                // temperatures: temperatures_comm.side_a(),
             })
             .is_err()
         {
@@ -142,27 +146,15 @@ async fn main(spawner: Spawner) {
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.spawn(dummy_panic().unwrap());
-
-    // TODO
-    let mut temp_sensors_comm = temperatures_comm.side_a();
-    loop {
-        temp_sensors_comm
-            .to_you
-            .publish(devices::temperature_sensors::Request)
-            .await;
-        let res = temp_sensors_comm.to_me.next_message_pure().await;
-        info!("Temperature sensors: {:?}", res);
-        Timer::after_secs(10).await;
-    }
 }
 
 struct MachineControl {
     compressor: devices::compressor::TheirChannelSide,
-    coolant_pump: devices::coolant_pump::TheirChannelSide,
-    coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,
-    coolant_return_rate: devices::coolant_rate_sensors::TheirChannelSide,
-    radiator_fan: devices::radiator_fan::TheirChannelSide,
-    temperatures: devices::temperature_sensors::TheirChannelSide,
+    // coolant_pump: devices::coolant_pump::TheirChannelSide,
+    // coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,
+    // coolant_return_rate: devices::coolant_rate_sensors::TheirChannelSide,
+    // radiator_fan: devices::radiator_fan::TheirChannelSide,
+    // temperatures: devices::temperature_sensors::TheirChannelSide,
 }
 
 #[embassy_executor::task]

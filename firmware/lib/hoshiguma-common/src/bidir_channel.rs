@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 use embassy_sync::{
     blocking_mutex::raw::RawMutex,
-    pubsub::{PubSubChannel, Publisher, Subscriber},
+    channel::{Channel, Receiver, Sender},
 };
 
 pub trait BiDirectionalChannelSides {
@@ -9,99 +9,50 @@ pub trait BiDirectionalChannelSides {
     type SideB;
 }
 
-pub struct BiDirectionalChannel<
-    'a,
-    M: RawMutex,
-    AToB: Clone,
-    BToA: Clone,
-    const CAP: usize,
-    const NUM_A: usize,
-    const NUM_B: usize,
-> {
-    a_to_b: PubSubChannel<M, AToB, CAP, NUM_B, NUM_A>,
-    b_to_a: PubSubChannel<M, BToA, CAP, NUM_A, NUM_B>,
+pub struct BiDirectionalChannel<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize> {
+    a_to_b: Channel<M, AToB, CAP>,
+    b_to_a: Channel<M, BToA, CAP>,
     _lifetime: PhantomData<&'a ()>,
 }
 
-impl<
-    'a,
-    M: RawMutex + 'a,
-    AToB: Clone + 'a,
-    BToA: Clone + 'a,
-    const CAP: usize,
-    const NUM_A: usize,
-    const NUM_B: usize,
-> BiDirectionalChannelSides for BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
+impl<'a, M: RawMutex + 'a, AToB: Clone + 'a, BToA: Clone + 'a, const CAP: usize>
+    BiDirectionalChannelSides for BiDirectionalChannel<'a, M, AToB, BToA, CAP>
 {
-    type SideA = Side<'a, M, BToA, AToB, CAP, NUM_A, NUM_B>;
-    type SideB = Side<'a, M, AToB, BToA, CAP, NUM_B, NUM_A>;
+    type SideA = Side<'a, M, BToA, AToB, CAP>;
+    type SideB = Side<'a, M, AToB, BToA, CAP>;
 }
 
-impl<
-    'a,
-    M: RawMutex,
-    AToB: Clone,
-    BToA: Clone,
-    const CAP: usize,
-    const NUM_A: usize,
-    const NUM_B: usize,
-> Default for BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
+impl<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize> Default
+    for BiDirectionalChannel<'a, M, AToB, BToA, CAP>
 {
     fn default() -> Self {
         Self {
-            a_to_b: PubSubChannel::new(),
-            b_to_a: PubSubChannel::new(),
+            a_to_b: Channel::new(),
+            b_to_a: Channel::new(),
             _lifetime: PhantomData,
         }
     }
 }
 
-impl<
-    'a,
-    M: RawMutex,
-    AToB: Clone,
-    BToA: Clone,
-    const CAP: usize,
-    const NUM_A: usize,
-    const NUM_B: usize,
-> BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
+impl<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize>
+    BiDirectionalChannel<'a, M, AToB, BToA, CAP>
 {
-    pub fn side_a(&'a self) -> Side<'a, M, BToA, AToB, CAP, NUM_A, NUM_B> {
+    pub fn side_a(&'a self) -> Side<'a, M, BToA, AToB, CAP> {
         Side {
-            to_me: self
-                .b_to_a
-                .subscriber()
-                .expect("Failed to create subscriber for side A"),
-            to_you: self
-                .a_to_b
-                .publisher()
-                .expect("Failed to create publisher for side A"),
+            to_me: self.b_to_a.receiver(),
+            to_you: self.a_to_b.sender(),
         }
     }
 
-    pub fn side_b(&'a self) -> Side<'a, M, AToB, BToA, CAP, NUM_B, NUM_A> {
+    pub fn side_b(&'a self) -> Side<'a, M, AToB, BToA, CAP> {
         Side {
-            to_me: self
-                .a_to_b
-                .subscriber()
-                .expect("Failed to create subscriber for side B"),
-            to_you: self
-                .b_to_a
-                .publisher()
-                .expect("Failed to create publisher for side B"),
+            to_me: self.a_to_b.receiver(),
+            to_you: self.b_to_a.sender(),
         }
     }
 }
 
-pub struct Side<
-    'a,
-    M: RawMutex,
-    ToMe: Clone,
-    ToYou: Clone,
-    const CAP: usize,
-    const NUM_ME: usize,
-    const NUM_YOU: usize,
-> {
-    pub to_me: Subscriber<'a, M, ToMe, CAP, NUM_ME, NUM_YOU>,
-    pub to_you: Publisher<'a, M, ToYou, CAP, NUM_YOU, NUM_ME>,
+pub struct Side<'a, M: RawMutex, ToMe: Clone, ToYou: Clone, const CAP: usize> {
+    pub to_me: Receiver<'a, M, ToMe, CAP>,
+    pub to_you: Sender<'a, M, ToYou, CAP>,
 }
