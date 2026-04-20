@@ -1,5 +1,5 @@
 use crate::OnewireResources;
-use defmt::{info, warn};
+use defmt::{Format, info, warn};
 use embassy_rp::{
     bind_interrupts,
     peripherals::PIO1,
@@ -17,9 +17,9 @@ use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannel
 pub(crate) type Channel =
     BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4, 1, 1>;
 
-#[derive(Clone)]
+#[derive(Clone, Format)]
 pub(crate) struct Request;
-#[derive(Clone)]
+#[derive(Clone, Format)]
 pub(crate) struct Response(OnewireTemperatureSensorReadings);
 
 pub(crate) type TheirChannelSide = <Channel as BiDirectionalChannelSides>::SideA;

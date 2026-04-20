@@ -30,9 +30,12 @@ assign_resources! {
         pio: PIO1,
         pin: PIN_28,
     },
-    flow_sensor: FlowSensorResources {
-        pwm: PWM_SLICE7,
-        pin: PIN_5,
+    coolant_rate_sensors: CoolantRateSensorResources {
+        flow_pwm: PWM_SLICE7,
+        flow_pin: PIN_5,
+
+        return_pwm: PWM_SLICE6,
+        return_pin: PIN_6,
     },
     compressor: CompressorResources {
         relay: PIN_8,
@@ -89,6 +92,10 @@ async fn main(spawner: Spawner) {
     let compressor_comm = COMPRESSOR_COMM.init(Default::default());
     spawner.spawn(devices::compressor::task(r.compressor, compressor_comm.side_b()).unwrap());
 
+    // TODO: coolant flow rate
+
+    // TODO: coolant return rate
+
     static COOLANT_PUMP_COMM: StaticCell<devices::coolant_pump::Channel> = StaticCell::new();
     let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
     spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm.side_b()).unwrap());
@@ -104,14 +111,24 @@ async fn main(spawner: Spawner) {
         devices::temperature_sensors::task(r.onewire, temperature_sensors_comm.side_b()).unwrap(),
     );
 
-    // TODO
-
     spawner.spawn(network::task(spawner, r.ethernet).unwrap());
 
     spawner.spawn(watchdog_feed_task(r.status).unwrap());
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.spawn(dummy_panic().unwrap());
+
+    // TODO
+    let mut temp_sensors_comm = temperature_sensors_comm.side_a();
+    loop {
+        temp_sensors_comm
+            .to_you
+            .publish(devices::temperature_sensors::Request)
+            .await;
+        let res = temp_sensors_comm.to_me.next_message_pure().await;
+        info!("Temperature sensors: {:?}", res);
+        Timer::after_secs(10).await;
+    }
 }
 
 #[embassy_executor::task]

@@ -1,6 +1,5 @@
-use crate::FlowSensorResources;
+use crate::CoolantRateSensorResources;
 use core::cell::RefCell;
-use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::{
     gpio::Pull,
@@ -17,7 +16,7 @@ const PULSES_PER_LITRE: f64 = 400.0;
 const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
 
 #[embassy_executor::task]
-async fn task(r: FlowSensorResources) {
+async fn task(r: CoolantRateSensorResources) {
     // let pwm = Pwm::new_input(
     //     r.pwm,
     //     r.pin,
@@ -58,7 +57,7 @@ async fn task(r: FlowSensorResources) {
 pub(crate) struct CoolantFlowSensor {}
 
 impl CoolantFlowSensor {
-    pub(crate) fn new(spawner: &Spawner, r: FlowSensorResources) -> Self {
+    pub(crate) fn new(spawner: &Spawner, r: CoolantRateSensorResources) -> Self {
         spawner.spawn(task(r).unwrap());
         Self {}
     }
