@@ -13,13 +13,28 @@ pub enum BootReason {
 
 pub type OnewireAddress = u64;
 
-#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize, Getters)]
+#[derive(Debug, defmt::Format, Clone, Copy, PartialEq, Serialize, Deserialize, Getters)]
 pub struct OnewireTemperatureSensorReading {
     device: OnewireAddress,
     reading: Result<f32, ()>,
 }
 
-#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub struct OnewireTemperatureSensorReadings<const MAX_SENSORS: usize> {
-    readings: Vec<OnewireTemperatureSensorReading, MAX_SENSORS>,
+impl OnewireTemperatureSensorReading {
+    pub fn new(device: OnewireAddress, reading: Result<f32, ()>) -> Self {
+        Self { device, reading }
+    }
+}
+
+#[derive(Default, Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OnewireTemperatureSensorReadings<const MAX_SENSORS: usize>(
+    Vec<OnewireTemperatureSensorReading, MAX_SENSORS>,
+);
+
+impl<const MAX_SENSORS: usize> OnewireTemperatureSensorReadings<MAX_SENSORS> {
+    pub fn push(
+        &mut self,
+        reading: OnewireTemperatureSensorReading,
+    ) -> Result<(), OnewireTemperatureSensorReading> {
+        self.0.push(reading).map_err(|_| reading)
+    }
 }

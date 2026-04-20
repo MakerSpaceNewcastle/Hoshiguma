@@ -1,66 +1,119 @@
 use crate::OnewireResources;
-use defmt::info;
-use ds18b20::{Ds18b20, Resolution};
-use embassy_executor::Spawner;
-use embassy_rp::gpio::{Level, OutputOpenDrain};
-use embassy_time::{Delay, Duration, Ticker, Timer};
-use one_wire_bus::{Address, OneWire};
+use defmt::{info, warn};
+use embassy_rp::{
+    bind_interrupts,
+    peripherals::PIO1,
+    pio::{InterruptHandler, Pio},
+    pio_programs::onewire::{PioOneWire, PioOneWireProgram, PioOneWireSearch},
+};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult};
+use embassy_time::Timer;
+use hoshiguma_api::{
+    OnewireTemperatureSensorReading,
+    cooler::{NUM_ONEWIRE_TEMPERATURE_SENSORS, OnewireTemperatureSensorReadings},
+};
+use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
+
+pub(crate) type Channel =
+    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4, 1, 1>;
+
+#[derive(Clone)]
+pub(crate) struct Request;
+#[derive(Clone)]
+pub(crate) struct Response(OnewireTemperatureSensorReadings);
+
+pub(crate) type TheirChannelSide = <Channel as BiDirectionalChannelSides>::SideA;
+pub(crate) type MyChannelSide = <Channel as BiDirectionalChannelSides>::SideB;
+
+bind_interrupts!(struct Irqs {
+    PIO1_IRQ_0 => InterruptHandler<PIO1>;
+});
 
 #[embassy_executor::task]
-async fn task(r: OnewireResources) {
-    let mut bus = {
-        let pin = OutputOpenDrain::new(r.pin, Level::Low);
-        OneWire::new(pin).unwrap()
-    };
+pub(crate) async fn task(r: OnewireResources, mut comm: MyChannelSide) {
+    let mut pio = Pio::new(r.pio, Irqs);
 
-    // Scan bus and report discovered devices
-    for device_address in bus.devices(false, &mut embassy_time::Delay) {
-        let device_address = device_address.unwrap();
-        info!("Found one wire device at address: {}", device_address.0);
+    let prg = PioOneWireProgram::new(&mut pio.common);
+    let mut onewire = PioOneWire::new(&mut pio.common, pio.sm0, r.pin, &prg);
+
+    let mut devices = heapless::Vec::<u64, NUM_ONEWIRE_TEMPERATURE_SENSORS>::new();
+
+    // Scan bus and discover devices
+    {
+        let mut search = PioOneWireSearch::new();
+        for _ in 0..NUM_ONEWIRE_TEMPERATURE_SENSORS {
+            if !search.is_finished() {
+                if let Some(address) = search.next(&mut onewire).await {
+                    if crc8(&address.to_le_bytes()) == 0 {
+                        info!("Found addres: {:x}", address);
+                        devices.push(address).unwrap();
+                    } else {
+                        warn!("Found invalid address: {:x}", address);
+                    }
+                }
+            }
+        }
+        if !search.is_finished() {
+            warn!("Found max number of devices before search finished");
+        }
+        info!("Search done, found {} devices", devices.len());
     }
 
-    let mut ticker = Ticker::every(Duration::from_secs(10));
-
-    // let onboard_sensor = Ds18b20::new::<()>(Address(7949810265475014952)).unwrap();
-    // let internal_ambient_sensor = Ds18b20::new::<()>(Address(6676982032140362024)).unwrap();
-    // let coolant_pump_motor_sensor = Ds18b20::new::<()>(Address(8664048150377309736)).unwrap();
-    // let reservoir_sensor = Ds18b20::new::<()>(Address(1945555040219935784)).unwrap();
-
     loop {
-        ticker.next().await;
+        match comm.to_me.next_message().await {
+            WaitResult::Lagged(n) => {
+                panic!("Lagged by {n} messages");
+            }
+            WaitResult::Message(_) => {
+                onewire.reset().await;
+                // Skip rom and trigger conversion, we can trigger all devices on the bus immediately
+                onewire.write_bytes(&[0xCC, 0x44]).await;
 
-        ds18b20::start_simultaneous_temp_measurement(&mut bus, &mut Delay).unwrap();
+                // Allow time for the measurement to finish
+                Timer::after_millis(800).await;
 
-        Timer::after_millis(Resolution::Bits12.max_measurement_time_millis() as u64).await;
+                // Read all devices
+                let mut readings = OnewireTemperatureSensorReadings::default();
+                for device in &devices {
+                    onewire.reset().await;
+                    onewire.write_bytes(&[0x55]).await; // Match rom
+                    onewire.write_bytes(&device.to_le_bytes()).await;
+                    onewire.write_bytes(&[0xBE]).await; // Read scratchpad
 
-        // let mut read_sensor = |sensor: &Ds18b20| -> OnewireTemperatureSensorReading {
-        //     sensor
-        //         .read_data(&mut bus, &mut Delay)
-        //         .map(|r| r.temperature)
-        //         .map_err(|_| ())
-        // };
+                    let mut data = [0; 9];
+                    onewire.read_bytes(&mut data).await;
+                    let reading = if crc8(&data) == 0 {
+                        let temp = ((data[1] as i16) << 8 | data[0] as i16) as f32 / 16.;
+                        info!("Read device {:x}: {} deg C", device, temp);
+                        Ok(temp)
+                    } else {
+                        warn!("Reading device {:x} failed", device);
+                        Err(())
+                    };
 
-        // let readings = Temperatures {
-        //     onboard: read_sensor(&onboard_sensor),
-        //     internal_ambient: read_sensor(&internal_ambient_sensor),
-        //     coolant_pump_motor: read_sensor(&coolant_pump_motor_sensor),
-        //     reservoir: read_sensor(&reservoir_sensor),
-        // };
+                    readings
+                        .push(OnewireTemperatureSensorReading::new(*device, reading))
+                        .unwrap();
+                }
 
-        // info!("{}", readings);
-
-        // TODO
+                comm.to_you.publish(Response(readings)).await;
+            }
+        }
     }
 }
 
-pub(crate) struct TemperatureSensors {}
-
-impl TemperatureSensors {
-    pub(crate) fn new(spawner: &Spawner, r: OnewireResources) -> Self {
-        spawner.spawn(task(r).unwrap());
-        Self {}
+fn crc8(data: &[u8]) -> u8 {
+    let mut crc = 0;
+    for b in data {
+        let mut data_byte = *b;
+        for _ in 0..8 {
+            let temp = (crc ^ data_byte) & 0x01;
+            crc >>= 1;
+            if temp != 0 {
+                crc ^= 0x8C;
+            }
+            data_byte >>= 1;
+        }
     }
-
-    // pub(crate) async fn get(&self) -> Temperatures {
-    // }
+    crc
 }

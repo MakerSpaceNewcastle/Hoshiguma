@@ -45,27 +45,50 @@ impl<
     const CAP: usize,
     const NUM_A: usize,
     const NUM_B: usize,
-> BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
+> Default for BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
 {
-    pub const fn new() -> Self {
+    fn default() -> Self {
         Self {
             a_to_b: PubSubChannel::new(),
             b_to_a: PubSubChannel::new(),
             _lifetime: PhantomData,
         }
     }
+}
 
+impl<
+    'a,
+    M: RawMutex,
+    AToB: Clone,
+    BToA: Clone,
+    const CAP: usize,
+    const NUM_A: usize,
+    const NUM_B: usize,
+> BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
+{
     pub fn side_a(&'a self) -> Side<'a, M, BToA, AToB, CAP, NUM_A, NUM_B> {
         Side {
-            to_me: self.b_to_a.subscriber().unwrap(),
-            to_you: self.a_to_b.publisher().unwrap(),
+            to_me: self
+                .b_to_a
+                .subscriber()
+                .expect("Failed to create subscriber for side A"),
+            to_you: self
+                .a_to_b
+                .publisher()
+                .expect("Failed to create publisher for side A"),
         }
     }
 
     pub fn side_b(&'a self) -> Side<'a, M, AToB, BToA, CAP, NUM_B, NUM_A> {
         Side {
-            to_me: self.a_to_b.subscriber().unwrap(),
-            to_you: self.b_to_a.publisher().unwrap(),
+            to_me: self
+                .a_to_b
+                .subscriber()
+                .expect("Failed to create subscriber for side B"),
+            to_you: self
+                .b_to_a
+                .publisher()
+                .expect("Failed to create publisher for side B"),
         }
     }
 }

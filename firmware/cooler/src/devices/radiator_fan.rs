@@ -5,7 +5,7 @@ use hoshiguma_api::cooler::RadiatorFanState;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
 pub(crate) type Channel =
-    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 8, 1, 1>;
+    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4, 1, 1>;
 
 #[derive(Clone)]
 pub(crate) struct Request(RadiatorFanState);

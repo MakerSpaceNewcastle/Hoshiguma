@@ -1,7 +1,10 @@
 use core::ops::Deref;
 use serde::{Deserialize, Serialize};
 
-pub type OnewireTemperatureSensorReadings = crate::OnewireTemperatureSensorReadings<8>;
+pub const NUM_ONEWIRE_TEMPERATURE_SENSORS: usize = 8;
+
+pub type OnewireTemperatureSensorReadings =
+    crate::OnewireTemperatureSensorReadings<NUM_ONEWIRE_TEMPERATURE_SENSORS>;
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CoolantPumpState {

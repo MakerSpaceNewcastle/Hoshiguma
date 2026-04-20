@@ -11,13 +11,11 @@ use embassy_executor::Spawner;
 use embassy_rp::{
     Peri,
     gpio::{Level, Output},
-    peripherals::{self},
+    peripherals,
     watchdog::Watchdog,
 };
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_time::{Duration, Timer};
 use hoshiguma_api::BootReason;
-use hoshiguma_common::bidir_channel::{BiDirectionalChannel, Side};
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
@@ -29,6 +27,7 @@ assign_resources! {
         led: PIN_19,
     },
     onewire: OnewireResources {
+        pio: PIO1,
         pin: PIN_28,
     },
     flow_sensor: FlowSensorResources {
@@ -86,49 +85,47 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    // TODO
+    static COMPRESSOR_COMM: StaticCell<devices::compressor::Channel> = StaticCell::new();
+    let compressor_comm = COMPRESSOR_COMM.init(Default::default());
+    spawner.spawn(devices::compressor::task(r.compressor, compressor_comm.side_b()).unwrap());
 
-    static CUNT: StaticCell<BiDirectionalChannel<CriticalSectionRawMutex, usize, usize, 8, 4, 4>> =
+    static COOLANT_PUMP_COMM: StaticCell<devices::coolant_pump::Channel> = StaticCell::new();
+    let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
+    spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm.side_b()).unwrap());
+
+    static RADIATOR_FAC_COMM: StaticCell<devices::radiator_fan::Channel> = StaticCell::new();
+    let radiator_fan_comm = RADIATOR_FAC_COMM.init(Default::default());
+    spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm.side_b()).unwrap());
+
+    static TEMPERATURE_SENSORS_COMM: StaticCell<devices::temperature_sensors::Channel> =
         StaticCell::new();
-    let cunt = CUNT.init(BiDirectionalChannel::new());
+    let temperature_sensors_comm = TEMPERATURE_SENSORS_COMM.init(Default::default());
+    spawner.spawn(
+        devices::temperature_sensors::task(r.onewire, temperature_sensors_comm.side_b()).unwrap(),
+    );
 
-    let mut side_a_1 = cunt.side_a();
-    let side_b_1 = cunt.side_b();
+    // TODO
 
     spawner.spawn(network::task(spawner, r.ethernet).unwrap());
 
-    spawner.spawn(watchdog_feed_task(r.status, side_b_1).unwrap());
+    spawner.spawn(watchdog_feed_task(r.status).unwrap());
 
     #[cfg(feature = "test-panic-on-core-0")]
-    spawner.must_spawn(dummy_panic());
-
-    loop {
-        match side_a_1.to_me.next_message().await {
-            embassy_sync::pubsub::WaitResult::Lagged(_) => todo!(),
-            embassy_sync::pubsub::WaitResult::Message(i) => info!("fucking i = {}", i),
-        }
-    }
+    spawner.spawn(dummy_panic().unwrap());
 }
 
 #[embassy_executor::task]
-async fn watchdog_feed_task(
-    r: StatusResources,
-    chan: Side<'static, CriticalSectionRawMutex, usize, usize, 8, 4, 4>,
-) {
+async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
     let watchdog_timeout = Duration::from_millis(600);
     watchdog.start(watchdog_timeout);
 
-    let mut i = 0_usize;
     loop {
         watchdog.feed(watchdog_timeout);
         onboard_led.toggle();
         Timer::after_millis(500).await;
-
-        chan.to_you.publish(i).await;
-        i = i.wrapping_add(1);
     }
 }
 
