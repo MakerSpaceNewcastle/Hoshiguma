@@ -14,8 +14,15 @@ use hoshiguma_api::{
 };
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) type Channel =
-    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4, 1, 1>;
+pub(crate) type Channel = BiDirectionalChannel<
+    'static,
+    CriticalSectionRawMutex,
+    Request,
+    Response,
+    4,
+    { crate::network::NUM_LISTENERS },
+    1,
+>;
 
 #[derive(Clone, Format)]
 pub(crate) struct Request;

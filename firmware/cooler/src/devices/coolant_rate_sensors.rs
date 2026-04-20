@@ -11,8 +11,15 @@ use embassy_time::{Duration, Ticker};
 use hoshiguma_api::cooler::CoolantRate;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) type Channel =
-    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4, 1, 1>;
+pub(crate) type Channel = BiDirectionalChannel<
+    'static,
+    CriticalSectionRawMutex,
+    Request,
+    Response,
+    4,
+    { crate::network::NUM_LISTENERS },
+    1,
+>;
 
 #[derive(Clone, Format)]
 pub(crate) struct Request;

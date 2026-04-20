@@ -1,6 +1,6 @@
 use core::net::Ipv4Addr;
 
-use crate::EthernetResources;
+use crate::{EthernetResources, MachineControl};
 use defmt::{info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
@@ -28,8 +28,14 @@ bind_interrupts!(struct Irqs {
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
 });
 
+pub(crate) const NUM_LISTENERS: usize = 3;
+
 #[embassy_executor::task]
-pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
+pub(super) async fn task(
+    spawner: Spawner,
+    r: EthernetResources,
+    mut machine: heapless::Vec<MachineControl, NUM_LISTENERS>,
+) -> ! {
     let mut rng = RoscRng;
 
     let mut spi_cfg = SpiConfig::default();
@@ -88,8 +94,9 @@ pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
 
     spawner.spawn(net_task(runner).unwrap());
 
-    spawner.spawn(listen_task(stack, 0, 1234).unwrap());
-    spawner.spawn(listen_task(stack, 1, 1234).unwrap());
+    for i in 0..NUM_LISTENERS {
+        spawner.spawn(listen_task(stack, i as u8, 1234, machine.pop().unwrap()).unwrap());
+    }
 
     loop {
         embassy_time::Timer::after_secs(10).await;
@@ -119,8 +126,9 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
     runner.run().await
 }
 
-#[embassy_executor::task(pool_size = 2)]
-async fn listen_task(stack: Stack<'static>, id: u8, port: u16) {
+#[embassy_executor::task(pool_size = NUM_LISTENERS)]
+async fn listen_task(stack: Stack<'static>, id: u8, port: u16, machine: MachineControl) {
+    // TODO
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
     let mut buf = [0; 4096];
