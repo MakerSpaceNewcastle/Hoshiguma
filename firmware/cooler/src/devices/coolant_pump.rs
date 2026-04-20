@@ -1,6 +1,10 @@
 use crate::CoolantPumpResources;
 use embassy_rp::gpio::{Level, Output};
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use hoshiguma_api::cooler::CoolantPumpState;
+use hoshiguma_common::bidir_channel::BiDirectionalChannel;
+
+pub(crate) type CoolantPumpChannel = BiDirectionalChannel<CriticalSectionRawMutex, ()>;
 
 pub(crate) struct CoolantPump {
     output: Output<'static>,

@@ -100,7 +100,7 @@ async fn main(spawner: Spawner) {
         temperature_sensors: TemperatureSensors::new(&spawner, r.onewire),
     };
 
-    static CUNT: StaticCell<BiDirectionalChannel<CriticalSectionRawMutex, usize, 8, 4, 4>> =
+    static CUNT: StaticCell<BiDirectionalChannel<CriticalSectionRawMutex, usize, usize, 8, 4, 4>> =
         StaticCell::new();
     let cunt = CUNT.init(BiDirectionalChannel::new());
 
@@ -115,7 +115,7 @@ async fn main(spawner: Spawner) {
     spawner.must_spawn(dummy_panic());
 
     loop {
-        match side_a_1.inbox.next_message().await {
+        match side_a_1.to_me.next_message().await {
             embassy_sync::pubsub::WaitResult::Lagged(_) => todo!(),
             embassy_sync::pubsub::WaitResult::Message(i) => info!("fucking i = {}", i),
         }
@@ -125,7 +125,7 @@ async fn main(spawner: Spawner) {
 #[embassy_executor::task]
 async fn watchdog_feed_task(
     r: StatusResources,
-    chan: Side<'static, CriticalSectionRawMutex, usize, 8, 4, 4>,
+    chan: Side<'static, CriticalSectionRawMutex, usize, usize, 8, 4, 4>,
 ) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
@@ -138,7 +138,7 @@ async fn watchdog_feed_task(
         onboard_led.toggle();
         Timer::after_millis(500).await;
 
-        chan.outbox.publish(i).await;
+        chan.to_you.publish(i).await;
         i = i.wrapping_add(1);
     }
 }
