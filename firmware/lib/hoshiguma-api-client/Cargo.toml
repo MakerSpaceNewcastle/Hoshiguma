@@ -1,6 +1,15 @@
 [package]
 name = "hoshiguma-api-client"
 version = "0.1.0"
+authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
+license = "MIT"
 
 [dependencies]
+clap = { version = "4.6.1", features = ["derive"] }
+hoshiguma-api = { path = "../hoshiguma-api" }
+postcard = { version = "1.1.3", features = ["use-std"] }
+serde = "1.0.228"
+
+[lints.rust]
+#unused_crate_dependencies = "deny"
