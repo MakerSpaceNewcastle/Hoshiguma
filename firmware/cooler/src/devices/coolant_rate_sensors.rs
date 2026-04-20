@@ -3,8 +3,7 @@ use defmt::{Format, info};
 use embassy_executor::Spawner;
 use embassy_futures::select::Either;
 use embassy_rp::{
-    gpio::{Pull, SlewRate},
-    pac::Interrupt::CLOCKS_IRQ,
+    gpio::Pull,
     pwm::{Config as PwmConfig, InputMode, Pwm},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult};
@@ -63,6 +62,7 @@ async fn task(pwm: Pwm<'static>, mut comm: MyChannelSide, pulses_per_litre: f64)
 
     loop {
         match embassy_futures::select::select(ticker.next(), comm.to_me.next_message()).await {
+            // Take a measurement
             Either::First(_) => {
                 // Read pulses since last sample
                 let pulses = pwm.counter();
@@ -85,6 +85,7 @@ async fn task(pwm: Pwm<'static>, mut comm: MyChannelSide, pulses_per_litre: f64)
             Either::Second(WaitResult::Lagged(n)) => {
                 panic!("Lagged by {n} messages");
             }
+            // Respond to a request for the measurement
             Either::Second(WaitResult::Message(_)) => {
                 comm.to_you.publish(Response(rate.clone())).await;
             }

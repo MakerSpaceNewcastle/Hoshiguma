@@ -1,4 +1,5 @@
 use crate::CoolantPumpResources;
+use defmt::Format;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult};
 use hoshiguma_api::cooler::CoolantPumpState;
@@ -7,9 +8,9 @@ use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannel
 pub(crate) type Channel =
     BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4, 1, 1>;
 
-#[derive(Clone)]
+#[derive(Clone, Format)]
 pub(crate) struct Request(CoolantPumpState);
-#[derive(Clone)]
+#[derive(Clone, Format)]
 pub(crate) struct Response(CoolantPumpState);
 
 pub(crate) type TheirChannelSide = <Channel as BiDirectionalChannelSides>::SideA;
