@@ -199,7 +199,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
             };
             let response = Response(Ok(response));
 
-            let response_bytes = postcard::to_slice(&response, &mut buf).unwrap();
+            let response_bytes = postcard::to_slice_cobs(&response, &mut buf).unwrap();
 
             if let Err(e) = socket.write_all(&response_bytes).await {
                 warn!("socket {}: write error: {:?}", id, e);

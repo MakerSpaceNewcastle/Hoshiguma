@@ -17,14 +17,14 @@ fn send_command<Req: Serialize, Resp: DeserializeOwned>(
     command: Req,
 ) -> Resp {
     println!("Sending command");
-    let bytes = postcard::to_stdvec(&command).unwrap();
+    let bytes = postcard::to_stdvec_cobs(&command).unwrap();
     stream.write_all(&bytes).unwrap();
     let request_time = std::time::Instant::now();
 
     println!("Waiting for response...");
     let mut bytes = Vec::new();
     stream.read_to_end(&mut bytes).unwrap();
-    let response = postcard::from_bytes(&bytes).unwrap();
+    let response = postcard::from_bytes_cobs(&mut bytes).unwrap();
     let response_time = std::time::Instant::now();
     let duration = response_time.duration_since(request_time);
     println!("Got response in {}ms", duration.as_millis());
