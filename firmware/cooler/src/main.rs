@@ -2,16 +2,11 @@
 #![no_main]
 
 mod devices;
-mod machine;
 mod network;
 
 use assign_resources::assign_resources;
 use defmt::info;
 use defmt_rtt as _;
-use devices::{
-    compressor::Compressor, coolant_flow_sensor::CoolantFlowSensor, coolant_pump::CoolantPump,
-    radiator_fan::RadiatorFan, temperature_sensors::TemperatureSensors,
-};
 use embassy_executor::Spawner;
 use embassy_rp::{
     Peri,
@@ -23,7 +18,6 @@ use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_time::{Duration, Timer};
 use hoshiguma_api::BootReason;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, Side};
-use machine::Machine;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
@@ -75,7 +69,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {
         // Keep feeding the watchdog so that we do not quickly reset.
         // Panics should be properly investigated.
-        watchdog.feed();
+        watchdog.feed(Duration::from_millis(100));
 
         // Blink the on-board LED pretty fast
         led.toggle();
@@ -92,13 +86,7 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    let machine = Machine {
-        coolant_pump: CoolantPump::new(r.coolant_pump),
-        compressor: Compressor::new(r.compressor),
-        radiator_fan: RadiatorFan::new(r.radiator_fan),
-        coolant_flow_sensor: CoolantFlowSensor::new(&spawner, r.flow_sensor),
-        temperature_sensors: TemperatureSensors::new(&spawner, r.onewire),
-    };
+    // TODO
 
     static CUNT: StaticCell<BiDirectionalChannel<CriticalSectionRawMutex, usize, usize, 8, 4, 4>> =
         StaticCell::new();
@@ -107,9 +95,9 @@ async fn main(spawner: Spawner) {
     let mut side_a_1 = cunt.side_a();
     let side_b_1 = cunt.side_b();
 
-    spawner.must_spawn(network::task(spawner, r.ethernet));
+    spawner.spawn(network::task(spawner, r.ethernet).unwrap());
 
-    spawner.must_spawn(watchdog_feed_task(r.status, side_b_1));
+    spawner.spawn(watchdog_feed_task(r.status, side_b_1).unwrap());
 
     #[cfg(feature = "test-panic-on-core-0")]
     spawner.must_spawn(dummy_panic());
@@ -130,11 +118,12 @@ async fn watchdog_feed_task(
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(600));
+    let watchdog_timeout = Duration::from_millis(600);
+    watchdog.start(watchdog_timeout);
 
     let mut i = 0_usize;
     loop {
-        watchdog.feed();
+        watchdog.feed(watchdog_timeout);
         onboard_led.toggle();
         Timer::after_millis(500).await;
 

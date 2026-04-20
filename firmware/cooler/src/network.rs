@@ -10,7 +10,7 @@ use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
     gpio::{Input, Level, Output, Pull},
-    peripherals::PIO0,
+    peripherals::{DMA_CH0, DMA_CH1, PIO0},
     pio::Pio,
     pio_programs::spi::Spi,
     spi::Config as SpiConfig,
@@ -25,6 +25,7 @@ const COOLER_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 4);
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
+    DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
 });
 
 #[embassy_executor::task]
@@ -46,6 +47,7 @@ pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
         r.miso,
         r.tx_dma,
         r.rx_dma,
+        Irqs,
         spi_cfg,
     );
     let cs = Output::new(r.cs, Level::High);
@@ -64,7 +66,7 @@ pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
     let (device, runner) = embassy_net_wiznet::new(mac_addr, state, device, w5500_int, w5500_reset)
         .await
         .unwrap();
-    spawner.must_spawn(ethernet_task(runner));
+    spawner.spawn(ethernet_task(runner).unwrap());
 
     // Generate random seed
     let seed = rng.next_u64();
@@ -84,10 +86,10 @@ pub(super) async fn task(spawner: Spawner, r: EthernetResources) -> ! {
         dns_servers: Vec::new(),
     }));
 
-    spawner.must_spawn(net_task(runner));
+    spawner.spawn(net_task(runner).unwrap());
 
-    spawner.must_spawn(listen_task(stack, 0, 1234));
-    spawner.must_spawn(listen_task(stack, 1, 1234));
+    spawner.spawn(listen_task(stack, 0, 1234).unwrap());
+    spawner.spawn(listen_task(stack, 1, 1234).unwrap());
 
     loop {
         embassy_time::Timer::after_secs(10).await;

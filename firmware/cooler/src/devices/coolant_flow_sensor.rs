@@ -59,7 +59,7 @@ pub(crate) struct CoolantFlowSensor {}
 
 impl CoolantFlowSensor {
     pub(crate) fn new(spawner: &Spawner, r: FlowSensorResources) -> Self {
-        spawner.must_spawn(task(r));
+        spawner.spawn(task(r).unwrap());
         Self {}
     }
 

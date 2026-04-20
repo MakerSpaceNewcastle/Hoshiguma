@@ -57,7 +57,7 @@ pub(crate) struct TemperatureSensors {}
 
 impl TemperatureSensors {
     pub(crate) fn new(spawner: &Spawner, r: OnewireResources) -> Self {
-        spawner.must_spawn(task(r));
+        spawner.spawn(task(r).unwrap());
         Self {}
     }
 
