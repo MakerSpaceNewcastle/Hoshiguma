@@ -31,11 +31,11 @@ assign_resources! {
         pin: PIN_28,
     },
     coolant_rate_sensors: CoolantRateSensorResources {
-        flow_pwm: PWM_SLICE7,
-        flow_pin: PIN_5,
+        flow_pwm: PWM_SLICE2,
+        flow_pin: PIN_5, // Input 1
 
-        return_pwm: PWM_SLICE6,
-        return_pin: PIN_6,
+        return_pwm: PWM_SLICE3,
+        return_pin: PIN_7, // Input 3
     },
     compressor: CompressorResources {
         relay: PIN_8,
@@ -92,21 +92,29 @@ async fn main(spawner: Spawner) {
     let compressor_comm = COMPRESSOR_COMM.init(Default::default());
     spawner.spawn(devices::compressor::task(r.compressor, compressor_comm.side_b()).unwrap());
 
-    // TODO: coolant flow rate
-
-    // TODO: coolant return rate
+    static COOLANT_FLOW_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
+        StaticCell::new();
+    let coolant_flow_rate_comm = COOLANT_FLOW_RATE_COMM.init(Default::default());
+    static COOLANT_RETURN_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
+        StaticCell::new();
+    let coolant_return_rate_comm = COOLANT_RETURN_RATE_COMM.init(Default::default());
+    devices::coolant_rate_sensors::start(
+        spawner,
+        r.coolant_rate_sensors,
+        coolant_flow_rate_comm.side_b(),
+        coolant_return_rate_comm.side_b(),
+    );
 
     static COOLANT_PUMP_COMM: StaticCell<devices::coolant_pump::Channel> = StaticCell::new();
     let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
     spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm.side_b()).unwrap());
 
-    static RADIATOR_FAC_COMM: StaticCell<devices::radiator_fan::Channel> = StaticCell::new();
-    let radiator_fan_comm = RADIATOR_FAC_COMM.init(Default::default());
+    static RADIATOR_FAN_COMM: StaticCell<devices::radiator_fan::Channel> = StaticCell::new();
+    let radiator_fan_comm = RADIATOR_FAN_COMM.init(Default::default());
     spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm.side_b()).unwrap());
 
-    static TEMPERATURE_SENSORS_COMM: StaticCell<devices::temperature_sensors::Channel> =
-        StaticCell::new();
-    let temperature_sensors_comm = TEMPERATURE_SENSORS_COMM.init(Default::default());
+    static TEMPERATURES_COMM: StaticCell<devices::temperature_sensors::Channel> = StaticCell::new();
+    let temperature_sensors_comm = TEMPERATURES_COMM.init(Default::default());
     spawner.spawn(
         devices::temperature_sensors::task(r.onewire, temperature_sensors_comm.side_b()).unwrap(),
     );
