@@ -4,7 +4,7 @@ use embassy_sync::{
     pubsub::{PubSubChannel, Publisher, Subscriber},
 };
 
-pub trait BiDirectionalChannelSide {
+pub trait BiDirectionalChannelSides {
     type SideA;
     type SideB;
 }
@@ -31,7 +31,7 @@ impl<
     const CAP: usize,
     const NUM_A: usize,
     const NUM_B: usize,
-> BiDirectionalChannelSide for BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
+> BiDirectionalChannelSides for BiDirectionalChannel<'a, M, AToB, BToA, CAP, NUM_A, NUM_B>
 {
     type SideA = Side<'a, M, BToA, AToB, CAP, NUM_A, NUM_B>;
     type SideB = Side<'a, M, AToB, BToA, CAP, NUM_B, NUM_A>;
