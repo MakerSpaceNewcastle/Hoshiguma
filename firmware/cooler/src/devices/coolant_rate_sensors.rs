@@ -1,11 +1,13 @@
 use crate::CoolantRateSensorResources;
 use defmt::{Format, info};
 use embassy_executor::Spawner;
+use embassy_futures::select::Either;
 use embassy_rp::{
-    gpio::Pull,
+    gpio::{Pull, SlewRate},
+    pac::Interrupt::CLOCKS_IRQ,
     pwm::{Config as PwmConfig, InputMode, Pwm},
 };
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult};
 use embassy_time::{Duration, Ticker};
 use hoshiguma_api::cooler::CoolantRate;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
@@ -53,30 +55,39 @@ pub(crate) fn start(
 const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
 
 #[embassy_executor::task(pool_size = 2)]
-async fn task(pwm: Pwm<'static>, comm: MyChannelSide, pulses_per_litre: f64) {
+async fn task(pwm: Pwm<'static>, mut comm: MyChannelSide, pulses_per_litre: f64) {
     let mut ticker = Ticker::every(MEASUREMENT_INTERVAL);
 
     let mut total_pulses = 0u64;
+    let mut rate = CoolantRate::ZERO;
 
-    // TODO
     loop {
-        ticker.next().await;
+        match embassy_futures::select::select(ticker.next(), comm.to_me.next_message()).await {
+            Either::First(_) => {
+                // Read pulses since last sample
+                let pulses = pwm.counter();
+                pwm.set_counter(0);
 
-        // Read pulses since last sample
-        let pulses = pwm.counter();
-        pwm.set_counter(0);
+                // Keep a running total of pulses for calibration purposes
+                total_pulses = total_pulses.wrapping_add(pulses.into());
+                info!("Total pulses since boot: {}", total_pulses);
 
-        // Keep a running total of pulses for calibration purposes
-        total_pulses = total_pulses.wrapping_add(pulses.into());
-        info!("Total pulses since boot: {}", total_pulses);
+                let litres = pulses as f64 / pulses_per_litre;
+                let seconds = MEASUREMENT_INTERVAL.as_secs() as f64;
+                let litres_per_minute = (litres / seconds) * 60.0;
 
-        let litres = pulses as f64 / pulses_per_litre;
-        let seconds = MEASUREMENT_INTERVAL.as_secs() as f64;
-        let litres_per_minute = (litres / seconds) * 60.0;
-
-        info!(
-            "Flow: {} pulses, {} litres, in {} seconds, {} L/min",
-            pulses, litres, seconds, litres_per_minute
-        );
+                info!(
+                    "Flow: {} pulses, {} litres, in {} seconds, {} L/min",
+                    pulses, litres, seconds, litres_per_minute
+                );
+                rate = CoolantRate::new(litres_per_minute);
+            }
+            Either::Second(WaitResult::Lagged(n)) => {
+                panic!("Lagged by {n} messages");
+            }
+            Either::Second(WaitResult::Message(_)) => {
+                comm.to_you.publish(Response(rate.clone())).await;
+            }
+        }
     }
 }
