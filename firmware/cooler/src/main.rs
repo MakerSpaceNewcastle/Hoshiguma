@@ -38,13 +38,13 @@ assign_resources! {
         return_pin: PIN_7, // Input 3
     },
     compressor: CompressorResources {
-        relay: PIN_8,
+        relay: PIN_13, // Relay 6
     },
     coolant_pump: CoolantPumpResources {
-        relay: PIN_9,
+        relay: PIN_14, // Relay 7
     },
     radiator_fan: RadiatorFanResources {
-        relay: PIN_10,
+        relay: PIN_15, // Relay 8
     },
     ethernet: EthernetResources {
         pio: PIO0,
