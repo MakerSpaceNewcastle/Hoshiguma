@@ -80,6 +80,8 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     }
 }
 
+// TODO: communication watchdog
+
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
