@@ -167,7 +167,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
 
             let request = match postcard::from_bytes_cobs::<Request>(received) {
                 Ok(req) => req,
-                Err(e) => {
+                Err(_) => {
                     warn!("socket {}: failed to parse request", id);
                     continue;
                 }
