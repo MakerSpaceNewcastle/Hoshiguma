@@ -28,7 +28,8 @@ jobs:
     strategy:
       matrix:
         crate:
-          - core
+          - hoshiguma-api
+          - hoshiguma-common
 
     steps:
       - uses: actions/checkout@v6
@@ -56,8 +57,8 @@ jobs:
       matrix:
         crate:
           - cooler
-          - extraction-airflow-sensor
           - orchestrator
+          - rear-sensor-board
           - telemetry-bridge
 
     steps:

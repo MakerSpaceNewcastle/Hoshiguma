@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-mod rpc;
 mod sdp810;
 
 use assign_resources::assign_resources;

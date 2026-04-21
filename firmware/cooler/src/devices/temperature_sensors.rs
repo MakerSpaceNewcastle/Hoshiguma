@@ -59,8 +59,8 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
     {
         let mut search = PioOneWireSearch::new();
         for _ in 0..NUM_ONEWIRE_TEMPERATURE_SENSORS {
-            if !search.is_finished() {
-                if let Some(address) = search.next(&mut onewire).await {
+            if !search.is_finished()
+                && let Some(address) = search.next(&mut onewire).await {
                     if crc8(&address.to_le_bytes()) == 0 {
                         info!("Found addres: {:x}", address);
                         devices.push(address).unwrap();
@@ -68,7 +68,6 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
                         warn!("Found invalid address: {:x}", address);
                     }
                 }
-            }
         }
         if !search.is_finished() {
             warn!("Found max number of devices before search finished");

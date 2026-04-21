@@ -8,7 +8,6 @@ use crate::{
     },
 };
 use defmt::{debug, info, warn};
-use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
@@ -35,6 +34,13 @@ bind_interrupts!(struct Irqs {
 });
 
 pub(crate) const NUM_LISTENERS: usize = 3;
+
+type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
+    'static,
+    CriticalSectionRawMutex,
+    Spi<'static, PIO0, 0, embassy_rp::spi::Async>,
+    Output<'static>,
+>;
 
 #[embassy_executor::task]
 pub(super) async fn task(
@@ -111,18 +117,7 @@ pub(super) async fn task(
 
 #[embassy_executor::task]
 async fn ethernet_task(
-    runner: Runner<
-        'static,
-        W5500,
-        SpiDevice<
-            'static,
-            CriticalSectionRawMutex,
-            Spi<'static, PIO0, 0, embassy_rp::spi::Async>,
-            Output<'static>,
-        >,
-        Input<'static>,
-        Output<'static>,
-    >,
+    runner: Runner<'static, W5500, SpiDevice, Input<'static>, Output<'static>>,
 ) -> ! {
     runner.run().await
 }
@@ -195,7 +190,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .radiator_fan
                         .get()
                         .await
-                        .map(|state| ResponseData::RadiatorFanState(state))
+                        .map(ResponseData::RadiatorFanState)
                         .map_err(|_| ()),
                 ),
                 Request::SetRadiatorFanState(state) => Response(
@@ -203,7 +198,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .radiator_fan
                         .set(state)
                         .await
-                        .map(|state| ResponseData::RadiatorFanState(state))
+                        .map(ResponseData::RadiatorFanState)
                         .map_err(|_| ()),
                 ),
                 Request::GetCompressorState => Response(
@@ -211,7 +206,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .compressor
                         .get()
                         .await
-                        .map(|state| ResponseData::CompressorState(state))
+                        .map(ResponseData::CompressorState)
                         .map_err(|_| ()),
                 ),
                 Request::SetCompressorState(state) => Response(
@@ -219,7 +214,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .compressor
                         .set(state)
                         .await
-                        .map(|state| ResponseData::CompressorState(state))
+                        .map(ResponseData::CompressorState)
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantPumpState => Response(
@@ -227,7 +222,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .coolant_pump
                         .get()
                         .await
-                        .map(|state| ResponseData::CoolantPumpState(state))
+                        .map(ResponseData::CoolantPumpState)
                         .map_err(|_| ()),
                 ),
                 Request::SetCoolantPumpState(state) => Response(
@@ -235,7 +230,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .coolant_pump
                         .set(state)
                         .await
-                        .map(|state| ResponseData::CoolantPumpState(state))
+                        .map(ResponseData::CoolantPumpState)
                         .map_err(|_| ()),
                 ),
                 Request::GetTemperatures => Response(
@@ -243,7 +238,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .temperatures
                         .get()
                         .await
-                        .map(|v| ResponseData::Temperatures(v))
+                        .map(ResponseData::Temperatures)
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantFlowRate => Response(
@@ -251,7 +246,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .coolant_flow_rate
                         .get()
                         .await
-                        .map(|v| ResponseData::CoolantFlowRate(v))
+                        .map(ResponseData::CoolantFlowRate)
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantReturnRate => Response(
@@ -259,7 +254,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                         .coolant_return_rate
                         .get()
                         .await
-                        .map(|v| ResponseData::CoolantReturnRate(v))
+                        .map(ResponseData::CoolantReturnRate)
                         .map_err(|_| ()),
                 ),
             };
@@ -272,7 +267,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                 }
             };
 
-            if let Err(e) = socket.write_all(&response_bytes).await {
+            if let Err(e) = socket.write_all(response_bytes).await {
                 warn!("socket {}: write error: {:?}", id, e);
                 break;
             }
