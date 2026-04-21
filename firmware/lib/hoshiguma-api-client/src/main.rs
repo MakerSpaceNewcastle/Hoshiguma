@@ -1,34 +1,35 @@
 use serde::{Serialize, de::DeserializeOwned};
-use std::{
-    io::{Read, Write},
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
-    time::Duration,
 };
 
-fn main() {
-    let mut stream = TcpStream::connect("10.69.69.4:1234").unwrap();
+#[tokio::main]
+async fn main() {
+    let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
 
     let response: hoshiguma_api::cooler::Response = send_command(
         &mut stream,
         hoshiguma_api::cooler::Request::SetCompressorState(
             hoshiguma_api::cooler::CompressorState::Run,
         ),
-    );
+    )
+    .await;
     println!("Response: {:?}", response);
 }
 
-fn send_command<Req: Serialize, Resp: DeserializeOwned>(
+async fn send_command<Req: Serialize, Resp: DeserializeOwned>(
     stream: &mut TcpStream,
     command: Req,
 ) -> Resp {
     println!("Sending command");
     let bytes = postcard::to_stdvec_cobs(&command).unwrap();
-    stream.write_all(&bytes).unwrap();
+    stream.write_all(&bytes).await.unwrap();
     let request_time = std::time::Instant::now();
 
     println!("Waiting for response...");
-    let mut bytes = Vec::new();
-    let n = stream.read(&mut bytes).unwrap();
+    let mut bytes = [0u8; 256];
+    let n = stream.read(&mut bytes).await.unwrap();
     let bytes = &mut bytes[..n];
     println!("bytes: {bytes:?}");
     let response = postcard::from_bytes_cobs(bytes).unwrap();
