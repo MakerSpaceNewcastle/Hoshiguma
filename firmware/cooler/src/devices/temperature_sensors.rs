@@ -85,7 +85,8 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
         onewire.write_bytes(&[0xCC, 0x44]).await;
 
         // Allow time for the measurement to finish
-        Timer::after_millis(800).await;
+        // Appropriate for 12 bit resolution
+        Timer::after_millis(750).await;
 
         // Read all devices
         let mut readings = OnewireTemperatureSensorReadings::default();
