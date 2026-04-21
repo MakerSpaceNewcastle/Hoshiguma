@@ -885,7 +885,6 @@ dependencies = [
  "defmt 1.0.1",
  "embassy-sync",
  "heapless 0.9.2",
- "serde",
 ]
 
 [[package]]
