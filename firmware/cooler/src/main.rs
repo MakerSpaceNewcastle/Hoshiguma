@@ -137,7 +137,7 @@ async fn main(spawner: Spawner) {
     let mut machine_control = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {
         if machine_control
-            .push(MachineControl {
+            .push(DeviceComminicator {
                 compressor: compressor_comm[i].side_a(),
                 coolant_pump: coolant_pump_comm[i].side_a(),
                 coolant_flow_rate: coolant_flow_rate_comm[i].side_a(),
@@ -158,7 +158,7 @@ async fn main(spawner: Spawner) {
     spawner.spawn(dummy_panic().unwrap());
 }
 
-struct MachineControl {
+struct DeviceComminicator {
     compressor: devices::compressor::TheirChannelSide,
     coolant_pump: devices::coolant_pump::TheirChannelSide,
     coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,

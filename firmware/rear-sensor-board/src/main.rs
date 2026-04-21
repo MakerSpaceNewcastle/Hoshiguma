@@ -1,7 +1,8 @@
 #![no_std]
 #![no_main]
 
-mod sdp810;
+// mod sdp810;
+mod network;
 
 use assign_resources::assign_resources;
 use defmt::info;
@@ -14,7 +15,7 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Timer};
-use hoshiguma_core::types::BootReason;
+use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
@@ -24,10 +25,16 @@ assign_resources! {
         watchdog: WATCHDOG,
         led: PIN_25,
     },
-    communication: CommunicationResources {
-        uart: UART0,
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
+    ethernet: EthernetResources {
+        miso: PIN_16,
+        mosi: PIN_19,
+        clk: PIN_18,
+        spi: SPI0,
+        tx_dma: DMA_CH0,
+        rx_dma: DMA_CH1,
+        cs_pin: PIN_17,
+        int_pin: PIN_21,
+        rst_pin: PIN_20,
     },
     sdp810: Sdp810Resources {
         i2c: I2C1,
@@ -48,7 +55,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {
         // Keep feeding the watchdog so that we do not quickly reset.
         // Panics should be properly investigated.
-        watchdog.feed();
+        watchdog.feed(Duration::from_millis(100));
 
         // Blink the on-board LED pretty fast
         led.toggle();
@@ -65,21 +72,21 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    let airflow_sensor = sdp810::Sdp810::new(r.sdp810).await;
-
-    spawner.must_spawn(watchdog_feed_task(r.status));
-    spawner.must_spawn(rpc::task(r.communication, airflow_sensor));
+    // let airflow_sensor = sdp810::Sdp810::new(r.sdp810).await;
+    // spawner.must_spawn(watchdog_feed_task(r.status));
 }
+
+struct DeviceCommunicator {}
 
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: StatusResources) -> ! {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(2000));
+    watchdog.start(Duration::from_millis(1000));
 
     loop {
-        watchdog.feed();
+        watchdog.feed(Duration::from_millis(1000));
         onboard_led.toggle();
         Timer::after_millis(500).await;
     }

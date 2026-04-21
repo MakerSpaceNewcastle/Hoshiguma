@@ -1,13 +1,4 @@
-use crate::{
-    DeviceComminicator, EthernetResources,
-    devices::{
-        compressor::CompressorInterfaceChannel, coolant_pump::CoolantPumpInterfaceChannel,
-        coolant_rate_sensors::CoolantRateInterfaceChannel,
-        radiator_fan::RadiatorFanInterfaceChannel,
-        temperature_sensors::TemperatureInterfaceChannel,
-    },
-};
-use defmt::{debug, info, warn};
+use defmt::{info, warn};
 use embassy_executor::Spawner;
 use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
@@ -15,21 +6,18 @@ use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
     gpio::{Input, Level, Output, Pull},
-    peripherals::{DMA_CH0, DMA_CH1, PIO0},
-    pio::Pio,
-    pio_programs::spi::Spi,
-    spi::Config as SpiConfig,
+    spi::Spi,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Instant};
-use embedded_io_async::Write;
 use heapless::Vec;
-use hoshiguma_api::cooler::{Request, Response, ResponseData};
-use hoshiguma_common::network::{AUX_CONTROL_PORT, COOLER_IP_ADDRESS};
+use hoshiguma_api::rear_sensor_board::{Request, Response, ResponseData};
+use hoshiguma_common::network::AUX_CONTROL_PORT;
 use static_cell::StaticCell;
 
+use crate::{DeviceCommunicator, EthernetResources};
+
 bind_interrupts!(struct Irqs {
-    PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
 });
 
@@ -42,31 +30,27 @@ type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
     Output<'static>,
 >;
 
-#[embassy_executor::task]
-pub(super) async fn task(
+pub(super) async fn init(
     spawner: Spawner,
     r: EthernetResources,
-    mut machine: Vec<DeviceComminicator, NUM_LISTENERS>,
-) -> ! {
+    mut machine: Vec<DeviceCommunicator, NUM_LISTENERS>,
+) {
     let mut rng = RoscRng;
 
-    let mut spi_cfg = SpiConfig::default();
-    spi_cfg.frequency = 12_500_000;
-
-    let Pio {
-        mut common, sm0, ..
-    } = Pio::new(r.pio, Irqs);
+    let mut spi_config = embassy_rp::spi::Config::default();
+    spi_config.frequency = 50_000_000;
+    spi_config.phase = embassy_rp::spi::Phase::CaptureOnSecondTransition;
+    spi_config.polarity = embassy_rp::spi::Polarity::IdleHigh;
 
     let spi = Spi::new(
-        &mut common,
-        sm0,
-        r.sck,
+        r.spi,
+        r.clk,
         r.mosi,
         r.miso,
         r.tx_dma,
         r.rx_dma,
         Irqs,
-        spi_cfg,
+        spi_config.clone(),
     );
     let cs = Output::new(r.cs, Level::High);
     let w5500_int = Input::new(r.int, Pull::Up);
@@ -109,10 +93,6 @@ pub(super) async fn task(
     for i in 0..NUM_LISTENERS {
         spawner.spawn(listen_task(stack, i as u8, machine.pop().unwrap()).unwrap());
     }
-
-    loop {
-        embassy_time::Timer::after_secs(10).await;
-    }
 }
 
 #[embassy_executor::task]
@@ -128,7 +108,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 }
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: u8, mut machine: DeviceComminicator) {
+async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
@@ -185,78 +165,6 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: DeviceComminica
                 Request::GetBootReason => {
                     Response(Ok(ResponseData::BootReason(crate::boot_reason())))
                 }
-                Request::GetRadiatorFanState => Response(
-                    machine
-                        .radiator_fan
-                        .get()
-                        .await
-                        .map(ResponseData::RadiatorFanState)
-                        .map_err(|_| ()),
-                ),
-                Request::SetRadiatorFanState(state) => Response(
-                    machine
-                        .radiator_fan
-                        .set(state)
-                        .await
-                        .map(ResponseData::RadiatorFanState)
-                        .map_err(|_| ()),
-                ),
-                Request::GetCompressorState => Response(
-                    machine
-                        .compressor
-                        .get()
-                        .await
-                        .map(ResponseData::CompressorState)
-                        .map_err(|_| ()),
-                ),
-                Request::SetCompressorState(state) => Response(
-                    machine
-                        .compressor
-                        .set(state)
-                        .await
-                        .map(ResponseData::CompressorState)
-                        .map_err(|_| ()),
-                ),
-                Request::GetCoolantPumpState => Response(
-                    machine
-                        .coolant_pump
-                        .get()
-                        .await
-                        .map(ResponseData::CoolantPumpState)
-                        .map_err(|_| ()),
-                ),
-                Request::SetCoolantPumpState(state) => Response(
-                    machine
-                        .coolant_pump
-                        .set(state)
-                        .await
-                        .map(ResponseData::CoolantPumpState)
-                        .map_err(|_| ()),
-                ),
-                Request::GetTemperatures => Response(
-                    machine
-                        .temperatures
-                        .get()
-                        .await
-                        .map(ResponseData::Temperatures)
-                        .map_err(|_| ()),
-                ),
-                Request::GetCoolantFlowRate => Response(
-                    machine
-                        .coolant_flow_rate
-                        .get()
-                        .await
-                        .map(ResponseData::CoolantFlowRate)
-                        .map_err(|_| ()),
-                ),
-                Request::GetCoolantReturnRate => Response(
-                    machine
-                        .coolant_return_rate
-                        .get()
-                        .await
-                        .map(ResponseData::CoolantReturnRate)
-                        .map_err(|_| ()),
-                ),
             };
 
             let response_bytes = match postcard::to_slice_cobs(&response, &mut buf) {

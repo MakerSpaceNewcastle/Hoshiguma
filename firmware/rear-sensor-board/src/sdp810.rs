@@ -6,9 +6,6 @@ use embassy_rp::{
     peripherals::I2C1,
 };
 use embassy_time::Timer;
-use hoshiguma_core::accessories::extraction_airflow_sensor::types::{
-    Measurement, MeasurementInner,
-};
 use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u8, write_command_u16};
 
 bind_interrupts!(struct Irqs {
