@@ -20,28 +20,20 @@ pub(crate) struct Response(CompressorState);
 pub(crate) type TheirChannelSide = <Channel as BiDirectionalChannelSides>::SideA;
 pub(crate) type MyChannelSide = <Channel as BiDirectionalChannelSides>::SideB;
 
-pub(crate) trait CompressorControlChannel {
+pub(crate) trait CompressorInterfaceChannel {
     async fn set(&mut self, state: CompressorState) -> Result<CompressorState, ()>;
     async fn get(&mut self) -> Result<CompressorState, ()>;
 }
 
-impl CompressorControlChannel for TheirChannelSide {
+impl CompressorInterfaceChannel for TheirChannelSide {
     async fn set(&mut self, state: CompressorState) -> Result<CompressorState, ()> {
         self.to_you.send(Request::Set(state.clone())).await;
 
-        match with_timeout(Duration::from_millis(200), self.to_me.receive()).await {
-            Ok(response_state) => {
-                if response_state.0 == state {
-                    Ok(response_state.0)
-                } else {
-                    warn!("Response mismatch");
-                    Err(())
-                }
-            }
-            Err(_) => {
-                warn!("Timeout");
-                Err(())
-            }
+        if self.get().await? == state {
+            Ok(state)
+        } else {
+            warn!("Response mismatch");
+            Err(())
         }
     }
 
@@ -49,8 +41,11 @@ impl CompressorControlChannel for TheirChannelSide {
         self.to_you.send(Request::Get).await;
 
         match with_timeout(Duration::from_millis(200), self.to_me.receive()).await {
-            Ok(response_state) => Ok(response_state.0),
-            Err(_) => Err(()),
+            Ok(response) => Ok(response.0),
+            Err(_) => {
+                warn!("Timeout");
+                Err(())
+            }
         }
     }
 }

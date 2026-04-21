@@ -1,25 +1,18 @@
-use crate::CoolantRateSensorResources;
-use defmt::{Format, info};
+use crate::{CoolantRateSensorResources, network::NUM_LISTENERS};
+use defmt::{Format, info, warn};
 use embassy_executor::Spawner;
 use embassy_futures::select::Either;
 use embassy_rp::{
     gpio::Pull,
     pwm::{Config as PwmConfig, InputMode, Pwm},
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::WaitResult};
-use embassy_time::{Duration, Ticker};
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_time::{Duration, Ticker, with_timeout};
 use hoshiguma_api::cooler::CoolantRate;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) type Channel = BiDirectionalChannel<
-    'static,
-    CriticalSectionRawMutex,
-    Request,
-    Response,
-    4,
-    { crate::network::NUM_LISTENERS },
-    1,
->;
+pub(crate) type Channel =
+    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4>;
 
 #[derive(Clone, Format)]
 pub(crate) struct Request;
@@ -29,14 +22,32 @@ pub(crate) struct Response(CoolantRate);
 pub(crate) type TheirChannelSide = <Channel as BiDirectionalChannelSides>::SideA;
 pub(crate) type MyChannelSide = <Channel as BiDirectionalChannelSides>::SideB;
 
+pub(crate) trait CoolantRateInterfaceChannel {
+    async fn get(&mut self) -> Result<CoolantRate, ()>;
+}
+
+impl CoolantRateInterfaceChannel for TheirChannelSide {
+    async fn get(&mut self) -> Result<CoolantRate, ()> {
+        self.to_you.send(Request).await;
+
+        match with_timeout(Duration::from_millis(1200), self.to_me.receive()).await {
+            Ok(response) => Ok(response.0),
+            Err(_) => {
+                warn!("Timeout");
+                Err(())
+            }
+        }
+    }
+}
+
 const PULSES_PER_LITRE_FLOW: f64 = 400.0;
 const PULSES_PER_LITRE_RETURN: f64 = 400.0; // TODO: calibrate
 
 pub(crate) fn start(
     spawner: Spawner,
     r: CoolantRateSensorResources,
-    flow_comm: MyChannelSide,
-    return_comm: MyChannelSide,
+    flow_comm: [MyChannelSide; NUM_LISTENERS],
+    return_comm: [MyChannelSide; NUM_LISTENERS],
 ) {
     let flow_pwm = Pwm::new_input(
         r.flow_pwm,
@@ -61,14 +72,21 @@ pub(crate) fn start(
 const MEASUREMENT_INTERVAL: Duration = Duration::from_secs(2);
 
 #[embassy_executor::task(pool_size = 2)]
-async fn task(pwm: Pwm<'static>, mut comm: MyChannelSide, pulses_per_litre: f64) {
+async fn task(pwm: Pwm<'static>, comm: [MyChannelSide; NUM_LISTENERS], pulses_per_litre: f64) {
     let mut ticker = Ticker::every(MEASUREMENT_INTERVAL);
 
     let mut total_pulses = 0u64;
     let mut rate = CoolantRate::ZERO;
 
     loop {
-        match embassy_futures::select::select(ticker.next(), comm.to_me.next_message()).await {
+        let comm_rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.to_me.receive());
+
+        match embassy_futures::select::select(
+            ticker.next(),
+            embassy_futures::select::select_array(comm_rx_futures),
+        )
+        .await
+        {
             // Take a measurement
             Either::First(_) => {
                 // Read pulses since last sample
@@ -89,12 +107,9 @@ async fn task(pwm: Pwm<'static>, mut comm: MyChannelSide, pulses_per_litre: f64)
                 );
                 rate = CoolantRate::new(litres_per_minute);
             }
-            Either::Second(WaitResult::Lagged(n)) => {
-                panic!("Lagged by {n} messages");
-            }
             // Respond to a request for the measurement
-            Either::Second(WaitResult::Message(_)) => {
-                comm.to_you.publish(Response(rate.clone())).await;
+            Either::Second((_, idx)) => {
+                comm[idx].to_you.send(Response(rate.clone())).await;
             }
         }
     }

@@ -31,16 +31,8 @@ async fn main() {
         let response: hoshiguma_api::cooler::Response = send_command(&mut stream, request).await;
         println!("Response: {:?}", response);
     });
-    let d = tokio::spawn(async {
-        let request = hoshiguma_api::cooler::Request::SetCompressorState(
-            hoshiguma_api::cooler::CompressorState::Run,
-        );
-        let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
-        let response: hoshiguma_api::cooler::Response = send_command(&mut stream, request).await;
-        println!("Response: {:?}", response);
-    });
 
-    let _ = tokio::join!(a, b, c, d);
+    let _ = tokio::join!(a, b, c);
 }
 
 async fn send_command<Req: Serialize, Resp: DeserializeOwned>(

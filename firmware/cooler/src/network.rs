@@ -1,4 +1,12 @@
-use crate::{EthernetResources, MachineControl, devices::compressor::CompressorControlChannel};
+use crate::{
+    EthernetResources, MachineControl,
+    devices::{
+        compressor::CompressorInterfaceChannel, coolant_pump::CoolantPumpInterfaceChannel,
+        coolant_rate_sensors::CoolantRateInterfaceChannel,
+        radiator_fan::RadiatorFanInterfaceChannel,
+        temperature_sensors::TemperatureInterfaceChannel,
+    },
+};
 use core::net::Ipv4Addr;
 use defmt::{info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
@@ -149,7 +157,6 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
         );
 
         loop {
-            // TODO
             let n = match socket.read(&mut buf).await {
                 Ok(0) => {
                     warn!("socket {}: read EOF", id);
@@ -182,20 +189,33 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
                     Instant::now().duration_since(Instant::MIN).into(),
                 )),
                 Request::GetBootReason => Some(ResponseData::BootReason(crate::boot_reason())),
-                Request::GetRadiatorFanState => todo!(),
-                Request::SetRadiatorFanState(state) => todo!(),
+                Request::GetRadiatorFanState => Some(ResponseData::RadiatorFanState(
+                    machine.radiator_fan.get().await.unwrap(),
+                )),
+                Request::SetRadiatorFanState(state) => Some(ResponseData::RadiatorFanState(
+                    machine.radiator_fan.set(state).await.unwrap(),
+                )),
                 Request::GetCompressorState => Some(ResponseData::CompressorState(
                     machine.compressor.get().await.unwrap(),
                 )),
                 Request::SetCompressorState(state) => Some(ResponseData::CompressorState(
                     machine.compressor.set(state).await.unwrap(),
                 )),
-
-                Request::GetCoolantPumpState => todo!(),
-                Request::SetCoolantPumpState(state) => todo!(),
-                Request::GetTemperatures => todo!(),
-                Request::GetCoolantFlowRate => todo!(),
-                Request::GetCoolantReturnRate => todo!(),
+                Request::GetCoolantPumpState => Some(ResponseData::CoolantPumpState(
+                    machine.coolant_pump.get().await.unwrap(),
+                )),
+                Request::SetCoolantPumpState(state) => Some(ResponseData::CoolantPumpState(
+                    machine.coolant_pump.set(state).await.unwrap(),
+                )),
+                Request::GetTemperatures => Some(ResponseData::Tempreatures(
+                    machine.temperatures.get().await.unwrap(),
+                )),
+                Request::GetCoolantFlowRate => Some(ResponseData::CoolantFlowRate(
+                    machine.coolant_flow_rate.get().await.unwrap(),
+                )),
+                Request::GetCoolantReturnRate => Some(ResponseData::CoolantReturnRate(
+                    machine.coolant_return_rate.get().await.unwrap(),
+                )),
             };
             let response = Response(Ok(response));
 

@@ -98,42 +98,53 @@ async fn main(spawner: Spawner) {
     let compressor_comm_b = compressor_comm.each_ref().map(|comm| comm.side_b());
     spawner.spawn(devices::compressor::task(r.compressor, compressor_comm_b).unwrap());
 
-    // static COOLANT_PUMP_COMM: StaticCell<devices::coolant_pump::Channel> = StaticCell::new();
-    // let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
-    // spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm.side_b()).unwrap());
+    static COOLANT_PUMP_COMM: StaticCell<[devices::coolant_pump::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let coolant_pump_comm = COOLANT_PUMP_COMM.init(Default::default());
+    let coolant_pump_comm_b = coolant_pump_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::coolant_pump::task(r.coolant_pump, coolant_pump_comm_b).unwrap());
 
-    // static COOLANT_FLOW_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
-    //     StaticCell::new();
-    // let coolant_flow_rate_comm = COOLANT_FLOW_RATE_COMM.init(Default::default());
-    // static COOLANT_RETURN_RATE_COMM: StaticCell<devices::coolant_rate_sensors::Channel> =
-    //     StaticCell::new();
-    // let coolant_return_rate_comm = COOLANT_RETURN_RATE_COMM.init(Default::default());
-    // devices::coolant_rate_sensors::start(
-    //     spawner,
-    //     r.coolant_rate_sensors,
-    //     coolant_flow_rate_comm.side_b(),
-    //     coolant_return_rate_comm.side_b(),
-    // );
+    static COOLANT_FLOW_RATE_COMM: StaticCell<
+        [devices::coolant_rate_sensors::Channel; NUM_LISTENERS],
+    > = StaticCell::new();
+    let coolant_flow_rate_comm = COOLANT_FLOW_RATE_COMM.init(Default::default());
+    let coolant_flow_rate_comm_b = coolant_flow_rate_comm.each_ref().map(|comm| comm.side_b());
+    static COOLANT_RETURN_RATE_COMM: StaticCell<
+        [devices::coolant_rate_sensors::Channel; NUM_LISTENERS],
+    > = StaticCell::new();
+    let coolant_return_rate_comm = COOLANT_RETURN_RATE_COMM.init(Default::default());
+    let coolant_return_rate_comm_b = coolant_return_rate_comm
+        .each_ref()
+        .map(|comm| comm.side_b());
+    devices::coolant_rate_sensors::start(
+        spawner,
+        r.coolant_rate_sensors,
+        coolant_flow_rate_comm_b,
+        coolant_return_rate_comm_b,
+    );
 
-    // static RADIATOR_FAN_COMM: StaticCell<devices::radiator_fan::Channel> = StaticCell::new();
-    // let radiator_fan_comm = RADIATOR_FAN_COMM.init(Default::default());
-    // spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm.side_b()).unwrap());
+    static RADIATOR_FAN_COMM: StaticCell<[devices::radiator_fan::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let radiator_fan_comm = RADIATOR_FAN_COMM.init(Default::default());
+    let radiator_fan_comm_b = radiator_fan_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::radiator_fan::task(r.radiator_fan, radiator_fan_comm_b).unwrap());
 
-    // static TEMPERATURES_COMM: StaticCell<devices::temperature_sensors::Channel> = StaticCell::new();
-    // let temperatures_comm = TEMPERATURES_COMM.init(Default::default());
-    // spawner
-    //     .spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm.side_b()).unwrap());
+    static TEMPERATURES_COMM: StaticCell<[devices::temperature_sensors::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let temperatures_comm = TEMPERATURES_COMM.init(Default::default());
+    let temperatures_comm_b = temperatures_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm_b).unwrap());
 
     let mut machine_control = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {
         if machine_control
             .push(MachineControl {
                 compressor: compressor_comm[i].side_a(),
-                // coolant_pump: coolant_pump_comm.side_a(),
-                // coolant_flow_rate: coolant_flow_rate_comm.side_a(),
-                // coolant_return_rate: coolant_return_rate_comm.side_a(),
-                // radiator_fan: radiator_fan_comm.side_a(),
-                // temperatures: temperatures_comm.side_a(),
+                coolant_pump: coolant_pump_comm[i].side_a(),
+                coolant_flow_rate: coolant_flow_rate_comm[i].side_a(),
+                coolant_return_rate: coolant_return_rate_comm[i].side_a(),
+                radiator_fan: radiator_fan_comm[i].side_a(),
+                temperatures: temperatures_comm[i].side_a(),
             })
             .is_err()
         {
@@ -150,11 +161,11 @@ async fn main(spawner: Spawner) {
 
 struct MachineControl {
     compressor: devices::compressor::TheirChannelSide,
-    // coolant_pump: devices::coolant_pump::TheirChannelSide,
-    // coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,
-    // coolant_return_rate: devices::coolant_rate_sensors::TheirChannelSide,
-    // radiator_fan: devices::radiator_fan::TheirChannelSide,
-    // temperatures: devices::temperature_sensors::TheirChannelSide,
+    coolant_pump: devices::coolant_pump::TheirChannelSide,
+    coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,
+    coolant_return_rate: devices::coolant_rate_sensors::TheirChannelSide,
+    radiator_fan: devices::radiator_fan::TheirChannelSide,
+    temperatures: devices::temperature_sensors::TheirChannelSide,
 }
 
 #[embassy_executor::task]
