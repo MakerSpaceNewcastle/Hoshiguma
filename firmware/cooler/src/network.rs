@@ -7,7 +7,6 @@ use crate::{
         temperature_sensors::TemperatureInterfaceChannel,
     },
 };
-use core::net::Ipv4Addr;
 use defmt::{debug, info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
@@ -27,9 +26,8 @@ use embassy_time::{Duration, Instant};
 use embedded_io_async::Write;
 use heapless::Vec;
 use hoshiguma_api::cooler::{Request, Response, ResponseData};
+use hoshiguma_common::network::{AUX_CONTROL_PORT, COOLER_IP_ADDRESS};
 use static_cell::StaticCell;
-
-const COOLER_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 4);
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
@@ -96,14 +94,14 @@ pub(super) async fn task(
 
     stack.set_config_v4(ConfigV4::Static(StaticConfigV4 {
         address: Ipv4Cidr::new(COOLER_IP_ADDRESS, 24),
-        gateway: Some(Ipv4Addr::new(10, 69, 69, 1)),
+        gateway: None,
         dns_servers: Vec::new(),
     }));
 
     spawner.spawn(net_task(runner).unwrap());
 
     for i in 0..NUM_LISTENERS {
-        spawner.spawn(listen_task(stack, i as u8, 1234, machine.pop().unwrap()).unwrap());
+        spawner.spawn(listen_task(stack, i as u8, machine.pop().unwrap()).unwrap());
     }
 
     loop {
@@ -135,7 +133,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 }
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: MachineControl) {
+async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
@@ -145,8 +143,8 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
         let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
         socket.set_timeout(Some(Duration::from_secs(5)));
 
-        info!("socket {}: Listening on TCP:{}...", id, port);
-        if let Err(e) = socket.accept(port).await {
+        info!("socket {}: Listening on TCP:{}...", id, AUX_CONTROL_PORT);
+        if let Err(e) = socket.accept(AUX_CONTROL_PORT).await {
             warn!("socket {}: accept error: {:?}", id, e);
             continue;
         }

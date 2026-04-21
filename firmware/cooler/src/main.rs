@@ -185,7 +185,7 @@ async fn watchdog_feed_task(r: StatusResources) {
 
         // Blink the LED
         onboard_led.set_high();
-        Timer::after_millis(50).await;
+        Timer::after_millis(10).await;
         onboard_led.set_low();
     }
 }

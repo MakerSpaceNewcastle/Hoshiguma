@@ -10,7 +10,7 @@ use tokio::{
 async fn main() {
     env_logger::init();
 
-    const ADDR: &str = "10.69.69.4:1234";
+    const ADDR: &str = "10.69.69.4:2001";
 
     let a = tokio::spawn(async {
         loop {
