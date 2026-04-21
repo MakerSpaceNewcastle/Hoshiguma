@@ -29,6 +29,17 @@ assign_resources! {
         watchdog: WATCHDOG,
         led: PIN_19,
     },
+    ethernet: EthernetResources {
+        pio: PIO0,
+        mosi: PIN_23,
+        miso: PIN_22,
+        sck: PIN_21,
+        tx_dma: DMA_CH0,
+        rx_dma: DMA_CH1,
+        cs: PIN_20,
+        int: PIN_24,
+        reset: PIN_25,
+    },
     onewire: OnewireResources {
         pio: PIO1,
         pin: PIN_28,
@@ -48,17 +59,6 @@ assign_resources! {
     },
     radiator_fan: RadiatorFanResources {
         relay: PIN_15, // Relay 8
-    },
-    ethernet: EthernetResources {
-        pio: PIO0,
-        mosi: PIN_23,
-        miso: PIN_22,
-        sck: PIN_21,
-        tx_dma: DMA_CH0,
-        rx_dma: DMA_CH1,
-        cs: PIN_20,
-        int: PIN_24,
-        reset: PIN_25,
     },
 }
 

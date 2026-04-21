@@ -5,6 +5,14 @@ authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
 license = "MIT"
 
+[[bin]]
+name = "cooler"
+path = "src/cooler/main.rs"
+
+[[bin]]
+name = "rear-sensor-board"
+path = "src/rear_sensor_board/main.rs"
+
 [dependencies]
 env_logger = "0.11.10"
 hoshiguma-api = { path = "../hoshiguma-api" }

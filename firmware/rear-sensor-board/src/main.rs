@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-// mod sdp810;
+mod devices;
 mod network;
 
 use assign_resources::assign_resources;
@@ -37,10 +37,19 @@ assign_resources! {
         int: PIN_21,
         reset: PIN_20,
     },
+    onewire: OnewireResources {
+        pio: PIO1,
+        pin: PIN_28,
+    },
+    status_light: StatusLightResources {
+        red_pin: PIN_13,
+        amber_pin: PIN_14,
+        green_pin: PIN_15,
+    },
     sdp810: Sdp810Resources {
         i2c: I2C1,
-        sda_pin: PIN_2,
-        scl_pin: PIN_3,
+        sda: PIN_2,
+        scl: PIN_3,
     },
 }
 

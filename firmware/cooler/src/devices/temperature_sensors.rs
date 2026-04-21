@@ -48,6 +48,8 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENERS]) {
+    const CRC: crc::Crc<u8> = crc::Crc::<u8>::new(&crc::CRC_8_MAXIM_DOW);
+
     let mut pio = Pio::new(r.pio, Irqs);
 
     let prg = PioOneWireProgram::new(&mut pio.common);
@@ -60,14 +62,15 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
         let mut search = PioOneWireSearch::new();
         for _ in 0..NUM_ONEWIRE_TEMPERATURE_SENSORS {
             if !search.is_finished()
-                && let Some(address) = search.next(&mut onewire).await {
-                    if crc8(&address.to_le_bytes()) == 0 {
-                        info!("Found addres: {:x}", address);
-                        devices.push(address).unwrap();
-                    } else {
-                        warn!("Found invalid address: {:x}", address);
-                    }
+                && let Some(address) = search.next(&mut onewire).await
+            {
+                if CRC.checksum(&address.to_le_bytes()) == 0 {
+                    info!("Found addres: {:x}", address);
+                    devices.push(address).unwrap();
+                } else {
+                    warn!("Found invalid address: {:x}", address);
                 }
+            }
         }
         if !search.is_finished() {
             warn!("Found max number of devices before search finished");
@@ -97,7 +100,7 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
 
             let mut data = [0; 9];
             onewire.read_bytes(&mut data).await;
-            let reading = if crc8(&data) == 0 {
+            let reading = if CRC.checksum(&data) == 0 {
                 let temp = ((data[1] as i16) << 8 | data[0] as i16) as f32 / 16.;
                 info!("Read device {:x}: {} deg C", device, temp);
                 Ok(temp)
@@ -113,20 +116,4 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
 
         comm[idx].send(Response(readings)).await;
     }
-}
-
-fn crc8(data: &[u8]) -> u8 {
-    let mut crc = 0;
-    for b in data {
-        let mut data_byte = *b;
-        for _ in 0..8 {
-            let temp = (crc ^ data_byte) & 0x01;
-            crc >>= 1;
-            if temp != 0 {
-                crc ^= 0x8C;
-            }
-            data_byte >>= 1;
-        }
-    }
-    crc
 }

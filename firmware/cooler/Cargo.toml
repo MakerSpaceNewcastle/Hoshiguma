@@ -17,6 +17,7 @@ panic-probe = ["dep:panic-probe"]
 [dependencies]
 assign-resources = "0.5.0"
 cortex-m-rt = "0.7.3"
+crc = "3.4.0"
 defmt = "1.0.1"
 defmt-rtt = "1.0.0"
 embassy-embedded-hal = { version = "0.6.0", features = ["defmt"] }
