@@ -29,7 +29,7 @@ pub enum ResponseData {
     RadiatorFanState(super::RadiatorFanState),
     CompressorState(super::CompressorState),
     CoolantPumpState(super::CoolantPumpState),
-    Tempreatures(super::OnewireTemperatureSensorReadings),
+    Temperatures(super::OnewireTemperatureSensorReadings),
     CoolantFlowRate(super::CoolantRate),
     CoolantReturnRate(super::CoolantRate),
 }

@@ -1,4 +1,5 @@
 use hoshiguma_api::cooler::{CompressorState, Request, Response};
+use log::info;
 use serde::{Serialize, de::DeserializeOwned};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -7,6 +8,8 @@ use tokio::{
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     const ADDR: &str = "10.69.69.4:1234";
 
     let a = tokio::spawn(async {
@@ -36,6 +39,9 @@ async fn main() {
     let b = tokio::spawn(async {
         loop {
             let mut stream = TcpStream::connect(ADDR).await.unwrap();
+            send_command::<_, Response>(&mut stream, Request::GetGitRevision).await;
+            send_command::<_, Response>(&mut stream, Request::GetBootReason).await;
+            send_command::<_, Response>(&mut stream, Request::GetUptime).await;
             send_command::<_, Response>(&mut stream, Request::GetCompressorState).await;
             drop(stream);
 
@@ -74,5 +80,5 @@ async fn send_command<
     let response_time = std::time::Instant::now();
 
     let duration = response_time.duration_since(request_time);
-    println!("{request:?} => {response:?} in {}ms", duration.as_millis());
+    info!("{request:?} => {response:?} in {}ms", duration.as_millis());
 }

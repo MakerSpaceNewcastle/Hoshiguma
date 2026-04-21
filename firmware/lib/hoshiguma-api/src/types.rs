@@ -16,13 +16,13 @@ pub type OnewireAddress = u64;
 
 #[derive(Debug, Format, Clone, Copy, PartialEq, Serialize, Deserialize, Getters)]
 pub struct OnewireTemperatureSensorReading {
-    device: OnewireAddress,
+    address: OnewireAddress,
     reading: Result<f32, ()>,
 }
 
 impl OnewireTemperatureSensorReading {
-    pub fn new(device: OnewireAddress, reading: Result<f32, ()>) -> Self {
-        Self { device, reading }
+    pub fn new(address: OnewireAddress, reading: Result<f32, ()>) -> Self {
+        Self { address, reading }
     }
 }
 

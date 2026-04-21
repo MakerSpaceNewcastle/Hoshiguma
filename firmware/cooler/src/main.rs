@@ -14,6 +14,7 @@ use embassy_rp::{
     peripherals,
     watchdog::Watchdog,
 };
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
 use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
@@ -168,18 +169,24 @@ struct MachineControl {
     temperatures: devices::temperature_sensors::TheirChannelSide,
 }
 
+static COMM_GOOD_INDICATOR: Channel<CriticalSectionRawMutex, (), 8> = Channel::new();
+
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    let watchdog_timeout = Duration::from_millis(600);
-    watchdog.start(watchdog_timeout);
+    watchdog.start(Duration::from_secs(5));
 
     loop {
-        watchdog.feed(watchdog_timeout);
-        onboard_led.toggle();
-        Timer::after_millis(500).await;
+        let _ = COMM_GOOD_INDICATOR.receive().await;
+
+        watchdog.feed(Duration::from_secs(5));
+
+        // Blink the LED
+        onboard_led.set_high();
+        Timer::after_millis(50).await;
+        onboard_led.set_low();
     }
 }
 

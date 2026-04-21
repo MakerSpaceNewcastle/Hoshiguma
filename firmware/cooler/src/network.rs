@@ -180,6 +180,8 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
                 }
             };
 
+            let _ = crate::COMM_GOOD_INDICATOR.try_send(());
+
             let response = match request {
                 Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
                     git_version::git_version!().try_into().unwrap(),
@@ -243,7 +245,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
                         .temperatures
                         .get()
                         .await
-                        .map(|v| ResponseData::Tempreatures(v))
+                        .map(|v| ResponseData::Temperatures(v))
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantFlowRate => Response(
