@@ -1,18 +1,22 @@
-use defmt::{info, warn};
+use defmt::{debug, info, warn};
 use embassy_executor::Spawner;
-use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
+use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
     gpio::{Input, Level, Output, Pull},
+    peripherals::{DMA_CH0, DMA_CH1, SPI0},
     spi::Spi,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Instant};
+use embedded_io_async::Write;
 use heapless::Vec;
 use hoshiguma_api::rear_sensor_board::{Request, Response, ResponseData};
-use hoshiguma_common::network::AUX_CONTROL_PORT;
+use hoshiguma_common::network::{
+    AUX_CONTROL_PORT, REAR_SENSOR_BOARD_IP_ADDRESS, REAR_SENSOR_BOARD_MAC_ADDRESS,
+};
 use static_cell::StaticCell;
 
 use crate::{DeviceCommunicator, EthernetResources};
@@ -26,14 +30,14 @@ pub(crate) const NUM_LISTENERS: usize = 3;
 type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
     'static,
     CriticalSectionRawMutex,
-    Spi<'static, PIO0, 0, embassy_rp::spi::Async>,
+    Spi<'static, SPI0, embassy_rp::spi::Async>,
     Output<'static>,
 >;
 
 pub(super) async fn init(
     spawner: Spawner,
     r: EthernetResources,
-    mut machine: Vec<DeviceCommunicator, NUM_LISTENERS>,
+    mut comm: Vec<DeviceCommunicator, NUM_LISTENERS>,
 ) {
     let mut rng = RoscRng;
 
@@ -57,17 +61,22 @@ pub(super) async fn init(
     let w5500_reset = Output::new(r.reset, Level::High);
 
     static SPI: StaticCell<
-        Mutex<CriticalSectionRawMutex, Spi<'static, PIO0, 0, embassy_rp::spi::Async>>,
+        Mutex<CriticalSectionRawMutex, Spi<'static, SPI0, embassy_rp::spi::Async>>,
     > = StaticCell::new();
     let spi = SPI.init(Mutex::new(spi));
 
-    let mac_addr = [0x02, 0x00, 0x00, 0xff, 0x22, 0x22];
     static STATE: StaticCell<State<8, 8>> = StaticCell::new();
     let state = STATE.init(State::<8, 8>::new());
     let device = SpiDevice::new(spi, cs);
-    let (device, runner) = embassy_net_wiznet::new(mac_addr, state, device, w5500_int, w5500_reset)
-        .await
-        .unwrap();
+    let (device, runner) = embassy_net_wiznet::new(
+        REAR_SENSOR_BOARD_MAC_ADDRESS,
+        state,
+        device,
+        w5500_int,
+        w5500_reset,
+    )
+    .await
+    .unwrap();
     spawner.spawn(ethernet_task(runner).unwrap());
 
     // Generate random seed
@@ -77,21 +86,19 @@ pub(super) async fn init(
     static RESOURCES: StaticCell<StackResources<12>> = StaticCell::new();
     let (stack, runner) = embassy_net::new(
         device,
-        embassy_net::Config::dhcpv4(Default::default()),
+        embassy_net::Config::ipv4_static(StaticConfigV4 {
+            address: Ipv4Cidr::new(REAR_SENSOR_BOARD_IP_ADDRESS, 24),
+            gateway: None,
+            dns_servers: Vec::new(),
+        }),
         RESOURCES.init(StackResources::new()),
         seed,
     );
 
-    stack.set_config_v4(ConfigV4::Static(StaticConfigV4 {
-        address: Ipv4Cidr::new(COOLER_IP_ADDRESS, 24),
-        gateway: None,
-        dns_servers: Vec::new(),
-    }));
-
     spawner.spawn(net_task(runner).unwrap());
 
     for i in 0..NUM_LISTENERS {
-        spawner.spawn(listen_task(stack, i as u8, machine.pop().unwrap()).unwrap());
+        spawner.spawn(listen_task(stack, i as u8, comm.pop().unwrap()).unwrap());
     }
 }
 
@@ -108,7 +115,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 }
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl) {
+async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
@@ -164,6 +171,9 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: MachineControl)
                 ))),
                 Request::GetBootReason => {
                     Response(Ok(ResponseData::BootReason(crate::boot_reason())))
+                }
+                Request::GetTemperatures => {
+                    todo!()
                 }
             };
 

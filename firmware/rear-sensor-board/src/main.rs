@@ -14,6 +14,7 @@ use embassy_rp::{
     peripherals,
     watchdog::Watchdog,
 };
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
 use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
@@ -32,9 +33,9 @@ assign_resources! {
         spi: SPI0,
         tx_dma: DMA_CH0,
         rx_dma: DMA_CH1,
-        cs_pin: PIN_17,
-        int_pin: PIN_21,
-        rst_pin: PIN_20,
+        cs: PIN_17,
+        int: PIN_21,
+        reset: PIN_20,
     },
     sdp810: Sdp810Resources {
         i2c: I2C1,
@@ -74,21 +75,38 @@ async fn main(spawner: Spawner) {
 
     // let airflow_sensor = sdp810::Sdp810::new(r.sdp810).await;
     // spawner.must_spawn(watchdog_feed_task(r.status));
+
+    let mut comm = heapless::Vec::new();
+    for i in 0..network::NUM_LISTENERS {
+        if comm.push(DeviceCommunicator {}).is_err() {
+            panic!();
+        }
+    }
+    network::init(spawner, r.ethernet, comm).await;
+
+    spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }
 
 struct DeviceCommunicator {}
+
+static COMM_GOOD_INDICATOR: Channel<CriticalSectionRawMutex, (), 8> = Channel::new();
 
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: StatusResources) -> ! {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_millis(1000));
+    watchdog.start(Duration::from_secs(5));
 
     loop {
-        watchdog.feed(Duration::from_millis(1000));
-        onboard_led.toggle();
-        Timer::after_millis(500).await;
+        let _ = COMM_GOOD_INDICATOR.receive().await;
+
+        watchdog.feed(Duration::from_secs(5));
+
+        // Blink the LED
+        onboard_led.set_high();
+        Timer::after_millis(10).await;
+        onboard_led.set_low();
     }
 }
 

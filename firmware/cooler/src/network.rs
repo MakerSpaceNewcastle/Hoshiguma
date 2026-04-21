@@ -1,5 +1,5 @@
 use crate::{
-    DeviceComminicator, EthernetResources,
+    DeviceCommunicator, EthernetResources,
     devices::{
         compressor::CompressorInterfaceChannel, coolant_pump::CoolantPumpInterfaceChannel,
         coolant_rate_sensors::CoolantRateInterfaceChannel,
@@ -9,7 +9,7 @@ use crate::{
 };
 use defmt::{debug, info, warn};
 use embassy_executor::Spawner;
-use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
+use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
     bind_interrupts,
@@ -25,7 +25,7 @@ use embassy_time::{Duration, Instant};
 use embedded_io_async::Write;
 use heapless::Vec;
 use hoshiguma_api::cooler::{Request, Response, ResponseData};
-use hoshiguma_common::network::{AUX_CONTROL_PORT, COOLER_IP_ADDRESS};
+use hoshiguma_common::network::{AUX_CONTROL_PORT, COOLER_IP_ADDRESS, COOLER_MAC_ADDRESS};
 use static_cell::StaticCell;
 
 bind_interrupts!(struct Irqs {
@@ -42,12 +42,11 @@ type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
     Output<'static>,
 >;
 
-#[embassy_executor::task]
-pub(super) async fn task(
+pub(super) async fn init(
     spawner: Spawner,
     r: EthernetResources,
-    mut machine: Vec<DeviceComminicator, NUM_LISTENERS>,
-) -> ! {
+    mut comm: Vec<DeviceCommunicator, NUM_LISTENERS>,
+) {
     let mut rng = RoscRng;
 
     let mut spi_cfg = SpiConfig::default();
@@ -77,13 +76,13 @@ pub(super) async fn task(
     > = StaticCell::new();
     let spi = SPI.init(Mutex::new(spi));
 
-    let mac_addr = [0x02, 0x00, 0x00, 0xff, 0x22, 0x22];
     static STATE: StaticCell<State<8, 8>> = StaticCell::new();
     let state = STATE.init(State::<8, 8>::new());
     let device = SpiDevice::new(spi, cs);
-    let (device, runner) = embassy_net_wiznet::new(mac_addr, state, device, w5500_int, w5500_reset)
-        .await
-        .unwrap();
+    let (device, runner) =
+        embassy_net_wiznet::new(COOLER_MAC_ADDRESS, state, device, w5500_int, w5500_reset)
+            .await
+            .unwrap();
     spawner.spawn(ethernet_task(runner).unwrap());
 
     // Generate random seed
@@ -93,25 +92,19 @@ pub(super) async fn task(
     static RESOURCES: StaticCell<StackResources<12>> = StaticCell::new();
     let (stack, runner) = embassy_net::new(
         device,
-        embassy_net::Config::dhcpv4(Default::default()),
+        embassy_net::Config::ipv4_static(StaticConfigV4 {
+            address: Ipv4Cidr::new(COOLER_IP_ADDRESS, 24),
+            gateway: None,
+            dns_servers: Vec::new(),
+        }),
         RESOURCES.init(StackResources::new()),
         seed,
     );
 
-    stack.set_config_v4(ConfigV4::Static(StaticConfigV4 {
-        address: Ipv4Cidr::new(COOLER_IP_ADDRESS, 24),
-        gateway: None,
-        dns_servers: Vec::new(),
-    }));
-
     spawner.spawn(net_task(runner).unwrap());
 
     for i in 0..NUM_LISTENERS {
-        spawner.spawn(listen_task(stack, i as u8, machine.pop().unwrap()).unwrap());
-    }
-
-    loop {
-        embassy_time::Timer::after_secs(10).await;
+        spawner.spawn(listen_task(stack, i as u8, comm.pop().unwrap()).unwrap());
     }
 }
 
@@ -128,7 +121,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 }
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: u8, mut machine: DeviceComminicator) {
+async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
     let mut rx_buffer = [0; 4096];
     let mut tx_buffer = [0; 4096];
 
@@ -186,72 +179,63 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut machine: DeviceComminica
                     Response(Ok(ResponseData::BootReason(crate::boot_reason())))
                 }
                 Request::GetRadiatorFanState => Response(
-                    machine
-                        .radiator_fan
+                    comm.radiator_fan
                         .get()
                         .await
                         .map(ResponseData::RadiatorFanState)
                         .map_err(|_| ()),
                 ),
                 Request::SetRadiatorFanState(state) => Response(
-                    machine
-                        .radiator_fan
+                    comm.radiator_fan
                         .set(state)
                         .await
                         .map(ResponseData::RadiatorFanState)
                         .map_err(|_| ()),
                 ),
                 Request::GetCompressorState => Response(
-                    machine
-                        .compressor
+                    comm.compressor
                         .get()
                         .await
                         .map(ResponseData::CompressorState)
                         .map_err(|_| ()),
                 ),
                 Request::SetCompressorState(state) => Response(
-                    machine
-                        .compressor
+                    comm.compressor
                         .set(state)
                         .await
                         .map(ResponseData::CompressorState)
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantPumpState => Response(
-                    machine
-                        .coolant_pump
+                    comm.coolant_pump
                         .get()
                         .await
                         .map(ResponseData::CoolantPumpState)
                         .map_err(|_| ()),
                 ),
                 Request::SetCoolantPumpState(state) => Response(
-                    machine
-                        .coolant_pump
+                    comm.coolant_pump
                         .set(state)
                         .await
                         .map(ResponseData::CoolantPumpState)
                         .map_err(|_| ()),
                 ),
                 Request::GetTemperatures => Response(
-                    machine
-                        .temperatures
+                    comm.temperatures
                         .get()
                         .await
                         .map(ResponseData::Temperatures)
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantFlowRate => Response(
-                    machine
-                        .coolant_flow_rate
+                    comm.coolant_flow_rate
                         .get()
                         .await
                         .map(ResponseData::CoolantFlowRate)
                         .map_err(|_| ()),
                 ),
                 Request::GetCoolantReturnRate => Response(
-                    machine
-                        .coolant_return_rate
+                    comm.coolant_return_rate
                         .get()
                         .await
                         .map(ResponseData::CoolantReturnRate)

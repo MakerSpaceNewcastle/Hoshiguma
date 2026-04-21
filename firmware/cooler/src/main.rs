@@ -134,10 +134,10 @@ async fn main(spawner: Spawner) {
     let temperatures_comm_b = temperatures_comm.each_ref().map(|comm| comm.side_b());
     spawner.spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm_b).unwrap());
 
-    let mut machine_control = heapless::Vec::new();
+    let mut comm = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {
-        if machine_control
-            .push(DeviceComminicator {
+        if comm
+            .push(DeviceCommunicator {
                 compressor: compressor_comm[i].side_a(),
                 coolant_pump: coolant_pump_comm[i].side_a(),
                 coolant_flow_rate: coolant_flow_rate_comm[i].side_a(),
@@ -150,15 +150,12 @@ async fn main(spawner: Spawner) {
             panic!();
         }
     }
-    spawner.spawn(network::task(spawner, r.ethernet, machine_control).unwrap());
+    network::init(spawner, r.ethernet, comm).await;
 
     spawner.spawn(watchdog_feed_task(r.status).unwrap());
-
-    #[cfg(feature = "test-panic-on-core-0")]
-    spawner.spawn(dummy_panic().unwrap());
 }
 
-struct DeviceComminicator {
+struct DeviceCommunicator {
     compressor: devices::compressor::TheirChannelSide,
     coolant_pump: devices::coolant_pump::TheirChannelSide,
     coolant_flow_rate: devices::coolant_rate_sensors::TheirChannelSide,
@@ -186,12 +183,6 @@ async fn watchdog_feed_task(r: StatusResources) {
         Timer::after_millis(10).await;
         onboard_led.set_low();
     }
-}
-
-#[embassy_executor::task]
-async fn dummy_panic() {
-    embassy_time::Timer::after_secs(5).await;
-    panic!("oh dear, how sad. nevermind...");
 }
 
 fn boot_reason() -> BootReason {
