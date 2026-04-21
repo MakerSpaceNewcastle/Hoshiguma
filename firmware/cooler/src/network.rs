@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use core::net::Ipv4Addr;
-use defmt::{info, warn};
+use defmt::{debug, info, warn};
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice;
 use embassy_executor::Spawner;
 use embassy_net::{ConfigV4, Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
@@ -143,7 +143,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
 
     loop {
         let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-        socket.set_timeout(Some(Duration::from_secs(10)));
+        socket.set_timeout(Some(Duration::from_secs(5)));
 
         info!("socket {}: Listening on TCP:{}...", id, port);
         if let Err(e) = socket.accept(port).await {
@@ -159,7 +159,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
         loop {
             let n = match socket.read(&mut buf).await {
                 Ok(0) => {
-                    warn!("socket {}: read EOF", id);
+                    info!("socket {}: EOF", id);
                     break;
                 }
                 Ok(n) => n,
@@ -170,56 +170,107 @@ async fn listen_task(stack: Stack<'static>, id: u8, port: u16, mut machine: Mach
             };
 
             let received = &mut buf[..n];
-            info!("socket {}: received {} bytes", id, received.len());
+            debug!("socket {}: received {} bytes", id, received.len());
 
             let request = match postcard::from_bytes_cobs::<Request>(received) {
-                Ok(req) => req,
+                Ok(request) => request,
                 Err(_) => {
                     warn!("socket {}: failed to parse request", id);
                     continue;
                 }
             };
 
-            // TODO: error handling
             let response = match request {
-                Request::GetGitRevision => Some(ResponseData::GitRevision(
+                Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
                     git_version::git_version!().try_into().unwrap(),
-                )),
-                Request::GetUptime => Some(ResponseData::Uptime(
+                ))),
+                Request::GetUptime => Response(Ok(ResponseData::Uptime(
                     Instant::now().duration_since(Instant::MIN).into(),
-                )),
-                Request::GetBootReason => Some(ResponseData::BootReason(crate::boot_reason())),
-                Request::GetRadiatorFanState => Some(ResponseData::RadiatorFanState(
-                    machine.radiator_fan.get().await.unwrap(),
-                )),
-                Request::SetRadiatorFanState(state) => Some(ResponseData::RadiatorFanState(
-                    machine.radiator_fan.set(state).await.unwrap(),
-                )),
-                Request::GetCompressorState => Some(ResponseData::CompressorState(
-                    machine.compressor.get().await.unwrap(),
-                )),
-                Request::SetCompressorState(state) => Some(ResponseData::CompressorState(
-                    machine.compressor.set(state).await.unwrap(),
-                )),
-                Request::GetCoolantPumpState => Some(ResponseData::CoolantPumpState(
-                    machine.coolant_pump.get().await.unwrap(),
-                )),
-                Request::SetCoolantPumpState(state) => Some(ResponseData::CoolantPumpState(
-                    machine.coolant_pump.set(state).await.unwrap(),
-                )),
-                Request::GetTemperatures => Some(ResponseData::Tempreatures(
-                    machine.temperatures.get().await.unwrap(),
-                )),
-                Request::GetCoolantFlowRate => Some(ResponseData::CoolantFlowRate(
-                    machine.coolant_flow_rate.get().await.unwrap(),
-                )),
-                Request::GetCoolantReturnRate => Some(ResponseData::CoolantReturnRate(
-                    machine.coolant_return_rate.get().await.unwrap(),
-                )),
+                ))),
+                Request::GetBootReason => {
+                    Response(Ok(ResponseData::BootReason(crate::boot_reason())))
+                }
+                Request::GetRadiatorFanState => Response(
+                    machine
+                        .radiator_fan
+                        .get()
+                        .await
+                        .map(|state| ResponseData::RadiatorFanState(state))
+                        .map_err(|_| ()),
+                ),
+                Request::SetRadiatorFanState(state) => Response(
+                    machine
+                        .radiator_fan
+                        .set(state)
+                        .await
+                        .map(|state| ResponseData::RadiatorFanState(state))
+                        .map_err(|_| ()),
+                ),
+                Request::GetCompressorState => Response(
+                    machine
+                        .compressor
+                        .get()
+                        .await
+                        .map(|state| ResponseData::CompressorState(state))
+                        .map_err(|_| ()),
+                ),
+                Request::SetCompressorState(state) => Response(
+                    machine
+                        .compressor
+                        .set(state)
+                        .await
+                        .map(|state| ResponseData::CompressorState(state))
+                        .map_err(|_| ()),
+                ),
+                Request::GetCoolantPumpState => Response(
+                    machine
+                        .coolant_pump
+                        .get()
+                        .await
+                        .map(|state| ResponseData::CoolantPumpState(state))
+                        .map_err(|_| ()),
+                ),
+                Request::SetCoolantPumpState(state) => Response(
+                    machine
+                        .coolant_pump
+                        .set(state)
+                        .await
+                        .map(|state| ResponseData::CoolantPumpState(state))
+                        .map_err(|_| ()),
+                ),
+                Request::GetTemperatures => Response(
+                    machine
+                        .temperatures
+                        .get()
+                        .await
+                        .map(|v| ResponseData::Tempreatures(v))
+                        .map_err(|_| ()),
+                ),
+                Request::GetCoolantFlowRate => Response(
+                    machine
+                        .coolant_flow_rate
+                        .get()
+                        .await
+                        .map(|v| ResponseData::CoolantFlowRate(v))
+                        .map_err(|_| ()),
+                ),
+                Request::GetCoolantReturnRate => Response(
+                    machine
+                        .coolant_return_rate
+                        .get()
+                        .await
+                        .map(|v| ResponseData::CoolantReturnRate(v))
+                        .map_err(|_| ()),
+                ),
             };
-            let response = Response(Ok(response));
 
-            let response_bytes = postcard::to_slice_cobs(&response, &mut buf).unwrap();
+            let response_bytes = match postcard::to_slice_cobs(&response, &mut buf) {
+                Ok(bytes) => bytes,
+                Err(_) => {
+                    warn!("socket {}: failed to serialize response", id);
+                    continue;
+                }
+            };
 
             if let Err(e) = socket.write_all(&response_bytes).await {
                 warn!("socket {}: write error: {:?}", id, e);

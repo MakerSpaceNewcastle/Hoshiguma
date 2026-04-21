@@ -6,8 +6,7 @@ use embassy_time::{Duration, with_timeout};
 use hoshiguma_api::cooler::CoolantPumpState;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) type Channel =
-    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4>;
+pub(crate) type Channel = BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response>;
 
 #[derive(Clone, Format)]
 pub(crate) enum Request {
@@ -27,7 +26,7 @@ pub(crate) trait CoolantPumpInterfaceChannel {
 
 impl CoolantPumpInterfaceChannel for TheirChannelSide {
     async fn set(&mut self, state: CoolantPumpState) -> Result<CoolantPumpState, ()> {
-        self.to_you.send(Request::Set(state.clone())).await;
+        self.send(Request::Set(state.clone())).await;
 
         if self.get().await? == state {
             Ok(state)
@@ -38,9 +37,9 @@ impl CoolantPumpInterfaceChannel for TheirChannelSide {
     }
 
     async fn get(&mut self) -> Result<CoolantPumpState, ()> {
-        self.to_you.send(Request::Get).await;
+        self.send(Request::Get).await;
 
-        match with_timeout(Duration::from_millis(200), self.to_me.receive()).await {
+        match with_timeout(Duration::from_millis(200), self.receive()).await {
             Ok(response) => Ok(response.0),
             Err(_) => {
                 warn!("Timeout");
@@ -55,7 +54,7 @@ pub(crate) async fn task(r: CoolantPumpResources, comm: [MyChannelSide; NUM_LIST
     let mut output = Output::new(r.relay, Level::Low);
 
     loop {
-        let rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.to_me.receive());
+        let rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.receive());
         let (msg, idx) = embassy_futures::select::select_array(rx_futures).await;
 
         if let Request::Set(state) = msg {
@@ -69,6 +68,6 @@ pub(crate) async fn task(r: CoolantPumpResources, comm: [MyChannelSide; NUM_LIST
             Level::Low => CoolantPumpState::Idle,
             Level::High => CoolantPumpState::Run,
         };
-        comm[idx].to_you.send(Response(state)).await;
+        comm[idx].send(Response(state)).await;
     }
 }

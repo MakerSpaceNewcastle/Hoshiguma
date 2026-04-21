@@ -1,5 +1,4 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
-use crate::ResponsePayload;
 use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
@@ -20,13 +19,7 @@ pub enum Request {
 }
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Response(pub Result<Option<ResponseData>, ()>);
-
-impl ResponsePayload for Response {
-    fn id() -> &'static [u8; 4] {
-        b"c00l"
-    }
-}
+pub struct Response(pub Result<ResponseData, ()>);
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {

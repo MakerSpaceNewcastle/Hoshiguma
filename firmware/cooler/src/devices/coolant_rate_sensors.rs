@@ -11,8 +11,7 @@ use embassy_time::{Duration, Ticker, with_timeout};
 use hoshiguma_api::cooler::CoolantRate;
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) type Channel =
-    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4>;
+pub(crate) type Channel = BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response>;
 
 #[derive(Clone, Format)]
 pub(crate) struct Request;
@@ -28,9 +27,9 @@ pub(crate) trait CoolantRateInterfaceChannel {
 
 impl CoolantRateInterfaceChannel for TheirChannelSide {
     async fn get(&mut self) -> Result<CoolantRate, ()> {
-        self.to_you.send(Request).await;
+        self.send(Request).await;
 
-        match with_timeout(Duration::from_millis(1200), self.to_me.receive()).await {
+        match with_timeout(Duration::from_millis(1200), self.receive()).await {
             Ok(response) => Ok(response.0),
             Err(_) => {
                 warn!("Timeout");
@@ -79,7 +78,7 @@ async fn task(pwm: Pwm<'static>, comm: [MyChannelSide; NUM_LISTENERS], pulses_pe
     let mut rate = CoolantRate::ZERO;
 
     loop {
-        let comm_rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.to_me.receive());
+        let comm_rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.receive());
 
         match embassy_futures::select::select(
             ticker.next(),
@@ -109,7 +108,7 @@ async fn task(pwm: Pwm<'static>, comm: [MyChannelSide; NUM_LISTENERS], pulses_pe
             }
             // Respond to a request for the measurement
             Either::Second((_, idx)) => {
-                comm[idx].to_you.send(Response(rate.clone())).await;
+                comm[idx].send(Response(rate.clone())).await;
             }
         }
     }

@@ -1,4 +1,5 @@
 use core::marker::PhantomData;
+use defmt::warn;
 use embassy_sync::{
     blocking_mutex::raw::RawMutex,
     channel::{Channel, Receiver, Sender},
@@ -9,21 +10,21 @@ pub trait BiDirectionalChannelSides {
     type SideB;
 }
 
-pub struct BiDirectionalChannel<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize> {
-    a_to_b: Channel<M, AToB, CAP>,
-    b_to_a: Channel<M, BToA, CAP>,
+pub struct BiDirectionalChannel<'a, M: RawMutex, AToB: Clone, BToA: Clone> {
+    a_to_b: Channel<M, AToB, 1>,
+    b_to_a: Channel<M, BToA, 1>,
     _lifetime: PhantomData<&'a ()>,
 }
 
-impl<'a, M: RawMutex + 'a, AToB: Clone + 'a, BToA: Clone + 'a, const CAP: usize>
-    BiDirectionalChannelSides for BiDirectionalChannel<'a, M, AToB, BToA, CAP>
+impl<'a, M: RawMutex + 'a, AToB: Clone + 'a, BToA: Clone + 'a> BiDirectionalChannelSides
+    for BiDirectionalChannel<'a, M, AToB, BToA>
 {
-    type SideA = Side<'a, M, BToA, AToB, CAP>;
-    type SideB = Side<'a, M, AToB, BToA, CAP>;
+    type SideA = Side<'a, M, BToA, AToB>;
+    type SideB = Side<'a, M, AToB, BToA>;
 }
 
-impl<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize> Default
-    for BiDirectionalChannel<'a, M, AToB, BToA, CAP>
+impl<'a, M: RawMutex, AToB: Clone, BToA: Clone> Default
+    for BiDirectionalChannel<'a, M, AToB, BToA>
 {
     fn default() -> Self {
         Self {
@@ -34,17 +35,15 @@ impl<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize> Default
     }
 }
 
-impl<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize>
-    BiDirectionalChannel<'a, M, AToB, BToA, CAP>
-{
-    pub fn side_a(&'a self) -> Side<'a, M, BToA, AToB, CAP> {
+impl<'a, M: RawMutex, AToB: Clone, BToA: Clone> BiDirectionalChannel<'a, M, AToB, BToA> {
+    pub fn side_a(&'a self) -> Side<'a, M, BToA, AToB> {
         Side {
             to_me: self.b_to_a.receiver(),
             to_you: self.a_to_b.sender(),
         }
     }
 
-    pub fn side_b(&'a self) -> Side<'a, M, AToB, BToA, CAP> {
+    pub fn side_b(&'a self) -> Side<'a, M, AToB, BToA> {
         Side {
             to_me: self.a_to_b.receiver(),
             to_you: self.b_to_a.sender(),
@@ -52,7 +51,21 @@ impl<'a, M: RawMutex, AToB: Clone, BToA: Clone, const CAP: usize>
     }
 }
 
-pub struct Side<'a, M: RawMutex, ToMe: Clone, ToYou: Clone, const CAP: usize> {
-    pub to_me: Receiver<'a, M, ToMe, CAP>,
-    pub to_you: Sender<'a, M, ToYou, CAP>,
+pub struct Side<'a, M: RawMutex, ToMe: Clone, ToYou: Clone> {
+    to_me: Receiver<'a, M, ToMe, 1>,
+    to_you: Sender<'a, M, ToYou, 1>,
+}
+
+impl<'a, M: RawMutex, ToMe: Clone, ToYou: Clone> Side<'a, M, ToMe, ToYou> {
+    pub async fn send(&self, v: ToYou) {
+        if !self.to_me.is_empty() {
+            warn!("Was about to send a request when the response channel was not empty");
+            self.to_me.clear();
+        }
+        self.to_you.send(v).await;
+    }
+
+    pub async fn receive(&self) -> ToMe {
+        self.to_me.receive().await
+    }
 }

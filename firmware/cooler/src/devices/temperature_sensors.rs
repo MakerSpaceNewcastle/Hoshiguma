@@ -14,8 +14,7 @@ use hoshiguma_api::{
 };
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
-pub(crate) type Channel =
-    BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response, 4>;
+pub(crate) type Channel = BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response>;
 
 #[derive(Clone, Format)]
 pub(crate) struct Request;
@@ -31,9 +30,9 @@ pub(crate) trait TemperatureInterfaceChannel {
 
 impl TemperatureInterfaceChannel for TheirChannelSide {
     async fn get(&mut self) -> Result<OnewireTemperatureSensorReadings, ()> {
-        self.to_you.send(Request).await;
+        self.send(Request).await;
 
-        match with_timeout(Duration::from_millis(1200), self.to_me.receive()).await {
+        match with_timeout(Duration::from_millis(1200), self.receive()).await {
             Ok(response) => Ok(response.0),
             Err(_) => {
                 warn!("Timeout");
@@ -78,7 +77,7 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
     }
 
     loop {
-        let rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.to_me.receive());
+        let rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.receive());
         let (_, idx) = embassy_futures::select::select_array(rx_futures).await;
 
         onewire.reset().await;
@@ -112,7 +111,7 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
                 .unwrap();
         }
 
-        comm[idx].to_you.send(Response(readings)).await;
+        comm[idx].send(Response(readings)).await;
     }
 }
 
