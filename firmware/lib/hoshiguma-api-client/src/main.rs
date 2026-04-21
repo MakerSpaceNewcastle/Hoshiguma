@@ -6,16 +6,41 @@ use tokio::{
 
 #[tokio::main]
 async fn main() {
-    let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
-
-    let response: hoshiguma_api::cooler::Response = send_command(
-        &mut stream,
-        hoshiguma_api::cooler::Request::SetCompressorState(
+    let a = tokio::spawn(async {
+        let request = hoshiguma_api::cooler::Request::SetCompressorState(
             hoshiguma_api::cooler::CompressorState::Run,
-        ),
-    )
-    .await;
-    println!("Response: {:?}", response);
+        );
+        let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
+        let response: hoshiguma_api::cooler::Response =
+            send_command(&mut stream, request.clone()).await;
+        println!("Response: {:?}", response);
+    });
+    let b = tokio::spawn(async {
+        let request = hoshiguma_api::cooler::Request::SetCompressorState(
+            hoshiguma_api::cooler::CompressorState::Run,
+        );
+        let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
+        let response: hoshiguma_api::cooler::Response = send_command(&mut stream, request).await;
+        println!("Response: {:?}", response);
+    });
+    let c = tokio::spawn(async {
+        let request = hoshiguma_api::cooler::Request::SetCompressorState(
+            hoshiguma_api::cooler::CompressorState::Run,
+        );
+        let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
+        let response: hoshiguma_api::cooler::Response = send_command(&mut stream, request).await;
+        println!("Response: {:?}", response);
+    });
+    let d = tokio::spawn(async {
+        let request = hoshiguma_api::cooler::Request::SetCompressorState(
+            hoshiguma_api::cooler::CompressorState::Run,
+        );
+        let mut stream = TcpStream::connect("10.69.69.4:1234").await.unwrap();
+        let response: hoshiguma_api::cooler::Response = send_command(&mut stream, request).await;
+        println!("Response: {:?}", response);
+    });
+
+    let _ = tokio::join!(a, b, c, d);
 }
 
 async fn send_command<Req: Serialize, Resp: DeserializeOwned>(
@@ -31,7 +56,6 @@ async fn send_command<Req: Serialize, Resp: DeserializeOwned>(
     let mut bytes = [0u8; 256];
     let n = stream.read(&mut bytes).await.unwrap();
     let bytes = &mut bytes[..n];
-    println!("bytes: {bytes:?}");
     let response = postcard::from_bytes_cobs(bytes).unwrap();
     let response_time = std::time::Instant::now();
     let duration = response_time.duration_since(request_time);
