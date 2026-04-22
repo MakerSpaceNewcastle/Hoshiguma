@@ -20,6 +20,9 @@ use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic as _;
+use static_cell::StaticCell;
+
+use crate::network::NUM_LISTENERS;
 
 assign_resources! {
     status: StatusResources {
@@ -82,12 +85,27 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    // let airflow_sensor = sdp810::Sdp810::new(r.sdp810).await;
-    // spawner.must_spawn(watchdog_feed_task(r.status));
+    static AIRFLOW_COMM: StaticCell<[devices::airflow_sensor::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let airflow_comm = AIRFLOW_COMM.init(Default::default());
+    let airflow_comm_b = airflow_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::airflow_sensor::task(r.sdp810, airflow_comm_b).unwrap());
+
+    static TEMPERATURES_COMM: StaticCell<[devices::temperature_sensors::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let temperatures_comm = TEMPERATURES_COMM.init(Default::default());
+    let temperatures_comm_b = temperatures_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm_b).unwrap());
 
     let mut comm = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {
-        if comm.push(DeviceCommunicator {}).is_err() {
+        if comm
+            .push(DeviceCommunicator {
+                airflow: airflow_comm[i].side_a(),
+                temperatures: temperatures_comm[i].side_a(),
+            })
+            .is_err()
+        {
             panic!();
         }
     }
@@ -96,7 +114,10 @@ async fn main(spawner: Spawner) {
     spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }
 
-struct DeviceCommunicator {}
+struct DeviceCommunicator {
+    airflow: devices::airflow_sensor::TheirChannelSide,
+    temperatures: devices::temperature_sensors::TheirChannelSide,
+}
 
 static COMM_GOOD_INDICATOR: Channel<CriticalSectionRawMutex, (), 8> = Channel::new();
 

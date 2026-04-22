@@ -19,7 +19,13 @@ use hoshiguma_common::network::{
 };
 use static_cell::StaticCell;
 
-use crate::{DeviceCommunicator, EthernetResources};
+use crate::{
+    DeviceCommunicator, EthernetResources,
+    devices::{
+        airflow_sensor::AirflowSensorInterfaceChannel,
+        temperature_sensors::TemperatureInterfaceChannel,
+    },
+};
 
 bind_interrupts!(struct Irqs {
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
@@ -172,9 +178,20 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
                 Request::GetBootReason => {
                     Response(Ok(ResponseData::BootReason(crate::boot_reason())))
                 }
-                Request::GetTemperatures => {
-                    todo!()
-                }
+                Request::GetExtractionAirflow => Response(
+                    comm.airflow
+                        .get()
+                        .await
+                        .map(ResponseData::ExtractionAriflow)
+                        .map_err(|_| ()),
+                ),
+                Request::GetTemperatures => Response(
+                    comm.temperatures
+                        .get()
+                        .await
+                        .map(ResponseData::Temperatures)
+                        .map_err(|_| ()),
+                ),
             };
 
             let response_bytes = match postcard::to_slice_cobs(&response, &mut buf) {

@@ -1,5 +1,3 @@
-// TODO: temperature sensors
-// TODO: status lights
-// TODO: airflow sensor
-
-// pub(crate) mod sdp810;
+pub(crate) mod airflow_sensor;
+pub(crate) mod status_lights;
+pub(crate) mod temperature_sensors;
