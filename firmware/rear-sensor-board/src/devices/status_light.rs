@@ -2,7 +2,7 @@ use crate::{StatusLightResources, network::NUM_LISTENERS};
 use defmt::{Format, warn};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use embassy_time::{Duration, with_timeout};
+use embassy_time::{Duration, Timer, with_timeout};
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
 pub(crate) type Channel = BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response>;
@@ -35,9 +35,26 @@ impl StatusLightInterfaceChannel for TheirChannelSide {
 
 #[embassy_executor::task]
 pub(crate) async fn task(r: StatusLightResources, comm: [MyChannelSide; NUM_LISTENERS]) {
-    let red = Output::new(r.red, Level::Low);
-    let amber = Output::new(r.amber, Level::Low);
-    let green = Output::new(r.green, Level::Low);
+    let mut red = Output::new(r.red, Level::Low);
+    let mut amber = Output::new(r.amber, Level::Low);
+    let mut green = Output::new(r.green, Level::Low);
+
+    loop {
+        red.set_high();
+        amber.set_low();
+        green.set_low();
+        Timer::after(Duration::from_secs(1)).await;
+
+        red.set_low();
+        amber.set_high();
+        green.set_low();
+        Timer::after(Duration::from_secs(1)).await;
+
+        red.set_low();
+        amber.set_low();
+        green.set_high();
+        Timer::after(Duration::from_secs(1)).await;
+    }
 
     loop {
         let rx_futures: [_; NUM_LISTENERS] = comm.each_ref().map(|f| f.receive());
