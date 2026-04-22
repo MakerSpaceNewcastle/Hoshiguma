@@ -45,9 +45,9 @@ assign_resources! {
         pin: PIN_28,
     },
     status_light: StatusLightResources {
-        red_pin: PIN_13,
-        amber_pin: PIN_14,
-        green_pin: PIN_15,
+        red: PIN_13,
+        amber: PIN_14,
+        green: PIN_15,
     },
     sdp810: Sdp810Resources {
         i2c: I2C1,
@@ -90,6 +90,12 @@ async fn main(spawner: Spawner) {
     let airflow_comm = AIRFLOW_COMM.init(Default::default());
     let airflow_comm_b = airflow_comm.each_ref().map(|comm| comm.side_b());
     spawner.spawn(devices::airflow_sensor::task(r.sdp810, airflow_comm_b).unwrap());
+
+    static STATUS_LIGHT_COMM: StaticCell<[devices::status_light::Channel; NUM_LISTENERS]> =
+        StaticCell::new();
+    let status_light_comm = STATUS_LIGHT_COMM.init(Default::default());
+    let status_light_comm_b = status_light_comm.each_ref().map(|comm| comm.side_b());
+    spawner.spawn(devices::status_light::task(r.status_light, status_light_comm_b).unwrap());
 
     static TEMPERATURES_COMM: StaticCell<[devices::temperature_sensors::Channel; NUM_LISTENERS]> =
         StaticCell::new();
