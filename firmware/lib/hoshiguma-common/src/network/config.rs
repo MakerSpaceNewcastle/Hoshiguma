@@ -1,5 +1,3 @@
-//! Control network configuration.
-
 use core::net::Ipv4Addr;
 
 pub const TELEMETRY_MODULE_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 1);

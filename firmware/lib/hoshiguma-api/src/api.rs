@@ -2,20 +2,6 @@ use defmt::Format;
 use heapless::Vec;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-pub fn bytes_to_payload<T: MessagePayload + DeserializeOwned>(
-    bytes: &mut [u8],
-) -> Result<T, MessageError> {
-    let mut message = Message::from_bytes(bytes).map_err(MessageError::Deserialize)?;
-    message.payload()
-}
-
-pub fn payload_to_bytes<T: MessagePayload + Serialize>(
-    payload: &T,
-) -> Result<Vec<u8, MAX_MESSAGE_SIZE>, postcard::Error> {
-    let message = Message::new(payload)?;
-    message.to_bytes()
-}
-
 pub const MAX_MESSAGE_SIZE: usize = MESSAGE_PAYLOAD_CAPACITY + 8;
 pub const MESSAGE_PAYLOAD_CAPACITY: usize = 200;
 

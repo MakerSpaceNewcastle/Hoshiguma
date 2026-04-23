@@ -1,18 +1,19 @@
 use crate::{DeviceCommunicator, EthernetResources};
-use defmt::{debug, info, warn};
+use defmt::warn;
 use embassy_executor::Spawner;
-use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
+use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
-use embassy_time::{Duration, Instant};
-use embedded_io_async::Write;
+use embassy_time::Instant;
 use heapless::Vec;
 use hoshiguma_api::{
-    bytes_to_payload,
+    Message,
     hmi::{Request, Response, ResponseData},
-    payload_to_bytes,
 };
-use hoshiguma_common::network::{AUX_CONTROL_PORT, HMI_IP_ADDRESS, HMI_MAC_ADDRESS};
+use hoshiguma_common::network::{
+    config::{AUX_CONTROL_PORT, HMI_IP_ADDRESS, HMI_MAC_ADDRESS},
+    message_handler_loop,
+};
 use peek_o_display_bsp::embassy_rp::{
     self, bind_interrupts,
     clocks::RoscRng,
@@ -118,76 +119,34 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
-    let mut rx_buffer = [0; 4096];
-    let mut tx_buffer = [0; 4096];
+    message_handler_loop(stack, AUX_CONTROL_PORT, id, async |mut message| {
+        let request = match message.payload::<Request>() {
+            Ok(request) => request,
+            Err(_) => {
+                warn!("socket {}: failed to parse request", id);
+                return Message::new(&Response(Err(()))).unwrap();
+            }
+        };
 
-    let mut buf = [0; 4096];
+        let _ = crate::COMM_GOOD_INDICATOR.try_send(());
 
-    loop {
-        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-        socket.set_timeout(Some(Duration::from_secs(5)));
+        let response = match request {
+            Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
+                git_version::git_version!().try_into().unwrap(),
+            ))),
+            Request::GetUptime => Response(Ok(ResponseData::Uptime(
+                Instant::now().duration_since(Instant::MIN).into(),
+            ))),
+            Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
+        };
 
-        info!("socket {}: Listening on TCP:{}...", id, AUX_CONTROL_PORT);
-        if let Err(e) = socket.accept(AUX_CONTROL_PORT).await {
-            warn!("socket {}: accept error: {:?}", id, e);
-            continue;
-        }
-        info!(
-            "socket {}: connection from {:?}",
-            id,
-            socket.remote_endpoint()
-        );
-
-        loop {
-            let n = match socket.read(&mut buf).await {
-                Ok(0) => {
-                    info!("socket {}: EOF", id);
-                    break;
-                }
-                Ok(n) => n,
-                Err(e) => {
-                    warn!("socket {}: {:?}", id, e);
-                    break;
-                }
-            };
-
-            let received = &mut buf[..n];
-            debug!("socket {}: received {} bytes", id, received.len());
-
-            let request = match bytes_to_payload::<Request>(received) {
-                Ok(request) => request,
-                Err(_) => {
-                    warn!("socket {}: failed to parse request", id);
-                    break;
-                }
-            };
-
-            let _ = crate::COMM_GOOD_INDICATOR.try_send(());
-
-            let response = match request {
-                Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
-                    git_version::git_version!().try_into().unwrap(),
-                ))),
-                Request::GetUptime => Response(Ok(ResponseData::Uptime(
-                    Instant::now().duration_since(Instant::MIN).into(),
-                ))),
-                Request::GetBootReason => {
-                    Response(Ok(ResponseData::BootReason(crate::boot_reason())))
-                }
-            };
-
-            let response_bytes = match payload_to_bytes(&response) {
-                Ok(message) => message,
-                Err(_) => {
-                    warn!("socket {}: failed to serialize response", id);
-                    continue;
-                }
-            };
-
-            if let Err(e) = socket.write_all(&response_bytes).await {
-                warn!("socket {}: write error: {:?}", id, e);
-                break;
+        match Message::new(&response) {
+            Ok(message) => message,
+            Err(_) => {
+                warn!("socket {}: failed to serialize response", id);
+                Message::new(&Response(Err(()))).unwrap()
             }
         }
-    }
+    })
+    .await
 }

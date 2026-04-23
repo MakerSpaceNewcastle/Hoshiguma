@@ -867,8 +867,12 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "defmt 1.0.1",
+ "embassy-net",
  "embassy-sync",
+ "embassy-time",
+ "embedded-io-async 0.7.0",
  "heapless",
+ "hoshiguma-api",
 ]
 
 [[package]]
@@ -888,7 +892,6 @@ dependencies = [
  "embassy-rp",
  "embassy-sync",
  "embassy-time",
- "embedded-io-async 0.7.0",
  "git-version",
  "heapless",
  "hoshiguma-api",

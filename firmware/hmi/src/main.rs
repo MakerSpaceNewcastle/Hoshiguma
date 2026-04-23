@@ -4,6 +4,7 @@
 mod network;
 
 use assign_resources::assign_resources;
+use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
@@ -45,43 +46,38 @@ assign_resources! {
 }
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let board = PeekODisplay::default();
     let p = board.peripherals();
     let r = split_resources!(p);
 
+    info!("Version: {}", git_version::git_version!());
+    info!("Boot reason: {}", boot_reason());
+
     let spi = board.board_spi();
 
+    // TODO
     let display_rotation = Rotation::Deg0;
-
     let (mut display, _backlight) = board.display(spi, display_rotation);
     let (mut touch, touch_irq) = board.touch(spi, display_rotation, Calibration::default());
-
     display.clear(Rgb666::BLACK).unwrap();
-
     touch.read();
-
     let access_control_signal = Input::new(r.access_control.granted, Pull::None);
 
-    // let mut ticker = Ticker::every(Duration::from_hz(100));
-    let mut ticker = Ticker::every(Duration::from_hz(10));
-    loop {
-        ticker.next().await;
-
-        // let irq_level = touch_irq.get_level();
-        // led.set_level(irq_level);
-
-        // if irq_level == Level::Low
-        //     && let Some(point) = touch.read()
-        // {
-        //     info!("touch at : {},{}", point.0, point.1);
-
-        //     draw_cursor(&mut display, last, Rgb666::BLACK, Rgb666::BLACK);
-        //     draw_cursor(&mut display, point, Rgb666::RED, Rgb666::GREEN);
-
-        //     last = point;
-        // }
+    let mut comm = heapless::Vec::new();
+    for i in 0..network::NUM_LISTENERS {
+        if comm
+            .push(DeviceCommunicator {
+                // TODO
+            })
+            .is_err()
+        {
+            panic!();
+        }
     }
+    network::init(spawner, r.ethernet, comm).await;
+
+    spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }
 
 struct DeviceCommunicator;

@@ -1,5 +1,5 @@
 use hoshiguma_api::{
-    MessagePayload, bytes_to_payload, payload_to_bytes,
+    Message, MessagePayload,
     rear_sensor_board::{Request, Response},
 };
 use log::info;
@@ -71,14 +71,16 @@ async fn send_command<
     stream: &mut TcpStream,
     request: Req,
 ) {
-    let bytes = payload_to_bytes(&request).unwrap();
+    let message = Message::new(&request).unwrap();
+    let bytes = message.to_bytes().unwrap();
     stream.write_all(&bytes).await.unwrap();
     let request_time = std::time::Instant::now();
 
     let mut bytes = [0u8; 256];
     let n = stream.read(&mut bytes).await.unwrap();
     let bytes = &mut bytes[..n];
-    let response: Resp = bytes_to_payload(bytes).unwrap();
+    let mut response_message = Message::from_bytes(bytes).unwrap();
+    let response: Resp = response_message.payload().unwrap();
     let response_time = std::time::Instant::now();
 
     let duration = response_time.duration_since(request_time);

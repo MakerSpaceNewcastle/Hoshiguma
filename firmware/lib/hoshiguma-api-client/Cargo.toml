@@ -10,6 +10,10 @@ name = "cooler"
 path = "src/cooler/main.rs"
 
 [[bin]]
+name = "hmi"
+path = "src/hmi/main.rs"
+
+[[bin]]
 name = "rear-sensor-board"
 path = "src/rear_sensor_board/main.rs"
 
