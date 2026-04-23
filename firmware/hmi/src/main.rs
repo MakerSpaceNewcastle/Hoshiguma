@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+mod devices;
 mod network;
 
 use assign_resources::assign_resources;
@@ -8,7 +9,7 @@ use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::{Duration, Timer};
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::Rgb666, prelude::RgbColor};
 use hoshiguma_api::BootReason;
 use panic_probe as _;

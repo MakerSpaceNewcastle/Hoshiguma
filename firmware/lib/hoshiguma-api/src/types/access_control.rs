@@ -13,3 +13,13 @@ pub enum AccessControlState {
     Denied,
     Granted,
 }
+
+impl From<AccessControlRawInput> for AccessControlState {
+    fn from(raw: AccessControlRawInput) -> Self {
+        match raw {
+            AccessControlRawInput::Idle => AccessControlState::Denied,
+            AccessControlRawInput::Denied => AccessControlState::Denied,
+            AccessControlRawInput::Granted => AccessControlState::Granted,
+        }
+    }
+}
