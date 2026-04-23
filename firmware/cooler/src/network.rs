@@ -24,7 +24,11 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Instant};
 use embedded_io_async::Write;
 use heapless::Vec;
-use hoshiguma_api::cooler::{Request, Response, ResponseData};
+use hoshiguma_api::{
+    bytes_to_payload,
+    cooler::{Request, Response, ResponseData},
+    payload_to_bytes,
+};
 use hoshiguma_common::network::{AUX_CONTROL_PORT, COOLER_IP_ADDRESS, COOLER_MAC_ADDRESS};
 use static_cell::StaticCell;
 
@@ -158,11 +162,11 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
             let received = &mut buf[..n];
             debug!("socket {}: received {} bytes", id, received.len());
 
-            let request = match postcard::from_bytes_cobs::<Request>(received) {
+            let request = match bytes_to_payload::<Request>(received) {
                 Ok(request) => request,
                 Err(_) => {
                     warn!("socket {}: failed to parse request", id);
-                    continue;
+                    break;
                 }
             };
 
@@ -243,15 +247,15 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
                 ),
             };
 
-            let response_bytes = match postcard::to_slice_cobs(&response, &mut buf) {
-                Ok(bytes) => bytes,
+            let response_bytes = match payload_to_bytes(&response) {
+                Ok(message) => message,
                 Err(_) => {
                     warn!("socket {}: failed to serialize response", id);
                     continue;
                 }
             };
 
-            if let Err(e) = socket.write_all(response_bytes).await {
+            if let Err(e) = socket.write_all(&response_bytes).await {
                 warn!("socket {}: write error: {:?}", id, e);
                 break;
             }

@@ -1,3 +1,4 @@
+use crate::{MessageId, MessagePayload};
 use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
@@ -11,8 +12,20 @@ pub enum Request {
     GetTemperatures,
 }
 
+impl MessagePayload for Request {
+    fn id() -> &'static MessageId {
+        b"rsbq"
+    }
+}
+
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Response(pub Result<ResponseData, ()>);
+
+impl MessagePayload for Response {
+    fn id() -> &'static MessageId {
+        b"rsbp"
+    }
+}
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {

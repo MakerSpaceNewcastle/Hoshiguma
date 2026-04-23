@@ -1,4 +1,5 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
+use crate::{MessageId, MessagePayload};
 use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
@@ -19,8 +20,20 @@ pub enum Request {
     GetCoolantReturnRate,
 }
 
+impl MessagePayload for Request {
+    fn id() -> &'static MessageId {
+        b"clrq"
+    }
+}
+
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Response(pub Result<ResponseData, ()>);
+
+impl MessagePayload for Response {
+    fn id() -> &'static MessageId {
+        b"clrp"
+    }
+}
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {

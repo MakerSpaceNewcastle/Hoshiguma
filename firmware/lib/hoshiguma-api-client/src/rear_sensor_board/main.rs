@@ -1,4 +1,7 @@
-use hoshiguma_api::rear_sensor_board::{Request, Response};
+use hoshiguma_api::{
+    MessagePayload, bytes_to_payload, payload_to_bytes,
+    rear_sensor_board::{Request, Response},
+};
 use log::info;
 use serde::{Serialize, de::DeserializeOwned};
 use tokio::{
@@ -62,20 +65,20 @@ async fn main() {
 }
 
 async fn send_command<
-    Req: Serialize + core::fmt::Debug,
-    Resp: DeserializeOwned + core::fmt::Debug,
+    Req: MessagePayload + Serialize + core::fmt::Debug,
+    Resp: MessagePayload + DeserializeOwned + core::fmt::Debug,
 >(
     stream: &mut TcpStream,
     request: Req,
 ) {
-    let bytes = postcard::to_stdvec_cobs(&request).unwrap();
+    let bytes = payload_to_bytes(&request).unwrap();
     stream.write_all(&bytes).await.unwrap();
     let request_time = std::time::Instant::now();
 
     let mut bytes = [0u8; 256];
     let n = stream.read(&mut bytes).await.unwrap();
     let bytes = &mut bytes[..n];
-    let response: Resp = postcard::from_bytes_cobs(bytes).unwrap();
+    let response: Resp = bytes_to_payload(bytes).unwrap();
     let response_time = std::time::Instant::now();
 
     let duration = response_time.duration_since(request_time);

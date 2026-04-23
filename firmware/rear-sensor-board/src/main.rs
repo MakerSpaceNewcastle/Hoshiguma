@@ -89,7 +89,7 @@ async fn main(spawner: Spawner) {
         StaticCell::new();
     let airflow_comm = AIRFLOW_COMM.init(Default::default());
     let airflow_comm_b = airflow_comm.each_ref().map(|comm| comm.side_b());
-    // spawner.spawn(devices::airflow_sensor::task(r.sdp810, airflow_comm_b).unwrap());
+    spawner.spawn(devices::airflow_sensor::task(r.sdp810, airflow_comm_b).unwrap());
 
     static STATUS_LIGHT_COMM: StaticCell<[devices::status_light::Channel; NUM_LISTENERS]> =
         StaticCell::new();
