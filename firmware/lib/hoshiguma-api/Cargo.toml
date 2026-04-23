@@ -9,9 +9,11 @@ license = "MIT"
 default = [
     "std",
     "device-cooler",
+    "device-hmi",
     "device-rear-sensor-board",
 ]
 device-cooler = []
+device-hmi = []
 device-rear-sensor-board = []
 
 std = [
