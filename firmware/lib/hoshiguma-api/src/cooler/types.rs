@@ -2,11 +2,6 @@ use core::ops::Deref;
 use defmt::Format;
 use serde::{Deserialize, Serialize};
 
-pub const NUM_ONEWIRE_TEMPERATURE_SENSORS: usize = 8;
-
-pub type OnewireTemperatureSensorReadings =
-    crate::OnewireTemperatureSensorReadings<NUM_ONEWIRE_TEMPERATURE_SENSORS>;
-
 #[derive(Debug, Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CoolantPumpState {
     Idle,

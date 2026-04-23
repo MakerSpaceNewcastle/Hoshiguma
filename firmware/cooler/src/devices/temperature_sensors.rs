@@ -8,10 +8,8 @@ use embassy_rp::{
 };
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_time::{Duration, Timer, with_timeout};
-use hoshiguma_api::{
-    OnewireTemperatureSensorReading,
-    cooler::{NUM_ONEWIRE_TEMPERATURE_SENSORS, OnewireTemperatureSensorReadings},
-};
+use heapless::Vec;
+use hoshiguma_api::{OnewireTemperatureSensorReading, OnewireTemperatureSensorReadings};
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 
 pub(crate) type Channel = BiDirectionalChannel<'static, CriticalSectionRawMutex, Request, Response>;
@@ -55,12 +53,12 @@ pub(crate) async fn task(r: OnewireResources, comm: [MyChannelSide; NUM_LISTENER
     let prg = PioOneWireProgram::new(&mut pio.common);
     let mut onewire = PioOneWire::new(&mut pio.common, pio.sm0, r.pin, &prg);
 
-    let mut devices = heapless::Vec::<u64, NUM_ONEWIRE_TEMPERATURE_SENSORS>::new();
+    let mut devices = Vec::<u64, { OnewireTemperatureSensorReadings::MAX_NUM_SENSORS }>::new();
 
     // Scan bus and discover devices
     {
         let mut search = PioOneWireSearch::new();
-        for _ in 0..NUM_ONEWIRE_TEMPERATURE_SENSORS {
+        for _ in 0..OnewireTemperatureSensorReadings::MAX_NUM_SENSORS {
             if !search.is_finished()
                 && let Some(address) = search.next(&mut onewire).await
             {

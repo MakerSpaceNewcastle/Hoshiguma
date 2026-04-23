@@ -138,6 +138,9 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
                 Instant::now().duration_since(Instant::MIN).into(),
             ))),
             Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
+            Request::SubscribeToNotifications => {
+                todo!()
+            }
         };
 
         match Message::new(&response) {

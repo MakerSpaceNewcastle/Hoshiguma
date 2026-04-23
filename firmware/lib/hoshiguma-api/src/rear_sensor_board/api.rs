@@ -35,26 +35,6 @@ pub enum ResponseData {
     BootReason(crate::BootReason),
 
     StatusLightSettings(super::StatusLightSettings),
-    ExtractionAriflow(super::AirflowSensorMeasurement),
-    Temperatures(super::OnewireTemperatureSensorReadings),
-}
-
-#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub enum Notification {
-    Todo,
-}
-
-impl MessagePayload for Notification {
-    fn id() -> &'static MessageId {
-        b"rsbn"
-    }
-}
-
-#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Acknowledgement;
-
-impl MessagePayload for Acknowledgement {
-    fn id() -> &'static MessageId {
-        b"rsba"
-    }
+    ExtractionAriflow(crate::AirflowSensorMeasurement),
+    Temperatures(crate::OnewireTemperatureSensorReadings),
 }

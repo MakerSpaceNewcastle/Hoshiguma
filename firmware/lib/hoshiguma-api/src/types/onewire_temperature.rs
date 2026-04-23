@@ -1,16 +1,7 @@
 use defmt::Format;
 use getset::Getters;
-use heapless::{String, Vec};
+use heapless::Vec;
 use serde::{Deserialize, Serialize};
-
-pub type GitRevisionString = String<20>;
-
-#[derive(Debug, Format, Clone, PartialEq, Serialize, Deserialize)]
-pub enum BootReason {
-    Normal,
-    WatchdogTimeout,
-    WatchdogForced,
-}
 
 pub type OnewireAddress = u64;
 
@@ -27,11 +18,11 @@ impl OnewireTemperatureSensorReading {
 }
 
 #[derive(Debug, Format, Default, Clone, PartialEq, Serialize, Deserialize)]
-pub struct OnewireTemperatureSensorReadings<const MAX_SENSORS: usize>(
-    Vec<OnewireTemperatureSensorReading, MAX_SENSORS>,
-);
+pub struct OnewireTemperatureSensorReadings(Vec<OnewireTemperatureSensorReading, 8>);
 
-impl<const MAX_SENSORS: usize> OnewireTemperatureSensorReadings<MAX_SENSORS> {
+impl OnewireTemperatureSensorReadings {
+    pub const MAX_NUM_SENSORS: usize = 8;
+
     pub fn push(
         &mut self,
         reading: OnewireTemperatureSensorReading,

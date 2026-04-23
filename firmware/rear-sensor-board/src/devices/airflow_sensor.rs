@@ -7,7 +7,7 @@ use embassy_rp::{
 };
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_time::{Duration, Timer, with_timeout};
-use hoshiguma_api::rear_sensor_board::{AirflowSensorMeasurement, AirflowSensorMeasurementInner};
+use hoshiguma_api::{AirflowSensorMeasurement, AirflowSensorMeasurementInner};
 use hoshiguma_common::bidir_channel::{BiDirectionalChannel, BiDirectionalChannelSides};
 use sensirion_i2c::i2c_async::{read_words_with_crc, write_command_u8, write_command_u16};
 
