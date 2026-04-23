@@ -8,6 +8,7 @@ pub enum Request {
     GetUptime,
     GetBootReason,
 
+    SetStatusLight(super::StatusLightSettings),
     GetExtractionAirflow,
     GetTemperatures,
 }
@@ -33,6 +34,7 @@ pub enum ResponseData {
     Uptime(Duration),
     BootReason(crate::BootReason),
 
+    StatusLightSettings(super::StatusLightSettings),
     ExtractionAriflow(super::AirflowSensorMeasurement),
     Temperatures(super::OnewireTemperatureSensorReadings),
 }

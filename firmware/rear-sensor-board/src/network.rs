@@ -1,3 +1,10 @@
+use crate::{
+    DeviceCommunicator, EthernetResources,
+    devices::{
+        airflow_sensor::AirflowSensorInterfaceChannel, status_light::StatusLightInterfaceChannel,
+        temperature_sensors::TemperatureInterfaceChannel,
+    },
+};
 use defmt::warn;
 use embassy_executor::Spawner;
 use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4};
@@ -21,14 +28,6 @@ use hoshiguma_common::network::{
     message_handler_loop,
 };
 use static_cell::StaticCell;
-
-use crate::{
-    DeviceCommunicator, EthernetResources,
-    devices::{
-        airflow_sensor::AirflowSensorInterfaceChannel,
-        temperature_sensors::TemperatureInterfaceChannel,
-    },
-};
 
 bind_interrupts!(struct Irqs {
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
@@ -144,6 +143,13 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
                 Instant::now().duration_since(Instant::MIN).into(),
             ))),
             Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
+            Request::SetStatusLight(settings) => Response(
+                comm.status_light
+                    .set(settings)
+                    .await
+                    .map(ResponseData::StatusLightSettings)
+                    .map_err(|_| ()),
+            ),
             Request::GetExtractionAirflow => Response(
                 comm.airflow
                     .get()

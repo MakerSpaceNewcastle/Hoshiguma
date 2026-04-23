@@ -108,6 +108,7 @@ async fn main(spawner: Spawner) {
         if comm
             .push(DeviceCommunicator {
                 airflow: airflow_comm[i].side_a(),
+                status_light: status_light_comm[i].side_a(),
                 temperatures: temperatures_comm[i].side_a(),
             })
             .is_err()
@@ -122,6 +123,7 @@ async fn main(spawner: Spawner) {
 
 struct DeviceCommunicator {
     airflow: devices::airflow_sensor::TheirChannelSide,
+    status_light: devices::status_light::TheirChannelSide,
     temperatures: devices::temperature_sensors::TheirChannelSide,
 }
 
