@@ -32,6 +32,11 @@ async fn main() {
                 amber: LightPattern::OFF,
                 green: LightPattern::ON,
             },
+            StatusLightSettings {
+                red: LightPattern::BLINK_1HZ,
+                amber: LightPattern::BLINK_2HZ,
+                green: LightPattern::OFF,
+            },
         ];
 
         loop {
