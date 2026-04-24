@@ -1,12 +1,15 @@
+use crate::network::config::CONTROL_PORT;
+use core::net::Ipv4Addr;
 use defmt::{debug, info, warn};
 use embassy_net::{Stack, tcp::TcpSocket};
-use embassy_time::Duration;
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Receiver};
+use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
+use heapless::Vec;
 use hoshiguma_api::Message;
 
 pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
     stack: Stack<'static>,
-    port: u16,
     id: u8,
     mut handler: F,
 ) -> ! {
@@ -19,8 +22,8 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
         let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
         socket.set_timeout(Some(Duration::from_secs(5)));
 
-        info!("socket {}: Listening on TCP:{}...", id, port);
-        if let Err(e) = socket.accept(port).await {
+        info!("socket {}: Listening on TCP:{}...", id, CONTROL_PORT);
+        if let Err(e) = socket.accept(CONTROL_PORT).await {
             warn!("socket {}: accept error: {:?}", id, e);
             continue;
         }
@@ -69,5 +72,24 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
                 break;
             }
         }
+    }
+}
+
+#[derive(Debug, Format, Clone, Copy, PartialEq, Eq)]
+pub struct Subscription {
+    pub ip: Ipv4Addr,
+}
+
+pub async fn notification_tx_loop<T>(
+    stack: Stack<'static>,
+    id: u8,
+    subscription_rx: Receiver<'static, CriticalSectionRawMutex, Subscription, 1>,
+    notification_rx: Receiver<'static, CriticalSectionRawMutex, T, 8>,
+) -> ! {
+    let mut subscriptions = Vec::<Subscription, 4>::new();
+
+    // TODO
+    loop {
+        Timer::after(Duration::from_secs(1)).await;
     }
 }

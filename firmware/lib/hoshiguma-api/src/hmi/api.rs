@@ -13,7 +13,7 @@ pub enum Request {
 
 impl MessagePayload for Request {
     fn id() -> &'static MessageId {
-        b"hmiq"
+        b"hmiQ"
     }
 }
 
@@ -22,7 +22,7 @@ pub struct Response(pub Result<ResponseData, ()>);
 
 impl MessagePayload for Response {
     fn id() -> &'static MessageId {
-        b"hmip"
+        b"hmiP"
     }
 }
 
@@ -37,20 +37,14 @@ pub enum ResponseData {
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Notification {
-    Todo,
+    AccessControlStateChanged {
+        raw: crate::AccessControlRawInput,
+        state: crate::AccessControlState,
+    },
 }
 
 impl MessagePayload for Notification {
     fn id() -> &'static MessageId {
-        b"rsbn"
-    }
-}
-
-#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Acknowledgement;
-
-impl MessagePayload for Acknowledgement {
-    fn id() -> &'static MessageId {
-        b"rsba"
+        b"hmiN"
     }
 }

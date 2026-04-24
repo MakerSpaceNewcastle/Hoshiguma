@@ -11,7 +11,7 @@ use hoshiguma_api::{
     hmi::{Request, Response, ResponseData},
 };
 use hoshiguma_common::network::{
-    config::{AUX_CONTROL_PORT, HMI_IP_ADDRESS, HMI_MAC_ADDRESS},
+    config::{HMI_IP_ADDRESS, HMI_MAC_ADDRESS},
     message_handler_loop,
 };
 use peek_o_display_bsp::embassy_rp::{
@@ -119,7 +119,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
-    message_handler_loop(stack, AUX_CONTROL_PORT, id, async |mut message| {
+    message_handler_loop(stack, id, async |mut message| {
         let request = match message.payload::<Request>() {
             Ok(request) => request,
             Err(_) => {

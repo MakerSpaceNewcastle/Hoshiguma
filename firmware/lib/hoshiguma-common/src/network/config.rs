@@ -19,4 +19,5 @@ pub const COOLER_MAC_ADDRESS: [u8; 6] = [0xF2, 0xFA, 0xEC, 0x8D, 0x88, 0x05];
 pub const REAR_SENSOR_BOARD_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 6);
 pub const REAR_SENSOR_BOARD_MAC_ADDRESS: [u8; 6] = [0xF2, 0xFA, 0xEC, 0x8D, 0x88, 0x06];
 
-pub const AUX_CONTROL_PORT: u16 = 2001;
+pub const CONTROL_PORT: u16 = 2000;
+pub const NOTIFICATION_PORT: u16 = 2001;

@@ -24,7 +24,7 @@ use hoshiguma_api::{
     rear_sensor_board::{Request, Response, ResponseData},
 };
 use hoshiguma_common::network::{
-    config::{AUX_CONTROL_PORT, REAR_SENSOR_BOARD_IP_ADDRESS, REAR_SENSOR_BOARD_MAC_ADDRESS},
+    config::{REAR_SENSOR_BOARD_IP_ADDRESS, REAR_SENSOR_BOARD_MAC_ADDRESS},
     message_handler_loop,
 };
 use static_cell::StaticCell;
@@ -124,7 +124,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
-    message_handler_loop(stack, AUX_CONTROL_PORT, id, async |mut message| {
+    message_handler_loop(stack, id, async |mut message| {
         let request = match message.payload::<Request>() {
             Ok(request) => request,
             Err(_) => {

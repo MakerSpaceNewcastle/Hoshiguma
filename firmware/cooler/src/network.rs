@@ -28,7 +28,7 @@ use hoshiguma_api::{
     cooler::{Request, Response, ResponseData},
 };
 use hoshiguma_common::network::{
-    config::{AUX_CONTROL_PORT, COOLER_IP_ADDRESS, COOLER_MAC_ADDRESS},
+    config::{COOLER_IP_ADDRESS, COOLER_MAC_ADDRESS},
     message_handler_loop,
 };
 use static_cell::StaticCell;
@@ -127,7 +127,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
-    message_handler_loop(stack, AUX_CONTROL_PORT, id, async |mut message| {
+    message_handler_loop(stack, id, async |mut message| {
         let request = match message.payload::<Request>() {
             Ok(request) => request,
             Err(_) => {

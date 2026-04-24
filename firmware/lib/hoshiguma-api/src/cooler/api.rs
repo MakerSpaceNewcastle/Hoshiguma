@@ -22,7 +22,7 @@ pub enum Request {
 
 impl MessagePayload for Request {
     fn id() -> &'static MessageId {
-        b"clrq"
+        b"clrQ"
     }
 }
 
@@ -31,7 +31,7 @@ pub struct Response(pub Result<ResponseData, ()>);
 
 impl MessagePayload for Response {
     fn id() -> &'static MessageId {
-        b"clrp"
+        b"clrP"
     }
 }
 
