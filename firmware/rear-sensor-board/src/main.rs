@@ -42,7 +42,7 @@ assign_resources! {
     },
     onewire: OnewireResources {
         pio: PIO1,
-        pin: PIN_28,
+        pin: PIN_2,
     },
     status_light: StatusLightResources {
         red: PIN_13,
@@ -50,9 +50,9 @@ assign_resources! {
         green: PIN_15,
     },
     sdp810: Sdp810Resources {
-        i2c: I2C1,
-        sda: PIN_2,
-        scl: PIN_3,
+        i2c: I2C0,
+        sda: PIN_0,
+        scl: PIN_1,
     },
 }
 

@@ -1,6 +1,6 @@
 use hoshiguma_api::{
     Message, MessagePayload,
-    rear_sensor_board::{Request, Response},
+    rear_sensor_board::{LightPattern, Request, Response, StatusLightSettings},
 };
 use log::info;
 use serde::{Serialize, de::DeserializeOwned};
@@ -15,29 +15,36 @@ async fn main() {
 
     const ADDR: &str = "10.69.69.6:2000";
 
-    // let a = tokio::spawn(async {
-    //     loop {
-    //         let mut stream = TcpStream::connect(ADDR).await.unwrap();
-    //         send_command::<_, Response>(
-    //             &mut stream,
-    //             Request::SetCompressorState(CompressorState::Run),
-    //         )
-    //         .await;
-    //         drop(stream);
+    let a = tokio::spawn(async {
+        let settings = [
+            StatusLightSettings {
+                red: LightPattern::ON,
+                amber: LightPattern::OFF,
+                green: LightPattern::OFF,
+            },
+            StatusLightSettings {
+                red: LightPattern::OFF,
+                amber: LightPattern::ON,
+                green: LightPattern::OFF,
+            },
+            StatusLightSettings {
+                red: LightPattern::OFF,
+                amber: LightPattern::OFF,
+                green: LightPattern::ON,
+            },
+        ];
 
-    //         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        loop {
+            for setting in settings.iter() {
+                let mut stream = TcpStream::connect(ADDR).await.unwrap();
+                send_command::<_, Response>(&mut stream, Request::SetStatusLight(setting.clone()))
+                    .await;
+                drop(stream);
 
-    //         let mut stream = TcpStream::connect(ADDR).await.unwrap();
-    //         send_command::<_, Response>(
-    //             &mut stream,
-    //             Request::SetCompressorState(CompressorState::Idle),
-    //         )
-    //         .await;
-    //         drop(stream);
-
-    //         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-    //     }
-    // });
+                tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            }
+        }
+    });
 
     let b = tokio::spawn(async {
         loop {
@@ -45,23 +52,24 @@ async fn main() {
             send_command::<_, Response>(&mut stream, Request::GetGitRevision).await;
             send_command::<_, Response>(&mut stream, Request::GetBootReason).await;
             send_command::<_, Response>(&mut stream, Request::GetUptime).await;
+            send_command::<_, Response>(&mut stream, Request::GetTemperatures).await;
+            drop(stream);
+
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        }
+    });
+
+    let c = tokio::spawn(async {
+        loop {
+            let mut stream = TcpStream::connect(ADDR).await.unwrap();
+            send_command::<_, Response>(&mut stream, Request::GetExtractionAirflow).await;
             drop(stream);
 
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         }
     });
 
-    // let c = tokio::spawn(async {
-    //     loop {
-    //         let mut stream = TcpStream::connect(ADDR).await.unwrap();
-    //         send_command::<_, Response>(&mut stream, Request::GetTemperatures).await;
-    //         drop(stream);
-
-    //         tokio::time::sleep(std::time::Duration::from_secs(4)).await;
-    //     }
-    // });
-
-    let _ = tokio::join!(b);
+    let _ = tokio::join!(a, b, c);
 }
 
 async fn send_command<

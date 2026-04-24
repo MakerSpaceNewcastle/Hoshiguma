@@ -3,7 +3,7 @@ use defmt::{Format, debug, info, warn};
 use embassy_rp::{
     bind_interrupts,
     i2c::{Config, I2c, InterruptHandler},
-    peripherals::I2C1,
+    peripherals::I2C0,
 };
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_time::{Duration, Timer, with_timeout};
@@ -40,7 +40,7 @@ impl AirflowSensorInterfaceChannel for TheirChannelSide {
 }
 
 bind_interrupts!(struct Irqs {
-    I2C1_IRQ => InterruptHandler<I2C1>;
+    I2C0_IRQ => InterruptHandler<I2C0>;
 });
 
 const DEVICE_ADDRESS: u8 = 0x25;

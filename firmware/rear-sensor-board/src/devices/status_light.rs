@@ -1,5 +1,5 @@
 use crate::{StatusLightResources, network::NUM_LISTENERS};
-use defmt::{Format, warn};
+use defmt::{Format, debug, info, warn};
 use embassy_futures::select::Either;
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
@@ -45,7 +45,7 @@ pub(crate) async fn task(r: StatusLightResources, comm: [MyChannelSide; NUM_LIST
     let mut time_zero = Instant::now();
 
     let mut ticker = Ticker::every(Duration::from_millis(
-        LightPattern::SEQUENCE_DURATION.as_millis() as u64,
+        LightPattern::STEP_DURATION.as_millis() as u64,
     ));
 
     loop {
@@ -61,6 +61,7 @@ pub(crate) async fn task(r: StatusLightResources, comm: [MyChannelSide; NUM_LIST
                 let now = core::time::Duration::from_millis(
                     Instant::now().duration_since(time_zero).as_millis() as u64,
                 );
+                debug!("Tick, now={}", now);
 
                 for (output, pattern) in [
                     (&mut red, &settings.red),
@@ -78,6 +79,7 @@ pub(crate) async fn task(r: StatusLightResources, comm: [MyChannelSide; NUM_LIST
                 settings = request.0;
                 time_zero = Instant::now();
                 ticker.reset();
+                info!("Received new settings");
                 comm[idx].send(Response(settings.clone())).await;
             }
         }
