@@ -1,6 +1,6 @@
 use crate::network::config::CONTROL_PORT;
 use core::net::Ipv4Addr;
-use defmt::{debug, info, warn};
+use defmt::{Format, debug, info, warn};
 use embassy_net::{Stack, tcp::TcpSocket};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Receiver};
 use embassy_time::{Duration, Timer};
