@@ -11,13 +11,13 @@ use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::Rgb666, prelude::RgbColor};
-use hoshiguma_api::BootReason;
+use hoshiguma_api::{BootReason, hmi::Notification};
 use panic_probe as _;
 use peek_o_display_bsp::{
     PeekODisplay,
     display::Rotation,
     embassy_rp::{
-        gpio::{Input, Level, Output, Pull},
+        gpio::{Level, Output},
         watchdog::Watchdog,
     },
     peripherals::{self, Peri},
@@ -63,7 +63,8 @@ async fn main(spawner: Spawner) {
     let (mut touch, touch_irq) = board.touch(spi, display_rotation, Calibration::default());
     display.clear(Rgb666::BLACK).unwrap();
     touch.read();
-    let access_control_signal = Input::new(r.access_control.granted, Pull::None);
+
+    static NOTIFICATION_CHANNEL: Channel<CriticalSectionRawMutex, Notification, 8> = Channel::new();
 
     let mut comm = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {
@@ -76,7 +77,7 @@ async fn main(spawner: Spawner) {
             panic!();
         }
     }
-    network::init(spawner, r.ethernet, comm).await;
+    network::init(spawner, r.ethernet, NOTIFICATION_CHANNEL.receiver(), comm).await;
 
     spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }

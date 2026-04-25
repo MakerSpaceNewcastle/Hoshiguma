@@ -1,14 +1,14 @@
 use crate::{MessageId, MessagePayload};
-use core::time::Duration;
+use core::{net::Ipv4Addr, time::Duration};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Request {
     GetGitRevision,
     GetUptime,
     GetBootReason,
 
-    SubscribeToNotifications,
+    SubscribeToNotifications(Ipv4Addr),
 }
 
 impl MessagePayload for Request {
