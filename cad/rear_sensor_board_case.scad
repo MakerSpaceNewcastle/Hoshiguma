@@ -1,16 +1,18 @@
 use </home/dan/git/SCAD_Lib/that-box/thatbox.scad>;
 use </home/dan/git/SCAD_Lib/wiznet-w55rp20-evb-pico/w55rp20-evb-pico.scad>;
 use </home/dan/git/SCAD_Lib/sensirion-sdp8xx/sdp8xx.scad>;
+use </home/dan/git/SCAD_Lib/yynmos-4/yynmos-4.scad>;
 
-box_inner = [100, 90, 38];
+box_inner = [120, 90, 38];
 wall_thickness = 2;
 base_thickness = 2;
 
-pico_board_position = [-30, -44, 0];
-sdp8xx_position = [49, 20, 0];
+pico_board_position = [-40, -44];
+mosfet_board_position = [15, -15];
+sdp8xx_position = [10, 44];
 
 module Box() {
-  color("red", 1.0) {
+  color("red") {
     difference() {
       union() {
         ThatBox_Box(
@@ -25,7 +27,9 @@ module Box() {
         }
 
         // MOSFET driver board mounting hole support
-        // TODO
+        translate(mosfet_board_position) {
+          YYNMOS4_add();
+        }
       }
 
       // Pico board mounting holes and RJ45 cutout
@@ -35,16 +39,20 @@ module Box() {
 
       // Pressure sensor mounting holes and cutout
       translate(sdp8xx_position) {
-        rotate([0, 0, 90]) {
+        rotate([0, 0, 180]) {
           SDP8xx_subtract(hole_extra_depth = base_thickness + 0.1);
         }
       }
 
-      // OneWire header cutout
-      // TODO
-
       // MOSFET driver board mounting holes and cutout
-      // TODO
+      translate(mosfet_board_position) {
+        YYNMOS4_subtract();
+      }
+
+      // Cable access cutout
+      translate([10, -45, 34]) {
+        cube([10, 5, 10], center = true);
+      }
     }
   }
 }
@@ -59,15 +67,18 @@ module Lid() {
   }
 }
 
-Box();
 color("grey") {
   translate(pico_board_position) {
     W55RP20EVBPico_device();
   }
+  translate(mosfet_board_position) {
+    YYNMOS4_device();
+  }
   translate(sdp8xx_position) {
-    rotate([0, 0, 90]) {
+    rotate([0, 0, 180]) {
       SDP8xx_device();
     }
   }
 }
+Box();
 //Lid();
