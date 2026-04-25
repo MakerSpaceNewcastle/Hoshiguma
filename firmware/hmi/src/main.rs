@@ -91,7 +91,7 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_secs(5));
+    //watchdog.start(Duration::from_secs(5));
 
     loop {
         let _ = COMM_GOOD_INDICATOR.receive().await;

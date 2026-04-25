@@ -86,23 +86,28 @@ pub struct Subscription {
     pub ip: Ipv4Addr,
 }
 
-pub type NotificationSubscriptionChannel<const N: usize> =
-    PubSubChannel<CriticalSectionRawMutex, Subscription, 1, N, 1>;
+pub type NotificationSubscriptionChannel<const NUM_LISTENERS: usize, const NUM_NOTIFIERS: usize> =
+    PubSubChannel<CriticalSectionRawMutex, Subscription, 1, NUM_NOTIFIERS, NUM_LISTENERS>;
 
-pub type NotificationSubscriptionChannelPublisher<const N: usize> =
-    Publisher<'static, CriticalSectionRawMutex, Subscription, 1, N, 1>;
+pub type NotificationSubscriptionChannelPublisher<
+    const NUM_LISTENERS: usize,
+    const NUM_NOTIFIERS: usize,
+> = Publisher<'static, CriticalSectionRawMutex, Subscription, 1, NUM_NOTIFIERS, NUM_LISTENERS>;
 
-pub type NotificationSubscriptionChannelSubscriber<const N: usize> =
-    Subscriber<'static, CriticalSectionRawMutex, Subscription, 1, N, 1>;
+pub type NotificationSubscriptionChannelSubscriber<
+    const NUM_LISTENERS: usize,
+    const NUM_NOTIFIERS: usize,
+> = Subscriber<'static, CriticalSectionRawMutex, Subscription, 1, NUM_NOTIFIERS, NUM_LISTENERS>;
 
 pub async fn notification_tx_loop<
-    const N: usize,
+    const NUM_LISTENERS: usize,
+    const NUM_NOTIFIERS: usize,
     T: MessagePayload + Serialize,
     const CAP: usize,
 >(
     stack: Stack<'static>,
     id: u8,
-    mut subscription_rx: NotificationSubscriptionChannelSubscriber<N>,
+    mut subscription_rx: NotificationSubscriptionChannelSubscriber<NUM_LISTENERS, NUM_NOTIFIERS>,
     notification_rx: Receiver<'static, CriticalSectionRawMutex, T, CAP>,
 ) -> ! {
     let mut rx_buffer = [0; 4096];

@@ -104,7 +104,7 @@ pub(super) async fn init(
 
     spawner.spawn(net_task(runner).unwrap());
 
-    static NOTIF_SUB_COMM: NotificationSubscriptionChannel<NUM_NOTIFIERS> =
+    static NOTIF_SUB_COMM: NotificationSubscriptionChannel<NUM_LISTENERS, NUM_NOTIFIERS> =
         NotificationSubscriptionChannel::new();
 
     for i in 0..NUM_LISTENERS {
@@ -147,7 +147,7 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
 async fn listen_task(
     stack: Stack<'static>,
     id: u8,
-    notif_sub_tx: NotificationSubscriptionChannelPublisher<NUM_NOTIFIERS>,
+    notif_sub_tx: NotificationSubscriptionChannelPublisher<NUM_LISTENERS, NUM_NOTIFIERS>,
     mut comm: DeviceCommunicator,
 ) {
     message_handler_loop(stack, id, async |mut message| {
@@ -191,7 +191,7 @@ async fn listen_task(
 async fn notify_task(
     stack: Stack<'static>,
     id: u8,
-    sub_rx: NotificationSubscriptionChannelSubscriber<NUM_NOTIFIERS>,
+    sub_rx: NotificationSubscriptionChannelSubscriber<NUM_LISTENERS, NUM_NOTIFIERS>,
     notif_rx: Receiver<'static, CriticalSectionRawMutex, Notification, 8>,
 ) {
     notification_tx_loop(stack, id, sub_rx, notif_rx).await
