@@ -5,10 +5,10 @@ use </home/dan/git/SCAD_Lib/yynmos-4/yynmos-4.scad>;
 
 box_inner = [120, 90, 38];
 wall_thickness = 2;
-base_thickness = 2;
+base_thickness = 2.5;
 
 pico_board_position = [-40, -44];
-mosfet_board_position = [15, -15];
+mosfet_board_position = [16, -15];
 sdp8xx_position = [10, 44];
 
 module Box() {
@@ -62,7 +62,7 @@ module Box() {
 
       // MOSFET driver board mounting holes and cutout
       translate(mosfet_board_position) {
-        YYNMOS4_subtract();
+        YYNMOS4_subtract(hole_extra_depth = base_thickness + 0.1);
       }
 
       // Cable access cutout
