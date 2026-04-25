@@ -74,27 +74,31 @@ module Box() {
 }
 
 module Lid() {
-  translate([0, 0, 30]) {
-    color("blue", 0.5) {
-      projection() {
-        ThatBox_Lid(inner = box_inner);
-      }
+  color("blue", 0.5) {
+    projection() {
+      ThatBox_Lid(inner = box_inner);
     }
   }
 }
 
-//color("grey") {
-//  translate(pico_board_position) {
-//    W55RP20EVBPico_device();
-//  }
-//  translate(mosfet_board_position) {
-//    YYNMOS4_device();
-//  }
-//  translate(sdp8xx_position) {
-//    rotate([0, 0, 180]) {
-//      SDP8xx_device();
-//    }
-//  }
-//}
+color("grey") {
+  translate(pico_board_position) {
+    W55RP20EVBPico_device();
+  }
+
+  translate(mosfet_board_position) {
+    YYNMOS4_device();
+  }
+
+  translate(sdp8xx_position) {
+    rotate([0, 0, 180]) {
+      SDP8xx_device();
+    }
+  }
+}
+
 Box();
-//Lid();
+
+translate([0, 0, 50]) {
+  Lid();
+}

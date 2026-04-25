@@ -7,14 +7,16 @@ default: (stl "airflow_metering_leak") \
          (dxf "front_panel") \
          (dxf "manual_focus_tool") \
          (dxf "rear_connector_panel") \
+         (stl "rear_sensor_board_case/box") \
+         (dxf "rear_sensor_board_case/lid") \
          (stl "side_connector_blanking_plate")
 
 dxf FILE:
-    mkdir -p {{OUT_DIR}}
+    mkdir -p $(dirname {{OUT_DIR}}/{{FILE}}.dxf)
     openscad -o {{OUT_DIR}}/{{FILE}}.dxf {{FILE}}.scad
 
 stl FILE:
-    mkdir -p {{OUT_DIR}}
+    mkdir -p $(dirname {{OUT_DIR}}/{{FILE}}.dxf)
     openscad -o {{OUT_DIR}}/{{FILE}}.stl {{FILE}}.scad
 
 clean:
