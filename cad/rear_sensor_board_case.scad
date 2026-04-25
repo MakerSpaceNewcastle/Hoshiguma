@@ -1,28 +1,50 @@
-use <thatbox.scad>;
+use </home/dan/git/SCAD_Lib/that-box/thatbox.scad>;
+use </home/dan/git/SCAD_Lib/wiznet-w55rp20-evb-pico/w55rp20-evb-pico.scad>;
+use </home/dan/git/SCAD_Lib/sensirion-sdp8xx/sdp8xx.scad>;
 
-// https://docs.wiznet.io/Product/Chip/MCU/W55RP20/w55rp20-evb-pico#dimension-unit--mm
-
-box_inner = [100, 60, 38];
+box_inner = [100, 90, 38];
 wall_thickness = 2;
 base_thickness = 2;
 
-module Box() {
-  color("red") {
-    difference() {
-      ThatBox_Box(
-        inner = box_inner,
-        wall_thickness = wall_thickness,
-        base_thickness = base_thickness
-      );
+pico_board_position = [-30, -44, 0];
+sdp8xx_position = [49, 20, 0];
 
-      // Pressure sensor mounting holes
-      translate([30, -10, -base_thickness - 0.05]) {
-        for (x = [-12, 12]) {
-          translate([x, 0]) {
-            cylinder(h = base_thickness + 0.1, d = 3, $fn = 5);
-          }
+module Box() {
+  color("red", 1.0) {
+    difference() {
+      union() {
+        ThatBox_Box(
+            inner = box_inner,
+            wall_thickness = wall_thickness,
+            base_thickness = base_thickness
+        );
+
+        // Pico board mounting hole support
+        translate(pico_board_position) {
+          W55RP20EVBPico_add();
+        }
+
+        // MOSFET driver board mounting hole support
+        // TODO
+      }
+
+      // Pico board mounting holes and RJ45 cutout
+      translate(pico_board_position) {
+        W55RP20EVBPico_subtract(hole_extra_depth = base_thickness + 0.1);
+      }
+
+      // Pressure sensor mounting holes and cutout
+      translate(sdp8xx_position) {
+        rotate([0, 0, 90]) {
+          SDP8xx_subtract(hole_extra_depth = base_thickness + 0.1);
         }
       }
+
+      // OneWire header cutout
+      // TODO
+
+      // MOSFET driver board mounting holes and cutout
+      // TODO
     }
   }
 }
@@ -38,4 +60,14 @@ module Lid() {
 }
 
 Box();
+color("grey") {
+  translate(pico_board_position) {
+    W55RP20EVBPico_device();
+  }
+  translate(sdp8xx_position) {
+    rotate([0, 0, 90]) {
+      SDP8xx_device();
+    }
+  }
+}
 //Lid();
