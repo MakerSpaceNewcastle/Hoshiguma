@@ -17,6 +17,10 @@
         # Rust toolchain
         rustup
         probe-rs-tools
+
+        # Other tools
+        just
+        openscad
       ];
     };
   };
