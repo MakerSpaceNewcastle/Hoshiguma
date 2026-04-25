@@ -12,7 +12,7 @@
             "GUID": "4LTBhMjktN",
             "Height": 400,
             "HomeOnStartup": true,
-            "Info": "",
+            "Info": "10.69.69.40",
             "Laser2OffsetX": 0,
             "Laser2OffsetY": 0,
             "LastCamera": "",
@@ -22,8 +22,11 @@
             "Name": "Ruida",
             "ProcessOffsetX": 0,
             "ProcessOffsetY": 0,
+            "ProfilePath": "Ruida",
             "ReverseIntervalCompensation": false,
             "Settings": {
+                "AlignH": 2,
+                "AlignV": 0,
                 "AutoIncrementFilename": false,
                 "Checklist": true,
                 "CutOrigin": 0,
@@ -67,9 +70,10 @@
                 "Sim_SpeedFactor": 1,
                 "TabPulseWidth": 0.05000000074505806,
                 "UserFinishX": 0,
-                "UserFinishY": 0
+                "UserFinishY": 0,
+                "overwriteFileByDefault": true
             },
-            "Type": "Serial",
+            "Type": "UDP",
             "UserCoords": [
                 {
                     "IncludeZ": false,
