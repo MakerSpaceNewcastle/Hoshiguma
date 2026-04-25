@@ -21,6 +21,22 @@ module Box() {
             base_thickness = base_thickness
         );
 
+        // Mounting tabs
+        difference() {
+          hull() {
+            for(x = [-70, 70]) {
+              translate([x, 0, -base_thickness]) {
+                cylinder(d = 30, h = base_thickness);
+              }
+            }
+          }
+          for(x = [-72, 72]) {
+            translate([x, 0, -base_thickness - 0.1]) {
+              cylinder(d = 4.5, h = base_thickness + 0.2, $fn = 16);
+            }
+          }
+        }
+
         // Pico board mounting hole support
         translate(pico_board_position) {
           W55RP20EVBPico_add();
@@ -67,18 +83,18 @@ module Lid() {
   }
 }
 
-color("grey") {
-  translate(pico_board_position) {
-    W55RP20EVBPico_device();
-  }
-  translate(mosfet_board_position) {
-    YYNMOS4_device();
-  }
-  translate(sdp8xx_position) {
-    rotate([0, 0, 180]) {
-      SDP8xx_device();
-    }
-  }
-}
+//color("grey") {
+//  translate(pico_board_position) {
+//    W55RP20EVBPico_device();
+//  }
+//  translate(mosfet_board_position) {
+//    YYNMOS4_device();
+//  }
+//  translate(sdp8xx_position) {
+//    rotate([0, 0, 180]) {
+//      SDP8xx_device();
+//    }
+//  }
+//}
 Box();
 //Lid();
