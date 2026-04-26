@@ -6,6 +6,10 @@ pub struct CobsFramer<const BUFFER_SIZE: usize> {
 }
 
 impl<const BUFFER_SIZE: usize> CobsFramer<BUFFER_SIZE> {
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
+
     pub fn len(&self) -> usize {
         self.buffer.len()
     }
@@ -33,6 +37,7 @@ mod test {
     #[test]
     fn initial_state() {
         let mut framer = CobsFramer::<1024>::default();
+        assert!(framer.is_empty());
         assert_eq!(framer.len(), 0);
         assert!(framer.next_message().is_none());
     }
@@ -50,9 +55,11 @@ mod test {
         let mut framer = CobsFramer::<1024>::default();
 
         framer.push(&[1, 2, 3, 0]).unwrap();
+        assert!(!framer.is_empty());
         assert_eq!(framer.len(), 4);
         assert_eq!(&framer.next_message().unwrap(), &[1, 2, 3, 0]);
 
+        assert_eq!(framer.len(), 0);
         assert_eq!(framer.len(), 0);
         assert!(framer.next_message().is_none());
     }
