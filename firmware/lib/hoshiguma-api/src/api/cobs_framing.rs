@@ -1,4 +1,4 @@
-use heapless::Vec;
+use heapless::{CapacityError, Vec};
 
 #[derive(Default)]
 pub struct CobsFramer<const BUFFER_SIZE: usize> {
@@ -14,8 +14,8 @@ impl<const BUFFER_SIZE: usize> CobsFramer<BUFFER_SIZE> {
         self.buffer.len()
     }
 
-    pub fn push(&mut self, bytes: &[u8]) -> Result<(), ()> {
-        self.buffer.extend_from_slice(bytes).map_err(|_| ())
+    pub fn push(&mut self, bytes: &[u8]) -> Result<(), CapacityError> {
+        self.buffer.extend_from_slice(bytes)
     }
 
     pub fn next_message(&mut self) -> Option<Vec<u8, BUFFER_SIZE>> {
