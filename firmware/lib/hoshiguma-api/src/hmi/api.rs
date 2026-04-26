@@ -9,6 +9,8 @@ pub enum Request {
     GetBootReason,
 
     SubscribeToNotifications(Ipv4Addr),
+
+    SetBacklightMode(crate::HmiBacklightMode),
 }
 
 impl MessagePayload for Request {
@@ -33,10 +35,13 @@ pub enum ResponseData {
     BootReason(crate::BootReason),
 
     SubscribedToNotifications,
+
+    BacklightMode(crate::HmiBacklightMode),
 }
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Notification {
+    AnyPanelInteraction,
     AccessControlStateChanged {
         raw: crate::AccessControlRawInput,
         state: crate::AccessControlState,

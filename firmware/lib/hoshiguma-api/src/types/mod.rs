@@ -4,6 +4,9 @@ pub use access_control::*;
 mod airflow;
 pub use airflow::*;
 
+mod hmi;
+pub use hmi::*;
+
 mod monitors;
 pub use monitors::*;
 
