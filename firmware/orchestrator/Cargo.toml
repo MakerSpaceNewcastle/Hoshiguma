@@ -5,6 +5,11 @@ authors = ["Dan Nixon <dan@dan-nixon.com>"]
 edition = "2024"
 license = "MIT"
 
+[[bin]]
+name = "hoshiguma-orchestrator"
+test = false
+bench = false
+
 [features]
 trace = ["embassy-executor/trace"]
 panic-probe = ["dep:panic-probe"]
@@ -25,9 +30,7 @@ embassy-rp = { version = "0.10.0", features = ["defmt", "unstable-pac", "time-dr
 embassy-sync = { version = "0.8.0", features = ["defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt"] }
 embassy-time-driver = "0.2.0"
-embassy-usb = "0.6.0"
 git-version = "0.3.5"
-heapless = { version = "0.9.1", features = ["defmt"] }
 hoshiguma-api = { path = "../lib/hoshiguma-api", default-features = false, features = ["device-cooler"] }
 hoshiguma-common = { path = "../lib/hoshiguma-common" }
 one-wire-bus = "0.1.1"
@@ -47,4 +50,4 @@ lto = true
 opt-level = "z"
 
 [lints.rust]
-unused_crate_dependencies = "deny"
+# unused_crate_dependencies = "deny" TODO
