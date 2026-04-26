@@ -3,7 +3,8 @@ OUT_DIR := "./out"
 default: (stl "airflow_metering_leak") \
          (stl "alignment_laser_mount") \
          (stl "coolant_filter_mount") \
-         (dxf "cooler_connector_blanking_plate") \
+         (dxf "cooler_connector_blank") \
+         (dxf "cooler_connector_rj45") \
          (dxf "front_panel") \
          (dxf "manual_focus_tool") \
          (dxf "rear_connector_panel") \
