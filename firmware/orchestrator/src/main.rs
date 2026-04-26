@@ -2,7 +2,6 @@
 #![no_main]
 
 mod changed;
-mod cli;
 mod devices;
 mod logic;
 mod maybe_timer;
@@ -35,9 +34,6 @@ assign_resources! {
     status: StatusResources {
         watchdog: WATCHDOG,
         led: PIN_25,
-    },
-    usb: UsbResources {
-        usb: USB,
     },
     onewire: OnewireResources {
         pin: PIN_22,
@@ -122,7 +118,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
     loop {
         // Keep feeding the watchdog so that we do not quickly reset.
         // Panics should be properly investigated.
-        watchdog.feed();
+        watchdog.feed(Duration::from_millis(500));
 
         // Keep setting the enable and status lamp outputs.
         // Not strictly needed, as no other tasks should be using the outputs at this point, but
@@ -207,8 +203,6 @@ fn main() -> ! {
     spawner.must_spawn(self_telemetry::task());
     spawner.must_spawn(telemetry::task(r.telemetry));
 
-    spawner.must_spawn(cli::task(r.usb, spawner));
-
     spawner.must_spawn(logic::status_lamp::task());
     spawner.must_spawn(devices::status_lamp::task(r.status_lamp));
 
@@ -281,7 +275,7 @@ async fn watchdog_feed_task(r: StatusResources) {
 
         // at 1 Hz
         for _ in 0..10 {
-            watchdog.feed();
+            watchdog.feed(Duration::from_millis(500));
             feed_ticker.next().await;
         }
 
