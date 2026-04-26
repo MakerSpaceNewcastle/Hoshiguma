@@ -1,3 +1,6 @@
+mod cobs_framing;
+pub use cobs_framing::CobsFramer;
+
 use defmt::Format;
 use heapless::Vec;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};

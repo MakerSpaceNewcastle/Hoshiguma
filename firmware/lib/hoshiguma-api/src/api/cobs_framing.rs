@@ -18,7 +18,7 @@ impl<const BUFFER_SIZE: usize> CobsFramer<BUFFER_SIZE> {
         // Find the next zero byte, which indicates the end of a COBS frame
         if let Some(pos) = self.buffer.iter().position(|&b| b == 0) {
             // Extract the frame up to and including the zero byte
-            let frame = self.buffer.drain(..=pos).collect();
+            let frame = self.buffer.drain(..=pos).collect::<Vec<_, _>>();
             Some(frame)
         } else {
             None
