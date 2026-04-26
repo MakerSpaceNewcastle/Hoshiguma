@@ -31,7 +31,7 @@ embassy-time = { version = "0.5.0", features = ["defmt"] }
 git-version = "0.3.5"
 heapless = "0.9.2"
 hoshiguma-api = { path = "../lib/hoshiguma-api", default-features = false, features = ["device-cooler"] }
-hoshiguma-common = { path = "../lib/hoshiguma-common", features = [] }
+hoshiguma-common = { path = "../lib/hoshiguma-common" }
 panic-probe = { version = "1.0.0", features = ["print-defmt"], optional = true }
 portable-atomic = { version = "1.10.0", default-features = false, features = ["critical-section"] }
 static_cell = "2.1.0"
