@@ -11,10 +11,12 @@ default = [
     "device-cooler",
     "device-hmi",
     "device-rear-sensor-board",
+    "device-telemetry-module",
 ]
 device-cooler = []
 device-hmi = []
 device-rear-sensor-board = []
+device-telemetry-module = []
 
 std = [
   "postcard/use-std",

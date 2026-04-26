@@ -2,8 +2,8 @@ use defmt::Format;
 use heapless::Vec;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-pub const MAX_MESSAGE_SIZE: usize = MESSAGE_PAYLOAD_CAPACITY + 8;
-pub const MESSAGE_PAYLOAD_CAPACITY: usize = 200;
+pub const MAX_MESSAGE_SIZE: usize = MESSAGE_PAYLOAD_CAPACITY + 10;
+pub const MESSAGE_PAYLOAD_CAPACITY: usize = 512;
 
 pub type MessageId = [u8; 4];
 
