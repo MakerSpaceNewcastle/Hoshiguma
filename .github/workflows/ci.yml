@@ -19,6 +19,21 @@ jobs:
       - name: Format
         run: nix develop --command treefmt --fail-on-change
 
+  cad:
+    name: CAD
+    needs:
+      - formatting
+    runs-on: ubuntu-slim
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+
+      - name: Render CAD files
+        run: |
+          cd cad
+          nix develop --command just
+
   libraries:
     name: Libraries
     needs:
