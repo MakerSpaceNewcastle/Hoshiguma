@@ -24,10 +24,10 @@ impl Message {
         let mut buffer = [0u8; MESSAGE_PAYLOAD_CAPACITY];
 
         let data = postcard::to_slice(payload, buffer.as_mut_slice())?;
-        let data = Vec::from_slice(&data).unwrap();
+        let data = Vec::from_slice(data).unwrap();
 
         Ok(Self {
-            id: T::id().clone(),
+            id: *T::id(),
             data,
         })
     }
@@ -39,7 +39,7 @@ impl Message {
     pub fn to_bytes(&self) -> Result<Vec<u8, MAX_MESSAGE_SIZE>, postcard::Error> {
         let mut buffer = [0u8; MAX_MESSAGE_SIZE];
         let data = postcard::to_slice_cobs(self, buffer.as_mut_slice())?;
-        Ok(Vec::from_slice(&data).unwrap())
+        Ok(Vec::from_slice(data).unwrap())
     }
 
     pub fn id(&self) -> MessageId {
@@ -54,7 +54,7 @@ impl Message {
             return Err(MessageError::IdMismatch);
         }
 
-        postcard::from_bytes(&mut self.data).map_err(MessageError::Deserialize)
+        postcard::from_bytes(&self.data).map_err(MessageError::Deserialize)
     }
 }
 
