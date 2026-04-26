@@ -1,7 +1,7 @@
 use </home/dan/git/SCAD_Lib/that-box/thatbox.scad>;
 use </home/dan/git/SCAD_Lib/wiznet-w55rp20-evb-pico/w55rp20-evb-pico.scad>;
 use </home/dan/git/SCAD_Lib/sensirion-sdp8xx/sdp8xx.scad>;
-use </home/dan/git/SCAD_Lib/yynmos-4/yynmos-4.scad>;
+use </home/dan/git/SCAD_Lib/yynmos-4.scad>;
 
 box_inner = [120, 90, 38];
 wall_thickness = 2;

@@ -1,3 +1,5 @@
+use </home/dan/git/SCAD_Lib/rj45_panel_mount.scad>;
+
 module UsbConnector() {
   // Connector
   square([15, 8], center = true);
@@ -6,19 +8,6 @@ module UsbConnector() {
   dx = 28 / 2;
   for(x = [-dx, dx]) {
     translate([x, 0]) {
-      circle(d = 3.1, $fn = 16);
-    }
-  }
-}
-
-module EthernetConnector() {
-  // Connector
-  square([15.9, 13.2], center = true);
-
-  // Connector mounting holes
-  dx = 28 / 2;
-  for(x = [-dx, dx]) {
-    translate([x, 1.5]) {
       circle(d = 3.1, $fn = 16);
     }
   }
@@ -79,7 +68,7 @@ difference() {
 
   // Network socket
   translate([-35, 20]) {
-    EthernetConnector();
+    Rj45Connector();
   }
 
   // Mains in socket
