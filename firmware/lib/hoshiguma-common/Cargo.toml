@@ -9,7 +9,7 @@ license = "MIT"
 chrono = { version = "0.4.43", default-features = false, features = ["defmt", "serde"] }
 defmt = "1.0.1"
 embassy-futures = "0.1.2"
-embassy-net = "0.9.1"
+embassy-net = { version = "0.9.1", features = ["defmt", "medium-ethernet", "proto-ipv4", "tcp"] }
 embassy-sync = "0.8.0"
 embassy-time = "0.5.1"
 embedded-io-async = "0.7.0"
