@@ -2,7 +2,11 @@ use crate::{MessageId, MessagePayload};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub enum Request {}
+pub enum Request {
+    IsReady,
+    GetTime,
+    SendTelemetryDataPoint(super::FormattedTelemetryDataPoint),
+}
 
 impl MessagePayload for Request {
     fn id() -> &'static MessageId {
@@ -20,4 +24,8 @@ impl MessagePayload for Response {
 }
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
-pub enum ResponseData {}
+pub enum ResponseData {
+    Ready(bool),
+    Time,
+    TelementryDataPointAck,
+}
