@@ -1,0 +1,1 @@
+// TODO: functionality to proxy requests for network devices (e.g. cooler compressor), record the state that they are requested to be in, and ensure they are always in that state with no further control input needed (e.g. if the cooler went briefly offline without the cooling demand changing, the compressor should be restarted automatically when it is detected online again).
