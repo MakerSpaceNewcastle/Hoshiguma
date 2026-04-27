@@ -1,5 +1,5 @@
 use crate::{MessageId, MessagePayload};
-use core::{net::Ipv4Addr, time::Duration};
+use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -7,8 +7,6 @@ pub enum Request {
     GetGitRevision,
     GetUptime,
     GetBootReason,
-
-    SubscribeToNotifications(Ipv4Addr),
 
     SetBacklightMode(crate::HmiBacklightMode),
 }
@@ -33,8 +31,6 @@ pub enum ResponseData {
     GitRevision(crate::GitRevisionString),
     Uptime(Duration),
     BootReason(crate::BootReason),
-
-    SubscribedToNotifications,
 
     BacklightMode(crate::HmiBacklightMode),
 }
