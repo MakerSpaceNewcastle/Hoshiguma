@@ -58,13 +58,13 @@ async fn main(spawner: Spawner) {
 
     let display_rotation = Rotation::Deg0;
     let (display, backlight) = board.display(spi, display_rotation);
-    let (touch, _touch_irq) = board.touch(spi, display_rotation, Calibration::default());
+    let (touch, touch_irq) = board.touch(spi, display_rotation, Calibration::default());
 
     static NOTIFICATION_CHANNEL: Channel<CriticalSectionRawMutex, Notification, 8> = Channel::new();
 
     spawner.spawn(devices::display::task(display).unwrap());
     spawner.spawn(devices::backlight::task(backlight).unwrap());
-    spawner.spawn(devices::touchscreen::task(touch).unwrap());
+    spawner.spawn(devices::touchscreen::task(touch, touch_irq).unwrap());
 
     let mut comm = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {

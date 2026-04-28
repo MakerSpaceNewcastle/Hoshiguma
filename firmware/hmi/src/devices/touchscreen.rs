@@ -1,15 +1,15 @@
 use defmt::info;
-use embassy_time::Timer;
-use peek_o_display_bsp::touch::Touch;
+use peek_o_display_bsp::{embassy_rp::gpio::Input, touch::Touch};
 
 #[embassy_executor::task]
-pub(crate) async fn task(mut touch: Touch) {
+pub(crate) async fn task(mut touch: Touch, mut irq: Input<'static>) {
     touch.read();
 
-    // TODO
     loop {
+        irq.wait_for_low().await;
+
+        // TODO
         let measurement = touch.read();
-        info!("Touch measurement: {:?}", measurement);
-        Timer::after_secs(1).await;
+        info!("touch={}", measurement);
     }
 }

@@ -1,4 +1,4 @@
-use defmt::{Format, info, warn};
+use defmt::{Format, debug, info, warn};
 use embassy_net::{Stack, tcp::TcpSocket};
 use embassy_time::Duration;
 use embedded_io_async::Write;
@@ -23,11 +23,11 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
 
     let mut framer = CobsFramer::<4096>::default();
 
-    loop {
+    'conn: loop {
         let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
         socket.set_timeout(Some(Duration::from_secs(1)));
 
-        info!("socket {}: Listening on TCP:{}...", id, CONTROL_PORT);
+        debug!("socket {}: listening on TCP {}...", id, CONTROL_PORT);
         if let Err(e) = socket.accept(CONTROL_PORT).await {
             warn!("socket {}: accept error: {:?}", id, e);
             continue;
@@ -38,19 +38,26 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
             socket.remote_endpoint()
         );
 
-        let message = match receive_one(&mut framer, &mut socket).await {
-            Ok(message) => message,
-            Err(e) => {
-                warn!("socket {}: failed to receive message: {}", id, e);
-                continue;
-            }
-        };
+        loop {
+            let message = match receive_one(&mut framer, &mut socket).await {
+                Ok(message) => message,
+                Err(Error::SocketReadEof) => {
+                    info!("socket {}: connection closed by peer", id);
+                    continue 'conn;
+                }
+                Err(e) => {
+                    warn!("socket {}: failed to receive message: {}", id, e);
+                    continue 'conn;
+                }
+            };
 
-        let message = handler(message).await;
+            let message = handler(message).await;
 
-        if let Err(e) = send_one(&mut socket, &message).await {
-            warn!("socket {}: failed to send response: {}", id, e);
-        };
+            if let Err(e) = send_one(&mut socket, &message).await {
+                warn!("socket {}: failed to send response: {}", id, e);
+                continue 'conn;
+            };
+        }
     }
 }
 

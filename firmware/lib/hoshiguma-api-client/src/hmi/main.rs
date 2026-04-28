@@ -1,6 +1,6 @@
 use hoshiguma_api::{
     CONTROL_PORT, HMI_IP_ADDRESS,
-    hmi::{Request, Response},
+    hmi::to_hmi::{Request, Response},
 };
 use hoshiguma_api_client::send_command;
 use tokio::net::TcpStream;
