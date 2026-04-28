@@ -5,13 +5,12 @@ mod devices;
 mod network;
 
 use assign_resources::assign_resources;
-use defmt::info;
+use defmt::{Format, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
-use embedded_graphics::{draw_target::DrawTarget, pixelcolor::Rgb666, prelude::RgbColor};
-use hoshiguma_api::{BootReason, hmi::Notification};
+use hoshiguma_api::{AccessControlRawInput, AccessControlState, BootReason};
 use panic_probe as _;
 use peek_o_display_bsp::{
     PeekODisplay,
@@ -57,14 +56,15 @@ async fn main(spawner: Spawner) {
 
     let spi = board.board_spi();
 
-    // TODO
     let display_rotation = Rotation::Deg0;
-    let (mut display, _backlight) = board.display(spi, display_rotation);
-    let (mut touch, touch_irq) = board.touch(spi, display_rotation, Calibration::default());
-    display.clear(Rgb666::BLACK).unwrap();
-    touch.read();
+    let (display, backlight) = board.display(spi, display_rotation);
+    let (touch, _touch_irq) = board.touch(spi, display_rotation, Calibration::default());
 
     static NOTIFICATION_CHANNEL: Channel<CriticalSectionRawMutex, Notification, 8> = Channel::new();
+
+    spawner.spawn(devices::display::task(display).unwrap());
+    spawner.spawn(devices::backlight::task(backlight).unwrap());
+    spawner.spawn(devices::touchscreen::task(touch).unwrap());
 
     let mut comm = heapless::Vec::new();
     for i in 0..network::NUM_LISTENERS {
@@ -84,6 +84,39 @@ async fn main(spawner: Spawner) {
 
 struct DeviceCommunicator;
 
+#[derive(Format)]
+enum Notification {
+    PanelInteraction,
+    AccessControlInputChanged(AccessControlRawInput),
+    AccessControlStateChanged(AccessControlState),
+}
+
+impl Notification {
+    fn expected_request_and_response(
+        self,
+    ) -> (
+        hoshiguma_api::hmi::from_hmi::Request,
+        hoshiguma_api::hmi::from_hmi::Response,
+    ) {
+        use hoshiguma_api::hmi::from_hmi::*;
+
+        match self {
+            Notification::PanelInteraction => (
+                Request::NotifyPanelInteraction,
+                Response(Ok(ResponseData::AckPanelInteraction)),
+            ),
+            Notification::AccessControlInputChanged(value) => (
+                Request::NotifyAccessControlInputChanged(value.clone()),
+                Response(Ok(ResponseData::AckAccessControlInputChanged(value))),
+            ),
+            Notification::AccessControlStateChanged(value) => (
+                Request::NotifyAccessControlStateChanged(value.clone()),
+                Response(Ok(ResponseData::AckAccessControlStateChanged(value))),
+            ),
+        }
+    }
+}
+
 static COMM_GOOD_INDICATOR: Channel<CriticalSectionRawMutex, (), 8> = Channel::new();
 
 #[embassy_executor::task]
@@ -91,7 +124,7 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    //watchdog.start(Duration::from_secs(5));
+    watchdog.start(Duration::from_secs(5));
 
     loop {
         let _ = COMM_GOOD_INDICATOR.receive().await;

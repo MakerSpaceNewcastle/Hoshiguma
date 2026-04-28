@@ -1,7 +1,7 @@
-use crate::AccessControlResources;
+use crate::{AccessControlResources, Notification};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Sender};
 use embassy_time::Timer;
-use hoshiguma_api::{AccessControlRawInput, AccessControlState, hmi::Notification};
+use hoshiguma_api::{AccessControlRawInput, AccessControlState};
 use peek_o_display_bsp::embassy_rp::gpio::{Input, Level, Pull};
 
 #[embassy_executor::task]
@@ -26,11 +26,12 @@ pub(crate) async fn task(
 
         let state: AccessControlState = raw_state.clone().into();
 
-        let notif = Notification::AccessControlStateChanged {
-            raw: raw_state,
-            state,
-        };
-        notif_tx.send(notif).await;
+        notif_tx
+            .send(Notification::AccessControlInputChanged(raw_state))
+            .await;
+        notif_tx
+            .send(Notification::AccessControlStateChanged(state))
+            .await;
 
         Timer::after_millis(250).await;
     }

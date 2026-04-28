@@ -1,16 +1,16 @@
-use crate::{DeviceCommunicator, EthernetResources};
-use defmt::warn;
+use crate::{DeviceCommunicator, EthernetResources, Notification};
+use defmt::{info, warn};
 use embassy_executor::Spawner;
-use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4};
+use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Receiver, mutex::Mutex};
-use embassy_time::Instant;
+use embassy_time::{Duration, Instant};
 use heapless::Vec;
 use hoshiguma_api::{
-    Message,
-    hmi::{Request, Response, ResponseData},
+    CobsFramer, HMI_IP_ADDRESS, Message,
+    hmi::to_hmi::{Request, Response, ResponseData},
 };
-use hoshiguma_common::network::{HMI_MAC_ADDRESS, message_handler_loop};
+use hoshiguma_common::network::{HMI_MAC_ADDRESS, message_handler_loop, send_request};
 use peek_o_display_bsp::embassy_rp::{
     self, bind_interrupts,
     clocks::RoscRng,
@@ -27,7 +27,7 @@ bind_interrupts!(struct Irqs {
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
 });
 
-pub(crate) const NUM_LISTENERS: usize = 3;
+pub(crate) const NUM_LISTENERS: usize = 2;
 pub(crate) const NUM_NOTIFIERS: usize = 2;
 
 type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
@@ -162,5 +162,39 @@ async fn notify_task(
     id: u8,
     notif_rx: Receiver<'static, CriticalSectionRawMutex, Notification, 8>,
 ) {
-    notification_tx_loop(stack, &[ORCHESTRATOR_IP_ADDRESS], id, notif_rx).await
+    let mut rx_buffer = [0; 4096];
+    let mut tx_buffer = [0; 4096];
+
+    loop {
+        let notification = notif_rx.receive().await;
+        info!("socket {}: got notification: {:?}", id, notification);
+
+        // TODO
+        continue;
+
+        let (request, expected_response) = notification.expected_request_and_response();
+
+        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+        socket.set_timeout(Some(Duration::from_secs(1)));
+
+        let message = Message::new(&request).unwrap();
+        let expected_response = Message::new(&expected_response).unwrap();
+
+        let result = send_request(&mut socket, &message).await;
+
+        let response = match result {
+            Ok(response) => response,
+            Err(e) => {
+                warn!("socket {}: failed to send notification: {}", id, e);
+                continue;
+            }
+        };
+
+        if response != expected_response {
+            warn!(
+                "socket {}: got unexpected response to notification: {:?} (expected {:?})",
+                id, response, expected_response
+            );
+        }
+    }
 }
