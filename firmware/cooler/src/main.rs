@@ -16,6 +16,7 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
+use heapless::Vec;
 use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -134,7 +135,7 @@ async fn main(spawner: Spawner) {
     let temperatures_comm_b = temperatures_comm.each_ref().map(|comm| comm.side_b());
     spawner.spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm_b).unwrap());
 
-    let mut comm = heapless::Vec::new();
+    let mut comm = Vec::new();
     for i in 0..network::NUM_LISTENERS {
         if comm
             .push(DeviceCommunicator {

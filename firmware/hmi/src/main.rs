@@ -10,6 +10,7 @@ use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
+use heapless::Vec;
 use hoshiguma_api::{AccessControlRawInput, AccessControlState, BootReason};
 use panic_probe as _;
 use peek_o_display_bsp::{
@@ -66,7 +67,7 @@ async fn main(spawner: Spawner) {
     spawner.spawn(devices::backlight::task(backlight).unwrap());
     spawner.spawn(devices::touchscreen::task(touch, touch_irq).unwrap());
 
-    let mut comm = heapless::Vec::new();
+    let mut comm = Vec::new();
     for i in 0..network::NUM_LISTENERS {
         if comm
             .push(DeviceCommunicator {
@@ -124,7 +125,7 @@ async fn watchdog_feed_task(r: StatusResources) {
     let mut onboard_led = Output::new(r.led, Level::Low);
 
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_secs(5));
+    // watchdog.start(Duration::from_secs(5));
 
     loop {
         let _ = COMM_GOOD_INDICATOR.receive().await;
