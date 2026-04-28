@@ -1,4 +1,7 @@
-use hoshiguma_api::cooler::{CompressorState, Request, Response};
+use hoshiguma_api::{
+    CONTROL_PORT, COOLER_IP_ADDRESS,
+    cooler::{CompressorState, Request, Response},
+};
 use hoshiguma_api_client::send_command;
 use tokio::net::TcpStream;
 
@@ -6,11 +9,11 @@ use tokio::net::TcpStream;
 async fn main() {
     env_logger::init();
 
-    const ADDR: &str = "10.69.69.5:2000";
-
     let a = tokio::spawn(async {
         loop {
-            let mut stream = TcpStream::connect(ADDR).await.unwrap();
+            let mut stream = TcpStream::connect((COOLER_IP_ADDRESS, CONTROL_PORT))
+                .await
+                .unwrap();
             send_command::<_, Response>(
                 &mut stream,
                 Request::SetCompressorState(CompressorState::Run),
@@ -20,7 +23,9 @@ async fn main() {
 
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-            let mut stream = TcpStream::connect(ADDR).await.unwrap();
+            let mut stream = TcpStream::connect((COOLER_IP_ADDRESS, CONTROL_PORT))
+                .await
+                .unwrap();
             send_command::<_, Response>(
                 &mut stream,
                 Request::SetCompressorState(CompressorState::Idle),
@@ -34,7 +39,9 @@ async fn main() {
 
     let b = tokio::spawn(async {
         loop {
-            let mut stream = TcpStream::connect(ADDR).await.unwrap();
+            let mut stream = TcpStream::connect((COOLER_IP_ADDRESS, CONTROL_PORT))
+                .await
+                .unwrap();
             send_command::<_, Response>(&mut stream, Request::GetGitRevision).await;
             send_command::<_, Response>(&mut stream, Request::GetBootReason).await;
             send_command::<_, Response>(&mut stream, Request::GetUptime).await;
@@ -47,7 +54,9 @@ async fn main() {
 
     let c = tokio::spawn(async {
         loop {
-            let mut stream = TcpStream::connect(ADDR).await.unwrap();
+            let mut stream = TcpStream::connect((COOLER_IP_ADDRESS, CONTROL_PORT))
+                .await
+                .unwrap();
             send_command::<_, Response>(&mut stream, Request::GetTemperatures).await;
             drop(stream);
 

@@ -24,13 +24,10 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::Instant;
 use heapless::Vec;
 use hoshiguma_api::{
-    Message,
+    COOLER_IP_ADDRESS, Message,
     cooler::{Request, Response, ResponseData},
 };
-use hoshiguma_common::network::{
-    config::{COOLER_IP_ADDRESS, COOLER_MAC_ADDRESS},
-    message_handler_loop,
-};
+use hoshiguma_common::network::{COOLER_MAC_ADDRESS, message_handler_loop};
 use static_cell::StaticCell;
 
 bind_interrupts!(struct Irqs {

@@ -874,14 +874,12 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "defmt 1.0.1",
- "embassy-futures",
  "embassy-net",
  "embassy-sync",
  "embassy-time",
  "embedded-io-async 0.7.0",
  "heapless",
  "hoshiguma-api",
- "serde",
 ]
 
 [[package]]

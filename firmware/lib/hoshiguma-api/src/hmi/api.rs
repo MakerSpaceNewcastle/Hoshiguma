@@ -36,7 +36,7 @@ pub enum ResponseData {
 }
 
 // TODO
-mod other_way {
+pub mod other_way {
     use crate::{MessageId, MessagePayload};
     use serde::{Deserialize, Serialize};
 

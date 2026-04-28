@@ -1,9 +1,8 @@
-use crate::network::config::CONTROL_PORT;
 use defmt::{info, warn};
 use embassy_net::{Stack, tcp::TcpSocket};
 use embassy_time::Duration;
 use embedded_io_async::Write;
-use hoshiguma_api::{CobsFramer, Message};
+use hoshiguma_api::{CONTROL_PORT, CobsFramer, Message};
 
 pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
     stack: Stack<'static>,

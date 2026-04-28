@@ -8,12 +8,9 @@ use embassy_time::Instant;
 use heapless::Vec;
 use hoshiguma_api::{
     Message,
-    hmi::{Notification, Request, Response, ResponseData},
+    hmi::{Request, Response, ResponseData},
 };
-use hoshiguma_common::network::{
-    config::{HMI_IP_ADDRESS, HMI_MAC_ADDRESS, ORCHESTRATOR_IP_ADDRESS},
-    message_handler_loop, notification_tx_loop,
-};
+use hoshiguma_common::network::{HMI_MAC_ADDRESS, message_handler_loop};
 use peek_o_display_bsp::embassy_rp::{
     self, bind_interrupts,
     clocks::RoscRng,

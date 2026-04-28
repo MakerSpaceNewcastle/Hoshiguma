@@ -20,13 +20,10 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use embassy_time::Instant;
 use heapless::Vec;
 use hoshiguma_api::{
-    Message,
+    Message, REAR_SENSOR_BOARD_IP_ADDRESS,
     rear_sensor_board::{Request, Response, ResponseData},
 };
-use hoshiguma_common::network::{
-    config::{REAR_SENSOR_BOARD_IP_ADDRESS, REAR_SENSOR_BOARD_MAC_ADDRESS},
-    message_handler_loop,
-};
+use hoshiguma_common::network::{REAR_SENSOR_BOARD_MAC_ADDRESS, message_handler_loop};
 use static_cell::StaticCell;
 
 bind_interrupts!(struct Irqs {
