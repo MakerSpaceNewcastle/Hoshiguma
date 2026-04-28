@@ -6,8 +6,14 @@ use embassy_time::Timer;
 use heapless::Vec;
 use peek_o_display_bsp::{embassy_rp::gpio::Input, touch::Touch};
 
+use crate::devices::backlight::BacklightInterfaceChannel;
+
 #[embassy_executor::task]
-pub(crate) async fn task(mut touch: Touch, mut irq: Input<'static>) {
+pub(crate) async fn task(
+    mut touch: Touch,
+    mut irq: Input<'static>,
+    mut backlight_comm: crate::devices::backlight::TheirChannelSide,
+) {
     touch.read();
 
     let mut touch_count = 0usize;
@@ -17,6 +23,7 @@ pub(crate) async fn task(mut touch: Touch, mut irq: Input<'static>) {
         irq.wait_for_low().await;
         touch_count = touch_count.saturating_add(1);
 
+        // Average multiple measurements to get a point
         let mut measurements = Vec::<_, 20>::new();
         for _ in 0..measurements.capacity() {
             let point = touch.read();
@@ -25,6 +32,9 @@ pub(crate) async fn task(mut touch: Touch, mut irq: Input<'static>) {
             Timer::after_millis(2).await;
         }
         let point = average_measurements(&measurements);
+
+        // Keep the backlight on
+        let _ = backlight_comm.wake().await;
 
         // TODO
         info!("touch {} at {:?}", touch_count, point);

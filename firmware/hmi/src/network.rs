@@ -1,4 +1,7 @@
-use crate::{DeviceCommunicator, EthernetResources, Notification};
+use crate::{
+    DeviceCommunicator, EthernetResources, Notification,
+    devices::backlight::BacklightInterfaceChannel,
+};
 use defmt::{info, warn};
 use embassy_executor::Spawner;
 use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4, tcp::TcpSocket};
@@ -7,7 +10,7 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Receiv
 use embassy_time::{Duration, Instant};
 use heapless::Vec;
 use hoshiguma_api::{
-    CobsFramer, HMI_IP_ADDRESS, Message,
+    HMI_IP_ADDRESS, Message,
     hmi::to_hmi::{Request, Response, ResponseData},
 };
 use hoshiguma_common::network::{HMI_MAC_ADDRESS, message_handler_loop, send_request};
@@ -140,9 +143,13 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
                 Instant::now().duration_since(Instant::MIN).into(),
             ))),
             Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
-            Request::SetBacklightMode(mode) => {
-                todo!()
-            }
+            Request::SetBacklightMode(mode) => Response(
+                comm.backlight
+                    .set_mode(mode)
+                    .await
+                    .map(ResponseData::BacklightMode)
+                    .map_err(|_| ()),
+            ),
         };
 
         match Message::new(&response) {
