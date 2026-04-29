@@ -19,6 +19,7 @@ defmt-rtt = "1.0.0"
 der = { version = "0.8.0", default-features = false, features = ["heapless"] } # Required due to https://github.com/drogue-iot/embedded-tls/issues/181
 embassy-embedded-hal = { version = "0.6.0", features = ["defmt"] }
 embassy-executor = { version = "0.10.0", features = ["platform-cortex-m", "executor-thread", "defmt"] }
+embassy-futures = "0.1.2"
 embassy-net = { version = "0.9.1", features = ["defmt", "dhcpv4", "dns", "proto-ipv4", "tcp", "udp"] }
 embassy-net-wiznet = "0.3.0"
 embassy-rp = { version = "0.10.0", features = ["rp2040", "defmt", "unstable-pac", "time-driver", "critical-section-impl"] }

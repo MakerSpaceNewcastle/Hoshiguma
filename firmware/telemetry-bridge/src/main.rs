@@ -86,6 +86,7 @@ async fn main(spawner: Spawner) {
 
     spawner.spawn(wall_time::ntp_task(net_stack_external).unwrap());
     spawner.spawn(self_telemetry::task().unwrap());
+    spawner.spawn(telemetry_tx::task(net_stack_external).unwrap());
 }
 
 #[embassy_executor::task]

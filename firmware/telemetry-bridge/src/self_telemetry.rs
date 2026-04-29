@@ -17,22 +17,13 @@ use defmt::warn;
 use embassy_time::{Instant, Timer};
 use hoshiguma_api::{TelemetryString, telemetry_bridge::FormattedTelemetryDataPoint};
 use hoshiguma_common::telemetry::{format_influx_line, format_influx_line_str};
-use portable_atomic::{AtomicU64, AtomicUsize};
+use portable_atomic::AtomicUsize;
 
 pub(crate) static DATA_POINTS_ACCEPTED: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static DATA_POINTS_DISCARDED: AtomicUsize = AtomicUsize::new(0);
 
 pub(crate) static TELEGRAF_SUBMIT_SUCCESS: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static TELEGRAF_SUBMIT_FAIL: AtomicUsize = AtomicUsize::new(0);
-
-pub(crate) static STRING_REGISTRY_LAST_MODIFIED: AtomicU64 = AtomicU64::new(0);
-pub(crate) static STRING_REGISTRY_SIZE: AtomicUsize = AtomicUsize::new(0);
-
-pub(crate) fn string_registry_last_modification_age_ms() -> u64 {
-    Instant::now()
-        .as_millis()
-        .saturating_sub(STRING_REGISTRY_LAST_MODIFIED.load(Ordering::Relaxed))
-}
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

@@ -1280,6 +1280,7 @@ dependencies = [
  "der 0.8.0",
  "embassy-embedded-hal",
  "embassy-executor",
+ "embassy-futures",
  "embassy-net",
  "embassy-net-wiznet",
  "embassy-rp",

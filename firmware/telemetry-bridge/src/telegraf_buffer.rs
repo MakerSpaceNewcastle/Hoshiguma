@@ -15,8 +15,6 @@ pub(crate) struct TelegrafBuffer {
     body: String<12288>,
 }
 
-pub(crate) const BUFFER_FREE_SPACE_THRESHOLD: usize = 2048;
-
 impl TelegrafBuffer {
     pub(crate) fn push<const LEN: usize>(&mut self, line: String<LEN>) -> Result<(), ()> {
         info!("New line: {}", line);
@@ -29,7 +27,7 @@ impl TelegrafBuffer {
 
     pub(crate) fn send_required(&self) -> bool {
         let free = self.body.capacity() - self.body.len();
-        free < BUFFER_FREE_SPACE_THRESHOLD
+        free < 2048
     }
 
     pub(crate) async fn tx<T: embedded_nal_async::TcpConnect, D: embedded_nal_async::Dns>(
