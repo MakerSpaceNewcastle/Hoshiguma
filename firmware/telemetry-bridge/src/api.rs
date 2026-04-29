@@ -10,7 +10,7 @@ use hoshiguma_common::network::message_handler_loop;
 pub(crate) const NUM_LISTENERS: usize = 2;
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-pub(super) async fn listen_task(stack: Stack<'static>, id: usize) {
+pub(super) async fn listen_task(stack: Stack<'static>, stack_external: Stack<'static>, id: usize) {
     let telem_pub = TELEMETRY_TX.publisher().unwrap();
 
     message_handler_loop(stack, id, async |mut message| {
@@ -23,10 +23,9 @@ pub(super) async fn listen_task(stack: Stack<'static>, id: usize) {
         };
 
         let response = match request {
-            Request::IsReady => {
-                // TODO
-                Response(Ok(ResponseData::Ready(false)))
-            }
+            Request::IsReady => Response(Ok(ResponseData::Ready(
+                stack_external.is_link_up() && stack_external.is_config_up(),
+            ))),
             Request::GetTime => Response(Ok(ResponseData::Time(crate::wall_time::now()))),
             Request::SendTelemetryDataPoint(data_point) => {
                 telem_pub.publish(data_point).await;

@@ -76,7 +76,7 @@ async fn main(spawner: Spawner) {
     let net_stack_external = network::init_external(r.ethernet_external, spawner).await;
 
     for idx in 0..api::NUM_LISTENERS {
-        spawner.spawn(api::listen_task(net_stack_internal, idx).unwrap());
+        spawner.spawn(api::listen_task(net_stack_internal, net_stack_external, idx).unwrap());
     }
 
     info!("Waiting for DHCP");
