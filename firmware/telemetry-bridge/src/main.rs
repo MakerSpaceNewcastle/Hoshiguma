@@ -4,6 +4,7 @@
 mod api;
 mod buttons;
 mod network;
+mod self_telemetry;
 mod telemetry_tx;
 mod wall_time;
 
@@ -16,9 +17,7 @@ use embassy_rp::{
     peripherals,
     watchdog::Watchdog,
 };
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use embassy_time::{Duration, Timer};
-use heapless::String;
 use hoshiguma_api::BootReason;
 use panic_probe as _;
 use portable_atomic as _;
@@ -85,10 +84,11 @@ async fn main(spawner: Spawner) {
     info!("IP address: {}", address);
 
     spawner.spawn(wall_time::ntp_task(net_stack_external).unwrap());
+    spawner.spawn(self_telemetry::task().unwrap());
 }
 
 #[embassy_executor::task]
-async fn watchdog_feed_task(r: crate::StatusResources) {
+async fn watchdog_feed_task(r: StatusResources) {
     let mut watchdog = Watchdog::new(r.watchdog);
     watchdog.start(Duration::from_secs(5));
 

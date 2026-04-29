@@ -11,7 +11,7 @@ pub(crate) const NUM_LISTENERS: usize = 2;
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 pub(super) async fn listen_task(stack: Stack<'static>, id: usize) {
-    let pubby = TELEMETRY_TX.publisher().unwrap();
+    let telem_pub = TELEMETRY_TX.publisher().unwrap();
 
     message_handler_loop(stack, id, async |mut message| {
         let request = match message.payload::<Request>() {
@@ -29,7 +29,7 @@ pub(super) async fn listen_task(stack: Stack<'static>, id: usize) {
             }
             Request::GetTime => Response(Ok(ResponseData::Time(crate::wall_time::now()))),
             Request::SendTelemetryDataPoint(data_point) => {
-                pubby.publish(data_point).await;
+                telem_pub.publish(data_point).await;
                 Response(Ok(ResponseData::TelementryDataPointAck))
             }
         };

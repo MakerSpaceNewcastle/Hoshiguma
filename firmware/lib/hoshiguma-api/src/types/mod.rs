@@ -17,6 +17,10 @@ use defmt::Format;
 use heapless::String;
 use serde::{Deserialize, Serialize};
 
+pub trait TelemetryString {
+    fn telemetry_str(&self) -> &'static str;
+}
+
 pub type GitRevisionString = String<20>;
 
 #[derive(Debug, Format, Clone, PartialEq, Serialize, Deserialize)]
@@ -24,6 +28,16 @@ pub enum BootReason {
     Normal,
     WatchdogTimeout,
     WatchdogForced,
+}
+
+impl TelemetryString for BootReason {
+    fn telemetry_str(&self) -> &'static str {
+        match self {
+            BootReason::Normal => "normal",
+            BootReason::WatchdogTimeout => "watchdog_timeout",
+            BootReason::WatchdogForced => "watchdog_forced",
+        }
+    }
 }
 
 #[derive(Debug, Format, Clone, PartialEq, Serialize, Deserialize)]

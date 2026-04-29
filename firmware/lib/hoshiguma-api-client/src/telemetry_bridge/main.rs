@@ -18,7 +18,7 @@ async fn main() {
             send_command::<_, Response>(&mut stream, Request::GetTime).await;
             drop(stream);
 
-            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         }
     });
 
