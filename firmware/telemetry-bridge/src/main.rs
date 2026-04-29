@@ -2,35 +2,31 @@
 #![no_main]
 
 mod buttons;
-mod display;
 mod network;
-mod rpc_server;
-mod self_telemetry;
-mod usb_serial;
+mod wall_time;
 
-use crate::buttons::{UI_INPUTS, UiEvent};
 use defmt::info;
 use defmt_rtt as _;
 use embassy_executor::Spawner;
-use embassy_futures::select::{Either, select};
 use embassy_rp::{
     Peri,
     gpio::{Level, Output},
     peripherals,
     watchdog::Watchdog,
 };
-use embassy_sync::{
-    blocking_mutex::raw::CriticalSectionRawMutex,
-    pubsub::{PubSubChannel, WaitResult},
-};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use embassy_time::{Duration, Timer};
 use heapless::String;
-use hoshiguma_core::types::BootReason;
+use hoshiguma_api::BootReason;
 use panic_probe as _;
 use portable_atomic as _;
 
 assign_resources::assign_resources! {
-    ethernet: EthernetResources {
+    status: StatusResources {
+        watchdog: WATCHDOG,
+        led: PIN_25,
+    },
+    ethernet_internal: Ethernet1Resources {
         miso: PIN_16,
         mosi: PIN_19,
         clk: PIN_18,
@@ -41,32 +37,27 @@ assign_resources::assign_resources! {
         int_pin: PIN_21,
         rst_pin: PIN_20,
     },
-    display: DisplayResources {
-        mosi_pin: PIN_11,
-        clk_pin: PIN_10,
-        dc_pin: PIN_13,
-        reset_pin: PIN_12,
-        backlight_pin: PIN_14,
+    ethernet_external: Ethernet2Resources {
+        miso: PIN_8,
+        mosi: PIN_11,
+        clk: PIN_10,
         spi: SPI1,
-        backlight_pwm: PWM_SLICE7,
-    }
-    rs485_uart_1: Rs485Uart1Resources {
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
-        uart: UART0,
-    }
+        tx_dma: DMA_CH2,
+        rx_dma: DMA_CH3,
+        cs_pin: PIN_9,
+        int_pin: PIN_13,
+        rst_pin: PIN_12,
+    },
+    display: DisplayResources {
+        i2c: I2C1,
+        sda: PIN_14,
+        scl: PIN_15,
+    },
     buttons: ButtonResources {
-        a_pin: PIN_6,
-        b_pin: PIN_7,
-        c_pin: PIN_8,
-    }
-    status: StatusResources {
-        watchdog: WATCHDOG,
-        led: PIN_25,
-    }
-    usb: UsbResources {
-        usb: USB,
-    }
+        user_1: PIN_22,
+        user_2: PIN_26,
+        user_3: PIN_28,
+    },
 }
 
 pub(crate) static TELEMETRY_TX: PubSubChannel<CriticalSectionRawMutex, String<128>, 32, 2, 2> =
@@ -80,16 +71,12 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
-    spawner.must_spawn(watchdog_feed_task(r.status));
-    spawner.must_spawn(crate::usb_serial::task(r.usb, spawner));
-    let net_stack = crate::network::init(r.ethernet, spawner).await;
-    spawner.must_spawn(crate::self_telemetry::task());
-    spawner.must_spawn(crate::rpc_server::task(r.rs485_uart_1, net_stack));
-    spawner.must_spawn(crate::buttons::task(r.buttons));
-    spawner.must_spawn(crate::display::task(r.display));
+    buttons::init(r.buttons, spawner);
 
-    #[cfg(feature = "test-panic-on-core-0")]
-    spawner.must_spawn(dummy_panic());
+    let net_stack_internal = network::init_ethernet_1(r.ethernet_internal, spawner).await;
+    let net_stack_external = network::init_ethernet_2(r.ethernet_external, spawner).await;
+
+    spawner.spawn(wall_time::ntp_task(net_stack_external).unwrap());
 }
 
 #[embassy_executor::task]
@@ -99,29 +86,13 @@ async fn watchdog_feed_task(r: crate::StatusResources) {
 
     let mut led = Output::new(r.led, Level::Low);
 
-    let mut ui_event_rx = UI_INPUTS.subscriber().unwrap();
-
     loop {
-        match select(Timer::after_secs(1), ui_event_rx.next_message()).await {
-            Either::First(_) => {
-                // Flash LED steadily to indicate normal operation
-                watchdog.feed();
-                led.toggle();
-            }
-            Either::Second(WaitResult::Lagged(_)) => unreachable!(),
-            Either::Second(WaitResult::Message(UiEvent::ButtonPushedForALongTime)) => {
-                info!("Triggering reboot!");
-                watchdog.trigger_reset();
-            }
-            _ => {}
-        }
-    }
-}
+        // Flash LED steadily to indicate normal operation
+        watchdog.feed(Duration::from_secs(2));
+        led.toggle();
 
-#[embassy_executor::task]
-async fn dummy_panic() {
-    embassy_time::Timer::after_secs(5).await;
-    panic!("oh dear, how sad. nevermind...");
+        Timer::after_secs(1).await;
+    }
 }
 
 fn boot_reason() -> BootReason {

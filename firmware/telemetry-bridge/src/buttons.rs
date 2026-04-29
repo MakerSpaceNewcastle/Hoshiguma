@@ -1,46 +1,63 @@
-use defmt::{Format, debug, info};
+use crate::ButtonResources;
+use defmt::{Format, debug};
+use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use embassy_time::{Duration, Instant, Timer};
 
-#[derive(Clone, PartialEq, Eq, Format)]
-pub(crate) enum UiEvent {
-    ButtonPushed,
-    ButtonPushedForALongTime,
-}
-
-pub(crate) static UI_INPUTS: PubSubChannel<CriticalSectionRawMutex, UiEvent, 8, 2, 1> =
+pub(crate) static BUTTON_EVENTS: PubSubChannel<CriticalSectionRawMutex, ButtonEvent, 8, 4, 3> =
     PubSubChannel::new();
 
-const PUSH_THRESHOLD: Duration = Duration::from_millis(75);
-const LONG_PUSH_THRESHOLD: Duration = Duration::from_secs(5);
+#[derive(Format, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ButtonEvent {
+    Pressed(Button),
+    Released(Button, Option<Duration>),
+}
 
-#[embassy_executor::task]
-pub(super) async fn task(r: crate::ButtonResources) {
-    let mut button = Input::new(r.a_pin, Pull::Up);
-    let tx = UI_INPUTS.publisher().unwrap();
+#[derive(Format, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Button {
+    One,
+    Two,
+    Three,
+}
+
+pub(crate) fn init(r: ButtonResources, spawner: Spawner) {
+    let btn_1 = Input::new(r.user_1, Pull::Up);
+    let btn_2 = Input::new(r.user_2, Pull::Up);
+    let btn_3 = Input::new(r.user_3, Pull::Up);
+
+    spawner.spawn(button_task(btn_1, Button::One).unwrap());
+    spawner.spawn(button_task(btn_2, Button::Two).unwrap());
+    spawner.spawn(button_task(btn_3, Button::Three).unwrap());
+}
+
+#[embassy_executor::task(pool_size = 3)]
+async fn button_task(mut pin: Input<'static>, button: Button) -> ! {
+    let publisher = BUTTON_EVENTS.publisher().unwrap();
+
+    // Start by just waiting for the button to be released
+    pin.wait_for_high().await;
+    publisher.publish(ButtonEvent::Released(button, None)).await;
 
     loop {
-        button.wait_for_low().await;
-        let time_down = Instant::now();
+        // Wait for the button to be pressed
+        pin.wait_for_low().await;
+        let press_time = Instant::now();
+        let event = ButtonEvent::Pressed(button);
+        debug!("{}", event);
+        publisher.publish(event).await;
 
-        button.wait_for_high().await;
-        let time_up = Instant::now();
+        // Wait for a little bit (as a crude debounce)
+        Timer::after_millis(10).await;
 
-        let time_pressed_for = time_up - time_down;
-        debug!("Button was down for {}ms", time_pressed_for.as_millis());
+        // Then wait for it to be released
+        pin.wait_for_high().await;
+        let release_time = Instant::now();
+        let event = ButtonEvent::Released(button, Some(release_time - press_time));
+        debug!("{}", event);
+        publisher.publish(event).await;
 
-        if time_pressed_for > LONG_PUSH_THRESHOLD {
-            info!("Button pressed for a long time");
-            tx.publish(UiEvent::ButtonPushedForALongTime).await;
-        } else if time_pressed_for > PUSH_THRESHOLD {
-            info!("Button pressed");
-            tx.publish(UiEvent::ButtonPushed).await;
-        } else {
-            continue;
-        }
-
-        // Wait a little while before allowing further pushes
-        Timer::after_millis(250).await;
+        // Wait for a little bit (as a crude debounce)
+        Timer::after_millis(10).await;
     }
 }

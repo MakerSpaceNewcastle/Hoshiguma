@@ -21,6 +21,10 @@ path = "src/hmi/main.rs"
 name = "rear-sensor-board"
 path = "src/rear_sensor_board/main.rs"
 
+[[bin]]
+name = "telemetry-bridge"
+path = "src/telemetry_bridge/main.rs"
+
 [dependencies]
 env_logger = "0.11.10"
 hoshiguma-api = { path = "../hoshiguma-api" }
