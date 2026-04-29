@@ -5,9 +5,10 @@ use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
     bind_interrupts,
     clocks::RoscRng,
+    dma,
     gpio::{Input, Level, Output, Pull},
     peripherals::{DMA_CH0, DMA_CH1, DMA_CH2, DMA_CH3, SPI0, SPI1},
-    spi::Spi,
+    spi::{self, Spi},
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use heapless::Vec;
@@ -17,16 +18,16 @@ use hoshiguma_common::network::{
 };
 use static_cell::StaticCell;
 
-fn w5500_spi_config() -> embassy_rp::spi::Config {
-    let mut spi_config = embassy_rp::spi::Config::default();
+fn w5500_spi_config() -> spi::Config {
+    let mut spi_config = spi::Config::default();
     spi_config.frequency = 50_000_000;
-    spi_config.phase = embassy_rp::spi::Phase::CaptureOnSecondTransition;
-    spi_config.polarity = embassy_rp::spi::Polarity::IdleHigh;
+    spi_config.phase = spi::Phase::CaptureOnSecondTransition;
+    spi_config.polarity = spi::Polarity::IdleHigh;
     spi_config
 }
 
 bind_interrupts!(struct Irqs {
-    DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>, embassy_rp::dma::InterruptHandler<DMA_CH2>, embassy_rp::dma::InterruptHandler<DMA_CH3>;
+    DMA_IRQ_0 => dma::InterruptHandler<DMA_CH0>, dma::InterruptHandler<DMA_CH1>, dma::InterruptHandler<DMA_CH2>, dma::InterruptHandler<DMA_CH3>;
 });
 
 pub(crate) async fn init_internal(

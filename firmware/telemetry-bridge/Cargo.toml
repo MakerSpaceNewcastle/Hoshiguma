@@ -28,6 +28,7 @@ embassy-time = { version = "0.5.0", features = ["defmt"] }
 embedded-graphics = "0.8.1"
 embedded-hal = "1.0.0"
 embedded-nal-async = "0.9.0"
+embedded-text = "0.7.3"
 git-version = "0.3.5"
 heapless = { version = "0.9.2", features = ["defmt"] }
 hoshiguma-api = { path = "../lib/hoshiguma-api", default-features = false, features = ["device-telemetry-bridge"] }
@@ -37,6 +38,7 @@ portable-atomic = { version = "1.13.0", features = ["critical-section"] }
 reqwless = { version = "0.14.0", features = ["defmt", "alloc"] }
 sntpc = { version = "0.9.0", default-features = false, features = ["defmt"] }
 sntpc-net-embassy = { version = "0.9.0", default-features = false, features = ["defmt"] }
+ssd1306 = "0.10.0"
 static_cell = "2.1.0"
 
 [profile.release]

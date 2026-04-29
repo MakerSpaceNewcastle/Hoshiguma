@@ -3,6 +3,7 @@
 
 mod api;
 mod buttons;
+mod display;
 mod network;
 mod self_telemetry;
 mod telegraf_buffer;
