@@ -1,7 +1,6 @@
-use defmt::info;
 use embassy_embedded_hal::shared_bus::asynch::spi::SpiDeviceWithConfig;
 use embassy_executor::Spawner;
-use embassy_net::{Config, Stack, StackResources};
+use embassy_net::{Config, Ipv4Cidr, Stack, StackResources, StaticConfigV4};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
 use embassy_rp::{
     bind_interrupts,
@@ -11,6 +10,8 @@ use embassy_rp::{
     spi::Spi,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
+use heapless::Vec;
+use hoshiguma_api::TELEMETRY_MODULE_IP_ADDRESS;
 use hoshiguma_common::network::{
     TELEMETRY_MODULE_MAC_ADDRESS, TELEMETRY_MODULE_MAC_ADDRESS_PUBLIC,
 };
@@ -73,7 +74,11 @@ pub(crate) async fn init_ethernet_1(
     let mut rng = RoscRng;
     let (stack, runner) = embassy_net::new(
         device,
-        Config::dhcpv4(Default::default()),
+        Config::ipv4_static(StaticConfigV4 {
+            address: Ipv4Cidr::new(TELEMETRY_MODULE_IP_ADDRESS, 24),
+            gateway: None,
+            dns_servers: Vec::default(),
+        }),
         RESOURCES.init(StackResources::new()),
         rng.next_u64(),
     );
@@ -132,12 +137,6 @@ pub(crate) async fn init_ethernet_2(
         rng.next_u64(),
     );
     spawner.spawn(net_task(runner).unwrap());
-
-    info!("Waiting for DHCP...");
-    stack.wait_config_up().await;
-    let cfg = stack.config_v4().unwrap();
-    let local_addr = cfg.address.address();
-    info!("IP address: {:?}", local_addr);
 
     stack
 }

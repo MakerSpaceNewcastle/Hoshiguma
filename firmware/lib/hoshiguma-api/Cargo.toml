@@ -11,20 +11,24 @@ default = [
     "device-cooler",
     "device-hmi",
     "device-rear-sensor-board",
-    "device-telemetry-module",
+    "device-telemetry-bridge",
 ]
 device-cooler = []
 device-hmi = []
 device-rear-sensor-board = []
-device-telemetry-module = []
+device-telemetry-bridge = [
+  "chrono",
+]
 
 std = [
+  "chrono/std",
   "postcard/use-std",
   "serde/std",
   "strum/std",
 ]
 
 [dependencies]
+chrono = { version = "0.4.44", default-features = false, features = ["defmt", "serde"], optional = true }
 defmt = "1.0.1"
 getset = "0.1.6"
 heapless = { version = "0.9.2", features = ["defmt", "serde"] }

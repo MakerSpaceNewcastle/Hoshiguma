@@ -18,5 +18,5 @@ pub mod hmi;
 #[cfg(feature = "device-rear-sensor-board")]
 pub mod rear_sensor_board;
 
-#[cfg(feature = "device-telemetry-module")]
+#[cfg(feature = "device-telemetry-bridge")]
 pub mod telemetry_bridge;

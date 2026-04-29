@@ -102,11 +102,11 @@ pub(super) async fn init(
 
     spawner.spawn(net_task(runner).unwrap());
 
-    for i in 0..NUM_LISTENERS {
-        spawner.spawn(listen_task(stack, i as u8, comm.pop().unwrap()).unwrap());
+    for idx in 0..NUM_LISTENERS {
+        spawner.spawn(listen_task(stack, idx, comm.pop().unwrap()).unwrap());
     }
-    for i in 0..NUM_NOTIFIERS {
-        spawner.spawn(notify_task(stack, i as u8, notif_rx.clone()).unwrap());
+    for idx in 0..NUM_NOTIFIERS {
+        spawner.spawn(notify_task(stack, idx, notif_rx.clone()).unwrap());
     }
 }
 
@@ -122,8 +122,10 @@ async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> 
     runner.run().await
 }
 
+// TODO: split comms out as per telemetry bridge
+
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator) {
+async fn listen_task(stack: Stack<'static>, id: usize, mut comm: DeviceCommunicator) {
     message_handler_loop(stack, id, async |mut message| {
         let request = match message.payload::<Request>() {
             Ok(request) => request,
@@ -166,7 +168,7 @@ async fn listen_task(stack: Stack<'static>, id: u8, mut comm: DeviceCommunicator
 #[embassy_executor::task(pool_size = NUM_NOTIFIERS)]
 async fn notify_task(
     stack: Stack<'static>,
-    id: u8,
+    id: usize,
     notif_rx: Receiver<'static, CriticalSectionRawMutex, Notification, 8>,
 ) {
     let mut rx_buffer = [0; 4096];

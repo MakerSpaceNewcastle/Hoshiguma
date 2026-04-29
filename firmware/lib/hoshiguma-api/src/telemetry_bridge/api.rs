@@ -1,4 +1,5 @@
 use crate::{MessageId, MessagePayload};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,6 +27,6 @@ impl MessagePayload for Response {
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {
     Ready(bool),
-    Time,
+    Time(Option<DateTime<Utc>>),
     TelementryDataPointAck,
 }

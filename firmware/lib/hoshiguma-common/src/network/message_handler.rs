@@ -15,7 +15,7 @@ pub enum Error {
 
 pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
     stack: Stack<'static>,
-    id: u8,
+    id: usize,
     mut handler: F,
 ) -> ! {
     let mut rx_buffer = [0; 4096];

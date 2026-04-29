@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+mod api;
 mod buttons;
 mod network;
 mod wall_time;
@@ -75,6 +76,15 @@ async fn main(spawner: Spawner) {
 
     let net_stack_internal = network::init_ethernet_1(r.ethernet_internal, spawner).await;
     let net_stack_external = network::init_ethernet_2(r.ethernet_external, spawner).await;
+
+    for idx in 0..api::NUM_LISTENERS {
+        spawner.spawn(api::listen_task(net_stack_internal, idx).unwrap());
+    }
+
+    info!("Waiting for DHCP");
+    net_stack_external.wait_config_up().await;
+    let address = net_stack_external.config_v4().unwrap().address.address();
+    info!("IP address: {}", address);
 
     spawner.spawn(wall_time::ntp_task(net_stack_external).unwrap());
 }
