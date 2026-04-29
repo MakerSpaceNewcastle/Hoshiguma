@@ -5,6 +5,7 @@ mod api;
 mod buttons;
 mod network;
 mod self_telemetry;
+mod telegraf_buffer;
 mod telemetry_tx;
 mod wall_time;
 

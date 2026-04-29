@@ -11,14 +11,14 @@ use reqwless::{
 };
 
 #[derive(Format, Default)]
-pub(super) struct TelegrafBuffer {
+pub(crate) struct TelegrafBuffer {
     body: String<12288>,
 }
 
-pub const BUFFER_FREE_SPACE_THRESHOLD: usize = 2048;
+pub(crate) const BUFFER_FREE_SPACE_THRESHOLD: usize = 2048;
 
 impl TelegrafBuffer {
-    pub(super) fn push<const LEN: usize>(&mut self, line: String<LEN>) -> Result<(), ()> {
+    pub(crate) fn push<const LEN: usize>(&mut self, line: String<LEN>) -> Result<(), ()> {
         info!("New line: {}", line);
         debug!("buffer length = {}", self.body.len());
         self.body.write_str(&line).map_err(|_| ())?;
@@ -27,12 +27,12 @@ impl TelegrafBuffer {
         Ok(())
     }
 
-    pub(super) fn send_required(&self) -> bool {
+    pub(crate) fn send_required(&self) -> bool {
         let free = self.body.capacity() - self.body.len();
         free < BUFFER_FREE_SPACE_THRESHOLD
     }
 
-    pub(super) async fn tx<T: embedded_nal_async::TcpConnect, D: embedded_nal_async::Dns>(
+    pub(crate) async fn tx<T: embedded_nal_async::TcpConnect, D: embedded_nal_async::Dns>(
         &mut self,
         http_client: &mut HttpClient<'_, T, D>,
         rx_buffer: &mut [u8],
