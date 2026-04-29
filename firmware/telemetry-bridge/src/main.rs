@@ -4,6 +4,7 @@
 mod api;
 mod buttons;
 mod network;
+mod telemetry_tx;
 mod wall_time;
 
 use defmt::info;
@@ -60,9 +61,6 @@ assign_resources::assign_resources! {
         user_3: PIN_28,
     },
 }
-
-pub(crate) static TELEMETRY_TX: PubSubChannel<CriticalSectionRawMutex, String<128>, 32, 2, 2> =
-    PubSubChannel::new();
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {

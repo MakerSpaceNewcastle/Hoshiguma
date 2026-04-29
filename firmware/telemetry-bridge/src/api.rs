@@ -1,3 +1,4 @@
+use crate::telemetry_tx::TELEMETRY_TX;
 use defmt::warn;
 use embassy_net::Stack;
 use hoshiguma_api::{
@@ -10,6 +11,8 @@ pub(crate) const NUM_LISTENERS: usize = 2;
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
 pub(super) async fn listen_task(stack: Stack<'static>, id: usize) {
+    let pubby = TELEMETRY_TX.publisher().unwrap();
+
     message_handler_loop(stack, id, async |mut message| {
         let request = match message.payload::<Request>() {
             Ok(request) => request,
@@ -26,7 +29,8 @@ pub(super) async fn listen_task(stack: Stack<'static>, id: usize) {
             }
             Request::GetTime => Response(Ok(ResponseData::Time(crate::wall_time::now()))),
             Request::SendTelemetryDataPoint(data_point) => {
-                todo!()
+                pubby.publish(data_point).await;
+                Response(Ok(ResponseData::TelementryDataPointAck))
             }
         };
 
