@@ -72,8 +72,8 @@ async fn main(spawner: Spawner) {
 
     buttons::init(r.buttons, spawner);
 
-    let net_stack_internal = network::init_ethernet_1(r.ethernet_internal, spawner).await;
-    let net_stack_external = network::init_ethernet_2(r.ethernet_external, spawner).await;
+    let net_stack_internal = network::init_internal(r.ethernet_internal, spawner).await;
+    let net_stack_external = network::init_external(r.ethernet_external, spawner).await;
 
     for idx in 0..api::NUM_LISTENERS {
         spawner.spawn(api::listen_task(net_stack_internal, idx).unwrap());

@@ -29,7 +29,7 @@ bind_interrupts!(struct Irqs {
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>, embassy_rp::dma::InterruptHandler<DMA_CH2>, embassy_rp::dma::InterruptHandler<DMA_CH3>;
 });
 
-pub(crate) async fn init_ethernet_1(
+pub(crate) async fn init_internal(
     r: crate::Ethernet1Resources,
     spawner: Spawner,
 ) -> Stack<'static> {
@@ -87,7 +87,7 @@ pub(crate) async fn init_ethernet_1(
     stack
 }
 
-pub(crate) async fn init_ethernet_2(
+pub(crate) async fn init_external(
     r: crate::Ethernet2Resources,
     spawner: Spawner,
 ) -> Stack<'static> {
