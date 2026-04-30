@@ -468,6 +468,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "embassy-net-driver-channel"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a07d2eb9f05a6fc876500949856ea1be40773d866d8cb99384f72d0ae4568c16"
+dependencies = [
+ "defmt 1.0.1",
+ "embassy-futures",
+ "embassy-net-driver",
+ "embassy-sync",
+]
+
+[[package]]
+name = "embassy-net-wiznet"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "336e290ec0eedc19e9d0a948d2f715ea187de79da517a0a24e55553c1a185ab8"
+dependencies = [
+ "defmt 1.0.1",
+ "embassy-futures",
+ "embassy-net-driver-channel",
+ "embassy-time",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+]
+
+[[package]]
 name = "embassy-rp"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -608,9 +634,6 @@ name = "embedded-io"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
-dependencies = [
- "defmt 0.3.100",
-]
 
 [[package]]
 name = "embedded-io"
@@ -624,7 +647,6 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ff09972d4073aa8c299395be75161d582e7629cd663171d62af73c8d50dba3f"
 dependencies = [
- "defmt 0.3.100",
  "embedded-io 0.6.1",
 ]
 
@@ -869,6 +891,8 @@ dependencies = [
  "ds18b20",
  "embassy-executor",
  "embassy-futures",
+ "embassy-net",
+ "embassy-net-wiznet",
  "embassy-rp",
  "embassy-sync",
  "embassy-time",
@@ -880,7 +904,6 @@ dependencies = [
  "panic-probe",
  "portable-atomic",
  "static_cell",
- "teeny-rpc",
 ]
 
 [[package]]
@@ -1578,21 +1601,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "teeny-rpc"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "051c0736745af15e869b23e976abc3a45844e9a016735bf8f4533632423c4ef5"
-dependencies = [
- "defmt 1.0.1",
- "embassy-time",
- "embedded-io-async 0.6.1",
- "heapless",
- "postcard",
- "serde",
- "thiserror",
 ]
 
 [[package]]

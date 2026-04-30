@@ -4,6 +4,7 @@
 mod devices;
 mod network;
 
+use crate::network::NUM_LISTENERS;
 use assign_resources::assign_resources;
 use defmt::info;
 use defmt_rtt as _;
@@ -22,8 +23,6 @@ use hoshiguma_api::BootReason;
 use panic_probe as _;
 use portable_atomic as _;
 use static_cell::StaticCell;
-
-use crate::network::NUM_LISTENERS;
 
 assign_resources! {
     status: StatusResources {

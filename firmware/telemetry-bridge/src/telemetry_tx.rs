@@ -4,7 +4,7 @@ use crate::{
     telegraf_buffer::TelegrafBuffer,
 };
 use core::sync::atomic::Ordering;
-use defmt::{info, warn};
+use defmt::{debug, warn};
 use embassy_futures::select::{Either, select};
 use embassy_net::{
     Stack,
@@ -16,7 +16,7 @@ use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     pubsub::{PubSubChannel, WaitResult},
 };
-use embassy_time::Timer;
+use embassy_time::{Duration, Instant, Timer};
 use hoshiguma_api::telemetry_bridge::FormattedTelemetryDataPoint;
 use reqwless::client::{HttpClient, TlsConfig, TlsVerify};
 
@@ -25,7 +25,7 @@ const TELEMETRY_PUBLISHERS: usize = NUM_LISTENERS + 1;
 pub(crate) static TELEMETRY_TX: PubSubChannel<
     CriticalSectionRawMutex,
     FormattedTelemetryDataPoint,
-    32,
+    64,
     1,
     TELEMETRY_PUBLISHERS,
 > = PubSubChannel::new();
@@ -55,8 +55,11 @@ pub(super) async fn task(stack: Stack<'static>) {
 
         let mut telegraf_buffer = TelegrafBuffer::default();
 
+        const TX_INTERVAL: Duration = Duration::from_millis(800);
+        let mut next_tx = Instant::now() + TX_INTERVAL;
+
         loop {
-            match select(data_point_line_rx.next_message(), Timer::after_millis(800)).await {
+            match select(data_point_line_rx.next_message(), Timer::at(next_tx)).await {
                 Either::First(WaitResult::Message(data_point)) => {
                     // Add the data point to the buffer
                     match telegraf_buffer.push(data_point.0) {
@@ -71,21 +74,23 @@ pub(super) async fn task(stack: Stack<'static>) {
 
                     // If the buffer is nearing capacity, then send now
                     if telegraf_buffer.send_required() {
-                        info!("Tx reason: buffer nearly full");
-                        telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
+                        warn!("Scheduling immediate send due to buffer capacity");
+                        next_tx = Instant::now();
                     }
                 }
                 Either::First(WaitResult::Lagged(n)) => {
                     warn!("Subscriber lagged, lost {} messages", n);
                 }
                 Either::Second(_) => {
-                    info!("Tx reason: periodic purge");
+                    debug!("Submitting buffered telemetry data");
                     telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
 
                     if !stack.is_config_up() {
                         warn!("Network down");
                         continue 'connection;
                     }
+
+                    next_tx = Instant::now() + TX_INTERVAL;
                 }
             }
         }

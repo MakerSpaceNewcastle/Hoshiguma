@@ -1,20 +1,12 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = [
-  "probe-rs",
-  "run",
-  "--chip",
-  "RP2040",
-  "--protocol",
-  "swd",
-  "--log-format",
-  "{L:1} {F:blue}:{l:cyan:1} {s}",
-]
+runner = "probe-rs run --chip RP2040 --protocol swd"
 
 [build]
 target = "thumbv6m-none-eabi"
 
 [env]
 DEFMT_LOG = "debug"
-TELEGRAF_URL = "https://telemetry.makerspace.org.uk/hoshiguma"
+# TELEGRAF_URL = "https://telemetry.makerspace.org.uk/hoshiguma" TODO
+TELEGRAF_URL = "https://webhook.site/dootdootdootdootdoot"
 TELEGRAF_USERNAME = "hoshiguma"
 TELEGRAF_PASSWORD = "fuck_no"

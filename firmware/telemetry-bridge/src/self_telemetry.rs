@@ -6,6 +6,7 @@
 //!
 //! Sent at a 1 minute interval:
 //! - uptime
+//! - wall time
 //! - data points inserted into buffer
 //! - data points discarded due to buffer overflow
 //! - data submission success counter
@@ -64,6 +65,13 @@ pub(crate) async fn task() {
             "telemetry_module_uptime",
             "value",
             Instant::now().as_millis(),
+            None,
+        ));
+
+        publish_datapoint!(format_influx_line(
+            "telemetry_module_time",
+            "value",
+            crate::wall_time::now().unwrap_or_default().timestamp(),
             None,
         ));
 

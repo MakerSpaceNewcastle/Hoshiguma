@@ -1,6 +1,7 @@
 use hoshiguma_api::{CobsFramer, Message, MessagePayload};
-use log::info;
+use log::{info, warn};
 use serde::{Serialize, de::DeserializeOwned};
+use std::time::Duration;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
@@ -28,6 +29,10 @@ pub async fn send_command<
 
     let duration = response_time.duration_since(request_time);
     info!("{request:?} => {response:?} in {}ms", duration.as_millis());
+
+    if duration > Duration::from_millis(20) {
+        warn!("Response took a long time!");
+    }
 }
 
 async fn receive_one(stream: &mut TcpStream) -> Vec<u8> {

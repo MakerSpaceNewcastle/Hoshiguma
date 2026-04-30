@@ -37,6 +37,7 @@ impl TelegrafBuffer {
     ) {
         if self.body.is_empty() {
             // Buffer is empty, nothing to do
+            debug!("No data to submit");
             return;
         }
 

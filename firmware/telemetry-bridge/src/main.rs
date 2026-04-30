@@ -8,10 +8,13 @@ mod network;
 mod self_telemetry;
 mod telegraf_buffer;
 mod telemetry_tx;
+mod ui;
 mod wall_time;
 
+use crate::ui::Context;
 use defmt::info;
 use defmt_rtt as _;
+use der as _;
 use embassy_executor::Spawner;
 use embassy_rp::{
     Peri,
@@ -71,10 +74,20 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
+    spawner.spawn(watchdog_feed_task(r.status).unwrap());
+
     buttons::init(r.buttons, spawner);
 
     let net_stack_internal = network::init_internal(r.ethernet_internal, spawner).await;
     let net_stack_external = network::init_external(r.ethernet_external, spawner).await;
+
+    spawner.spawn(display::task(r.display).unwrap());
+    spawner.spawn(
+        ui::task(Context {
+            network_external: net_stack_external,
+        })
+        .unwrap(),
+    );
 
     for idx in 0..api::NUM_LISTENERS {
         spawner.spawn(api::listen_task(net_stack_internal, net_stack_external, idx).unwrap());
@@ -93,7 +106,7 @@ async fn main(spawner: Spawner) {
 #[embassy_executor::task]
 async fn watchdog_feed_task(r: StatusResources) {
     let mut watchdog = Watchdog::new(r.watchdog);
-    watchdog.start(Duration::from_secs(5));
+    watchdog.start(Duration::from_secs(2));
 
     let mut led = Output::new(r.led, Level::Low);
 

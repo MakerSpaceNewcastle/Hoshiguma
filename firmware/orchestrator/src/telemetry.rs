@@ -6,11 +6,6 @@ use crate::{
 use chrono::{DateTime, TimeDelta, Utc};
 use core::{sync::atomic::Ordering, time::Duration};
 use defmt::{debug, error, info, unwrap, warn};
-use embassy_rp::{
-    bind_interrupts,
-    peripherals::UART0,
-    uart::{BufferedInterruptHandler, BufferedUart, Config as UartConfig},
-};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Instant, Timer};
 use hoshiguma_core::{
@@ -180,62 +175,6 @@ async fn is_telemetry_module_ready<T: Transport<RpcMessage<Request, Response>>>(
             warn!("Telemetry module questionably ready: error {}", e);
             Err(e)
         }
-    }
-}
-
-async fn populate_telemetry_module_string_registry<T: Transport<RpcMessage<Request, Response>>>(
-    client: &mut Client<'_, T, Request, Response>,
-    strings: &StringRegistry,
-) -> Result<(), ()> {
-    let timeout = Duration::from_millis(500);
-
-    // Clear existing strings
-    debug!("Clearing existing strings");
-    match client.call(Request::ClearStringRegistry, timeout).await {
-        Ok(Response::ClearStringRegistry) => Ok(()),
-        Ok(_) => Err(()),
-        Err(_) => Err(()),
-    }?;
-
-    // Send new strings
-    debug!("Sending new strings");
-    for s in strings.iter() {
-        debug!("Sending string: {}", s);
-        match client
-            .call(Request::PushStringToRegistry(s.clone()), timeout)
-            .await
-        {
-            Ok(Response::PushStringToRegistry(Ok(_))) => Ok(()),
-            Ok(Response::PushStringToRegistry(Err(e))) => {
-                error!("Failed pushing string, module response: {}", e);
-                Err(())
-            }
-            Ok(_) => Err(()),
-            Err(_) => Err(()),
-        }?;
-    }
-
-    // Check metadata matches
-    debug!("Checking string metadata matches");
-    let metadata = match client
-        .call(Request::GetStringRegistryMetadata, timeout)
-        .await
-    {
-        Ok(Response::GetStringRegistryMetadata(metadata)) => Ok(metadata),
-        Ok(_) => Err(()),
-        Err(_) => Err(()),
-    }?;
-    debug!("Got from module: {}", metadata);
-
-    if strings.metadata() == metadata {
-        Ok(())
-    } else {
-        error!(
-            "String metadata mismatch: (local) {} != (remote) {}",
-            strings.metadata(),
-            metadata,
-        );
-        Err(())
     }
 }
 

@@ -1,10 +1,8 @@
 #![no_std]
 #![no_main]
 
-mod changed;
-mod devices;
-mod logic;
-mod maybe_timer;
+// mod devices;
+// mod logic;
 mod polled_input;
 // mod self_telemetry; TODO
 // mod telemetry; TODO
@@ -18,13 +16,13 @@ use defmt_rtt as _;
 use embassy_executor::raw::Executor;
 use embassy_rp::{
     Peri,
-    gpio::{Input, Level, Output, Pull},
+    gpio::{Level, Output},
     multicore::{Stack, spawn_core1},
     peripherals,
     watchdog::Watchdog,
 };
-use embassy_time::{Duration, Instant, Ticker, Timer};
-use hoshiguma_core::types::BootReason;
+use embassy_time::{Duration, Instant, Ticker};
+use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic::AtomicBool;
@@ -33,68 +31,56 @@ use static_cell::StaticCell;
 assign_resources! {
     status: StatusResources {
         watchdog: WATCHDOG,
-        led: PIN_25,
+        led: PIN_19,
+    },
+    ethernet: EthernetResources {
+        pio: PIO0,
+        mosi: PIN_23,
+        miso: PIN_22,
+        sck: PIN_21,
+        tx_dma: DMA_CH0,
+        rx_dma: DMA_CH1,
+        cs: PIN_20,
+        int: PIN_24,
+        reset: PIN_25,
     },
     onewire: OnewireResources {
-        pin: PIN_22,
-    },
-    status_lamp: StatusLampResources {
-        red: PIN_7,
-        amber: PIN_6,
-        green: PIN_16,
+        pio: PIO1,
+        pin: PIN_28,
     },
     machine_power_detect: MachinePowerDetectResources {
-        detect: PIN_8,
+        detect: PIN_5, // Input 1
     },
     chassis_intrusion_detect: ChassisIntrusionDetectResources {
-        detect: PIN_9,
+        detect: PIN_6, // Input 2
     },
     air_assist_demand_detect: AirAssistDemandDetectResources {
-        detect: PIN_11,
+        detect: PIN_7, // Input 3
     },
     machine_run_detect: MachineRunDetectResources {
-        detect: PIN_12,
-    },
-    fume_extraction_mode_switch: FumeExtractionModeSwitchResources {
-        switch: PIN_10,
-    },
-    access_control: AccessControlResources {
-        detect: PIN_13,
+        detect: PIN_4, // Input 3
     },
     air_assist_pump: AirAssistPumpResources {
-        relay: PIN_20,
+        relay: PIN_15, // Relay 8
     },
     fume_extraction_fan: FumeExtractionFanResources {
-        relay: PIN_21,
+        relay: PIN_14, // Relay 7
     },
     laser_enable: LaserEnableResources {
-        relay: PIN_18,
+        relay: PIN_13, // Relay 6
     },
     machine_enable: MachineEnableResources {
-        relay: PIN_17,
+        relay: PIN_12, // Relay 5
     },
     machine_power: MachinePowerResources {
-        relay: PIN_19,
-    },
-    telemetry: TelemetryResources {
-        uart: UART0,
-        tx_pin: PIN_0,
-        rx_pin: PIN_1,
-    },
-    accessories_bus: AccessoriesCommunicationResources {
-        uart: UART1,
-        tx_pin: PIN_4,
-        rx_pin: PIN_5,
+        relay: PIN_11, // Relay 4
     },
 }
 
 #[cfg(not(feature = "panic-probe"))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
-    use crate::devices::{
-        laser_enable::LaserEnableOutput, machine_enable::MachineEnableOutput,
-        status_lamp::StatusLampOutput,
-    };
+    use crate::devices::{laser_enable::LaserEnableOutput, machine_enable::MachineEnableOutput};
 
     // Flag the panic, indicating that executors should stop scheduling work
     PANIC_HALT.store(true, Ordering::Relaxed);
@@ -107,10 +93,6 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
     laser_enable.set_panic();
     let mut machine_enable = MachineEnableOutput::new(r.machine_enable);
     machine_enable.set_panic();
-
-    // Set the status lamp to something distinctive
-    let mut status_lamp = StatusLampOutput::new(r.status_lamp);
-    status_lamp.set_panic();
 
     let mut watchdog = Watchdog::new(r.status.watchdog);
     let mut led = Output::new(r.status.led, Level::Low);
@@ -125,7 +107,6 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
         // here for belt and braces.
         laser_enable.set_panic();
         machine_enable.set_panic();
-        status_lamp.set_panic();
 
         // Blink the on-board LED pretty fast
         led.toggle();
@@ -161,23 +142,23 @@ fn main() -> ! {
 
             spawner.spawn(watchdog_feed_task(r.status).unwrap());
 
-            spawner.spawn(devices::machine_power_detector::task(r.machine_power_detect).unwrap());
-            spawner.spawn(devices::machine_run_detector::task(r.machine_run_detect).unwrap());
-            spawner.spawn(
-                devices::chassis_intrusion_detector::task(r.chassis_intrusion_detect).unwrap(),
-            );
+            // spawner.spawn(devices::machine_power_detector::task(r.machine_power_detect).unwrap());
+            // spawner.spawn(devices::machine_run_detector::task(r.machine_run_detect).unwrap());
+            // spawner.spawn(
+            //     devices::chassis_intrusion_detector::task(r.chassis_intrusion_detect).unwrap(),
+            // );
 
             // State monitor tasks
-            spawner.spawn(logic::safety::monitor::chassis_intrusion::task().unwrap());
+            // spawner.spawn(logic::safety::monitor::chassis_intrusion::task().unwrap());
 
             // State monitor observation and alarm tasks
-            spawner.spawn(logic::safety::monitor::observation_task().unwrap());
-            spawner.spawn(logic::safety::lockout::alarm_evaluation_task().unwrap());
+            // spawner.spawn(logic::safety::monitor::observation_task().unwrap());
+            // spawner.spawn(logic::safety::lockout::alarm_evaluation_task().unwrap());
 
             // Machine operation permission control tasks
-            spawner.spawn(logic::safety::lockout::machine_lockout_task().unwrap());
-            spawner.spawn(devices::laser_enable::task(r.laser_enable).unwrap());
-            spawner.spawn(devices::machine_enable::task(r.machine_enable).unwrap());
+            // spawner.spawn(logic::safety::lockout::machine_lockout_task().unwrap());
+            // spawner.spawn(devices::laser_enable::task(r.laser_enable).unwrap());
+            // spawner.spawn(devices::machine_enable::task(r.machine_enable).unwrap());
 
             #[cfg(feature = "test-panic-on-core-1")]
             spawner.spawn(dummy_panic().unwrap());
@@ -201,42 +182,42 @@ fn main() -> ! {
     // spawner.spawn(self_telemetry::task().unwrap()); TODO
     // spawner.spawn(telemetry::task(r.telemetry).unwrap()); TODO
 
-    spawner.spawn(logic::status_lamp::task().unwrap());
-    spawner.spawn(devices::status_lamp::task(r.status_lamp).unwrap());
+    // spawner.spawn(logic::status_lamp::task().unwrap());
+    // spawner.spawn(devices::status_lamp::task(r.status_lamp).unwrap());
 
-    spawner.spawn(devices::temperature_sensors::task(r.onewire).unwrap());
-    spawner.spawn(devices::accessories::task(r.accessories_bus).unwrap());
+    // spawner.spawn(devices::temperature_sensors::task(r.onewire).unwrap());
+    // spawner.spawn(devices::accessories::task(r.accessories_bus).unwrap());
 
-    spawner.spawn(
-        quick_and_dirty_machine_power_for_new_access_control_task(
-            r.access_control,
-            r.machine_power,
-        )
-        .unwrap(),
-    );
+    // spawner.spawn(
+    //     quick_and_dirty_machine_power_for_new_access_control_task(
+    //         r.access_control,
+    //         r.machine_power,
+    //     )
+    //     .unwrap(),
+    // );
 
     // State monitor tasks
-    spawner.spawn(logic::safety::monitor::power::task().unwrap());
-    spawner.spawn(logic::safety::monitor::coolant_flow::task().unwrap());
-    spawner.spawn(logic::safety::monitor::coolant_level::task().unwrap());
-    spawner.spawn(logic::safety::monitor::extraction_airflow::task().unwrap());
-    spawner.spawn(logic::safety::monitor::temperatures_a::task().unwrap());
-    spawner.spawn(logic::safety::monitor::temperatures_b::task().unwrap());
+    // spawner.spawn(logic::safety::monitor::power::task().unwrap());
+    // spawner.spawn(logic::safety::monitor::coolant_flow::task().unwrap());
+    // spawner.spawn(logic::safety::monitor::coolant_level::task().unwrap());
+    // spawner.spawn(logic::safety::monitor::extraction_airflow::task().unwrap());
+    // spawner.spawn(logic::safety::monitor::temperatures_a::task().unwrap());
+    // spawner.spawn(logic::safety::monitor::temperatures_b::task().unwrap());
 
     // Air assist control tasks
-    spawner.spawn(devices::air_assist_demand_detector::task(r.air_assist_demand_detect).unwrap());
-    spawner.spawn(devices::air_assist_pump::task(r.air_assist_pump).unwrap());
-    spawner.spawn(logic::air_assist::task().unwrap());
+    // spawner.spawn(devices::air_assist_demand_detector::task(r.air_assist_demand_detect).unwrap());
+    // spawner.spawn(devices::air_assist_pump::task(r.air_assist_pump).unwrap());
+    // spawner.spawn(logic::air_assist::task().unwrap());
 
     // Fume extraction control tasks
-    spawner
-        .spawn(devices::fume_extraction_mode_switch::task(r.fume_extraction_mode_switch).unwrap());
-    spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan).unwrap());
-    spawner.spawn(logic::fume_extraction::task().unwrap());
+    // spawner
+    //     .spawn(devices::fume_extraction_mode_switch::task(r.fume_extraction_mode_switch).unwrap());
+    // spawner.spawn(devices::fume_extraction_fan::task(r.fume_extraction_fan).unwrap());
+    // spawner.spawn(logic::fume_extraction::task().unwrap());
 
     // Cooler control tasks
-    spawner.spawn(logic::cooling::control::task().unwrap());
-    spawner.spawn(logic::cooling::demand::task().unwrap());
+    // spawner.spawn(logic::cooling::control::task().unwrap());
+    // spawner.spawn(logic::cooling::demand::task().unwrap());
 
     // Task reporting
     #[cfg(feature = "trace")]
@@ -303,21 +284,5 @@ fn boot_reason() -> BootReason {
         BootReason::WatchdogTimeout
     } else {
         BootReason::Normal
-    }
-}
-
-#[embassy_executor::task]
-async fn quick_and_dirty_machine_power_for_new_access_control_task(
-    ir: AccessControlResources,
-    or: MachinePowerResources,
-) {
-    let access_control = Input::new(ir.detect, Pull::Down);
-    let mut machine_power = Output::new(or.relay, Level::Low);
-
-    loop {
-        let level = access_control.get_level();
-        machine_power.set_level(level);
-
-        Timer::after_millis(200).await;
     }
 }

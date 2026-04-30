@@ -5,7 +5,7 @@ use embassy_rp::gpio::{Input, Pull};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::PubSubChannel};
 use embassy_time::{Duration, Instant, Timer};
 
-pub(crate) static BUTTON_EVENTS: PubSubChannel<CriticalSectionRawMutex, ButtonEvent, 8, 4, 3> =
+pub(crate) static BUTTON_EVENTS: PubSubChannel<CriticalSectionRawMutex, ButtonEvent, 8, 1, 3> =
     PubSubChannel::new();
 
 #[derive(Format, Clone, Copy, PartialEq, Eq)]

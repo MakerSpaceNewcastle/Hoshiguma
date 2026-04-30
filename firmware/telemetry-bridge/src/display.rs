@@ -1,11 +1,10 @@
 use crate::DisplayResources;
-use chrono::{Datelike, Timelike};
-use core::fmt::Write;
 use embassy_rp::{
     bind_interrupts,
     i2c::{I2c, InterruptHandler},
     peripherals::I2C1,
 };
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
 use embassy_time::Timer;
 use embedded_graphics::{
     Drawable,
@@ -19,10 +18,15 @@ use embedded_text::{
     alignment::HorizontalAlignment,
     style::{HeightMode, TextBoxStyleBuilder},
 };
+use heapless::String;
 use ssd1306::{
     I2CDisplayInterface, Ssd1306, mode::DisplayConfig, prelude::DisplayRotation,
     size::DisplaySize128x64,
 };
+
+pub(crate) type DisplayText = String<256>;
+
+pub(crate) static DISPLAY_TEXT: Watch<CriticalSectionRawMutex, DisplayText, 1> = Watch::new();
 
 bind_interrupts!(struct Irqs {
     I2C1_IRQ => InterruptHandler<I2C1>;
@@ -46,38 +50,10 @@ pub(crate) async fn task(r: DisplayResources) -> ! {
 
     let bounds = Rectangle::new(Point::zero(), Size::new(128, 0));
 
+    let mut text_rx = DISPLAY_TEXT.receiver().unwrap();
+
     loop {
-        let mut text = heapless::String::<128>::new();
-
-        text.write_str("Rev: ").unwrap();
-        text.write_str(git_version::git_version!()).unwrap();
-        text.write_char('\n').unwrap();
-
-        let time = crate::wall_time::now();
-
-        text.write_str("Date: ").unwrap();
-        match time {
-            Some(time) => text.write_fmt(format_args!(
-                "{}-{:02}-{:02}\n",
-                time.year(),
-                time.month(),
-                time.day()
-            )),
-            None => text.write_str("unknown\n"),
-        }
-        .unwrap();
-
-        text.write_str("Time: ").unwrap();
-        match time {
-            Some(time) => text.write_fmt(format_args!(
-                "{:02}:{:02}:{:02}\n",
-                time.hour(),
-                time.minute(),
-                time.second()
-            )),
-            None => text.write_str("unknown\n"),
-        }
-        .unwrap();
+        let text = text_rx.changed().await;
 
         let text_box = TextBox::with_textbox_style(&text, bounds, character_style, textbox_style);
 
