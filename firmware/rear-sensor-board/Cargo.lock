@@ -880,6 +880,7 @@ dependencies = [
  "embedded-io-async 0.7.0",
  "heapless",
  "hoshiguma-api",
+ "serde",
 ]
 
 [[package]]

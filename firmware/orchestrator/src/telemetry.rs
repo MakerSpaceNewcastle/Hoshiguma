@@ -5,7 +5,7 @@ use embassy_net::Stack;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
 use hoshiguma_api::{
-    CONTROL_PORT, Message, TELEMETRY_MODULE_IP_ADDRESS,
+    CONTROL_PORT, TELEMETRY_MODULE_IP_ADDRESS,
     telemetry_bridge::{
         FormattedTelemetryDataPoint, Request, Response, ResponseData, TELEMETRY_DATA_POINT_MAX_LEN,
     },
@@ -72,16 +72,16 @@ async fn wait_for_telemetry_module_ready(stack: Stack<'static>) {
 }
 
 async fn is_telemetry_module_ready(stack: Stack<'static>) -> bool {
-    match send_request(
+    match send_request::<_, Response>(
         stack,
         TELEMETRY_MODULE_IP_ADDRESS,
         CONTROL_PORT,
-        &Message::new(&Request::IsReady).unwrap(),
+        &Request::IsReady,
     )
     .await
     {
-        Ok(mut msg) => match msg.payload::<Response>() {
-            Ok(Response(Ok(ResponseData::Ready(ready)))) => {
+        Ok(response) => match response.0 {
+            Ok(ResponseData::Ready(ready)) => {
                 info!("Telemetry module ready: {}", ready);
                 ready
             }
