@@ -1,11 +1,16 @@
 use crate::self_telemetry::{DATA_POINTS_DISCARDED_BUFFER, DATA_POINTS_DISCARDED_FORMAT};
 use core::sync::atomic::Ordering;
-use defmt::warn;
+use defmt::{info, warn};
 use embassy_net::Stack;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
-use hoshiguma_api::telemetry_bridge::{FormattedTelemetryDataPoint, TELEMETRY_DATA_POINT_MAX_LEN};
-use hoshiguma_common::telemetry::FormatInfluxResult;
+use hoshiguma_api::{
+    CONTROL_PORT, Message, TELEMETRY_MODULE_IP_ADDRESS,
+    telemetry_bridge::{
+        FormattedTelemetryDataPoint, Request, Response, ResponseData, TELEMETRY_DATA_POINT_MAX_LEN,
+    },
+};
+use hoshiguma_common::{network::send_request, telemetry::FormatInfluxResult};
 
 static TELEMETRY_TX: Channel<CriticalSectionRawMutex, FormattedTelemetryDataPoint, 64> =
     Channel::new();
@@ -58,16 +63,36 @@ pub(super) async fn task(stack: Stack<'static>) {
 
 async fn wait_for_telemetry_module_ready(stack: Stack<'static>) {
     loop {
-        match is_telemetry_module_ready(stack).await {
-            Ok(true) => return,
-            Ok(false) => (),
-            Err(_) => (),
+        if is_telemetry_module_ready(stack).await {
+            return;
         }
 
         Timer::after_secs(1).await;
     }
 }
 
-async fn is_telemetry_module_ready(stack: Stack<'static>) -> Result<bool, ()> {
-    todo!()
+async fn is_telemetry_module_ready(stack: Stack<'static>) -> bool {
+    match send_request(
+        stack,
+        TELEMETRY_MODULE_IP_ADDRESS,
+        CONTROL_PORT,
+        &Message::new(&Request::IsReady).unwrap(),
+    )
+    .await
+    {
+        Ok(mut msg) => match msg.payload::<Response>() {
+            Ok(Response(Ok(ResponseData::Ready(ready)))) => {
+                info!("Telemetry module ready: {}", ready);
+                ready
+            }
+            _ => {
+                warn!("Failed to parse response from telemetry module");
+                false
+            }
+        },
+        Err(e) => {
+            warn!("Failed to send request to telemetry module: {}", e);
+            false
+        }
+    }
 }
