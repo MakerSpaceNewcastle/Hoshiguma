@@ -182,7 +182,6 @@ fn main() -> ! {
     spawner.spawn(network_tasks(spawner, r.ethernet).unwrap());
 
     spawner.spawn(self_telemetry::task().unwrap());
-    // spawner.spawn(telemetry::task(r.telemetry).unwrap());
 
     // spawner.spawn(logic::status_lamp::task().unwrap());
     // spawner.spawn(devices::status_lamp::task(r.status_lamp).unwrap());
@@ -274,7 +273,7 @@ async fn watchdog_feed_task(r: StatusResources) {
 #[embassy_executor::task]
 async fn network_tasks(spawner: Spawner, r: EthernetResources) {
     let net_stack = network::init(spawner, r).await;
-    // TODO
+    spawner.spawn(telemetry::task(net_stack).unwrap());
 }
 
 #[embassy_executor::task]

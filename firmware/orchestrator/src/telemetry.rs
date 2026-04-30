@@ -25,105 +25,84 @@ pub(crate) fn queue_telemetry_data_point(
     }
 }
 
-// #[embassy_executor::task]
-// pub(super) async fn task(r: TelemetryResources) {
-//     #[cfg(feature = "trace")]
-//     crate::trace::name_task("telemetry").await;
+#[embassy_executor::task]
+pub(super) async fn task(stack: Stack<'static>) {
+    #[cfg(feature = "trace")]
+    crate::trace::name_task("telemetry").await;
 
-//     const TX_BUFFER_SIZE: usize = 256;
-//     static TX_BUFFER: StaticCell<[u8; TX_BUFFER_SIZE]> = StaticCell::new();
-//     let tx_buffer = &mut TX_BUFFER.init([0; TX_BUFFER_SIZE])[..];
+    //     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
-//     const RX_BUFFER_SIZE: usize = 32;
-//     static RX_BUFFER: StaticCell<[u8; RX_BUFFER_SIZE]> = StaticCell::new();
-//     let rx_buffer = &mut RX_BUFFER.init([0; RX_BUFFER_SIZE])[..];
+    //     'connection: loop {
+    //         // Report telemetry inoperative
+    //         status_tx
+    //             .publish((MonitorKind::TelemetryInop, Severity::Information))
+    //             .await;
 
-//     let mut config = UartConfig::default();
-//     config.baudrate = hoshiguma_core::telemetry_module::SERIAL_BAUD;
+    //         // Wait for telemetry module to come online
+    //         wait_for_telemetry_module_ready(&mut client).await;
 
-//     let uart = BufferedUart::new(
-//         r.uart, r.tx_pin, r.rx_pin, Irqs, tx_buffer, rx_buffer, config,
-//     );
+    //         // Send static strings to telemetry module
+    //         if let Err(e) = populate_telemetry_module_string_registry(&mut client, &strings).await {
+    //             error!("Failed to send strings to telemetry module: {}", e);
+    //             Timer::after_secs(1).await;
+    //             continue 'connection;
+    //         }
 
-//     // Setup RPC client
-//     let transport = EioTransport::<_, 512>::new(uart);
-//     let mut client = Client::<_, Request, Response>::new(transport, Duration::from_millis(100));
+    //         // Get time from telemetry module
+    //         let time = match get_time_offset_from_telemetry_module(&mut client).await {
+    //             Ok(time) => {
+    //                 info!("Got time from telemetry module: {}", time);
+    //                 NtpSyncedTime::new(
+    //                     TimeDelta::microseconds(Instant::now().as_micros() as i64),
+    //                     time,
+    //                 )
+    //             }
+    //             Err(e) => {
+    //                 error!("Failed to get time from telemetry module: {}", e);
+    //                 Timer::after_secs(1).await;
+    //                 continue 'connection;
+    //             }
+    //         };
 
-//     let strings = hoshiguma_core::telemetry_module::build_string_registry().unwrap();
+    //         // Report telemetry ready
+    //         status_tx
+    //             .publish((MonitorKind::TelemetryInop, Severity::Normal))
+    //             .await;
 
-//     let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
+    //         // Receive data points from queue
+    //         loop {
+    //             let data_point = TELEMETRY_TX.receive().await;
 
-//     'connection: loop {
-//         // Report telemetry inoperative
-//         status_tx
-//             .publish((MonitorKind::TelemetryInop, Severity::Information))
-//             .await;
+    //             match data_point.to_templated_data_point(&strings) {
+    //                 Ok(mut data_point) => {
+    //                     // Set the actual time for the data point
+    //                     data_point.timestamp =
+    //                         Some(time.now(TimeDelta::microseconds(Instant::now().as_micros() as i64)));
 
-//         // Wait for telemetry module to come online
-//         wait_for_telemetry_module_ready(&mut client).await;
-
-//         // Send static strings to telemetry module
-//         if let Err(e) = populate_telemetry_module_string_registry(&mut client, &strings).await {
-//             error!("Failed to send strings to telemetry module: {}", e);
-//             Timer::after_secs(1).await;
-//             continue 'connection;
-//         }
-
-//         // Get time from telemetry module
-//         let time = match get_time_offset_from_telemetry_module(&mut client).await {
-//             Ok(time) => {
-//                 info!("Got time from telemetry module: {}", time);
-//                 NtpSyncedTime::new(
-//                     TimeDelta::microseconds(Instant::now().as_micros() as i64),
-//                     time,
-//                 )
-//             }
-//             Err(e) => {
-//                 error!("Failed to get time from telemetry module: {}", e);
-//                 Timer::after_secs(1).await;
-//                 continue 'connection;
-//             }
-//         };
-
-//         // Report telemetry ready
-//         status_tx
-//             .publish((MonitorKind::TelemetryInop, Severity::Normal))
-//             .await;
-
-//         // Receive data points from queue
-//         loop {
-//             let data_point = TELEMETRY_TX.receive().await;
-
-//             match data_point.to_templated_data_point(&strings) {
-//                 Ok(mut data_point) => {
-//                     // Set the actual time for the data point
-//                     data_point.timestamp =
-//                         Some(time.now(TimeDelta::microseconds(Instant::now().as_micros() as i64)));
-
-//                     debug!("Submitting data point {}", data_point);
-//                     match client
-//                         .call(
-//                             Request::SendTelemetryDataPoint(data_point),
-//                             Duration::from_millis(50),
-//                         )
-//                         .await
-//                     {
-//                         Ok(_) => {
-//                             debug!("Data point submitted successfully");
-//                         }
-//                         Err(e) => {
-//                             warn!("RPC call failed when submitting data point: {}", e);
-//                         }
-//                     }
-//                 }
-//                 Err(e) => {
-//                     warn!("Failed to template data point: {}", e);
-//                     DATA_POINT_TEMPLATE_ERRORS.fetch_add(1, Ordering::Relaxed);
-//                 }
-//             }
-//         }
-//     }
-// }
+    //                     debug!("Submitting data point {}", data_point);
+    //                     match client
+    //                         .call(
+    //                             Request::SendTelemetryDataPoint(data_point),
+    //                             Duration::from_millis(50),
+    //                         )
+    //                         .await
+    //                     {
+    //                         Ok(_) => {
+    //                             debug!("Data point submitted successfully");
+    //                         }
+    //                         Err(e) => {
+    //                             warn!("RPC call failed when submitting data point: {}", e);
+    //                         }
+    //                     }
+    //                 }
+    //                 Err(e) => {
+    //                     warn!("Failed to template data point: {}", e);
+    //                     DATA_POINT_TEMPLATE_ERRORS.fetch_add(1, Ordering::Relaxed);
+    //                 }
+    //             }
+    //         }
+    //     }
+}
 
 async fn wait_for_telemetry_module_ready(stack: Stack<'static>) {
     loop {
