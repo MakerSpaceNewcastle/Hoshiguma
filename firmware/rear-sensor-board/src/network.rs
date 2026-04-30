@@ -82,7 +82,6 @@ pub(super) async fn init(spawner: Spawner, r: EthernetResources) -> Stack<'stati
         RESOURCES.init(StackResources::new()),
         seed,
     );
-
     spawner.spawn(net_task(runner).unwrap());
 
     stack

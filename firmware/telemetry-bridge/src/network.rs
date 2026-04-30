@@ -68,7 +68,6 @@ pub(crate) async fn init_internal(
     )
     .await
     .unwrap();
-
     spawner.spawn(ethernet_1_task(runner).unwrap());
 
     static RESOURCES: StaticCell<StackResources<8>> = StaticCell::new();
@@ -126,7 +125,6 @@ pub(crate) async fn init_external(
     )
     .await
     .unwrap();
-
     spawner.spawn(ethernet_2_task(runner).unwrap());
 
     static RESOURCES: StaticCell<StackResources<8>> = StaticCell::new();
