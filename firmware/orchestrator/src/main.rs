@@ -5,8 +5,8 @@
 // mod logic;
 mod network;
 mod polled_input;
-// mod self_telemetry; TODO
-// mod telemetry; TODO
+mod self_telemetry;
+mod telemetry;
 #[cfg(feature = "trace")]
 mod trace;
 
@@ -14,7 +14,7 @@ use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;
 use defmt::{info, warn};
 use defmt_rtt as _;
-use embassy_executor::raw::Executor;
+use embassy_executor::{Spawner, raw::Executor};
 use embassy_rp::{
     Peri,
     gpio::{Level, Output},
@@ -179,11 +179,10 @@ fn main() -> ! {
     trace::identify_core_0_executor(executor_0.id() as u32);
     let spawner = executor_0.spawner();
 
-    // let net_stack = network::init(spawner, r.ethernet).await;
+    spawner.spawn(network_tasks(spawner, r.ethernet).unwrap());
 
-    // Telemetry reporting
-    // spawner.spawn(self_telemetry::task().unwrap()); TODO
-    // spawner.spawn(telemetry::task(r.telemetry).unwrap()); TODO
+    spawner.spawn(self_telemetry::task().unwrap());
+    // spawner.spawn(telemetry::task(r.telemetry).unwrap());
 
     // spawner.spawn(logic::status_lamp::task().unwrap());
     // spawner.spawn(devices::status_lamp::task(r.status_lamp).unwrap());
@@ -270,6 +269,12 @@ async fn watchdog_feed_task(r: StatusResources) {
             );
         }
     }
+}
+
+#[embassy_executor::task]
+async fn network_tasks(spawner: Spawner, r: EthernetResources) {
+    let net_stack = network::init(spawner, r).await;
+    // TODO
 }
 
 #[embassy_executor::task]
