@@ -1,15 +1,12 @@
-use crate::{
-    devices::{
-        fume_extraction_fan::FUME_EXTRACTION_FAN,
-        fume_extraction_mode_switch::FUME_EXTRACTION_MODE_CHANGED,
-        machine_power_detector::MACHINE_POWER_CHANGED,
-        machine_run_detector::MACHINE_RUNNING_CHANGED,
-    },
-    maybe_timer::MaybeTimer,
+use crate::devices::{
+    fume_extraction_fan::FUME_EXTRACTION_FAN,
+    fume_extraction_mode_switch::FUME_EXTRACTION_MODE_CHANGED,
+    machine_power_detector::MACHINE_POWER_CHANGED, machine_run_detector::MACHINE_RUNNING_CHANGED,
 };
 use defmt::{Format, debug, info, unwrap};
 use embassy_time::{Duration, Instant};
-use hoshiguma_core::types::{FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun};
+use hoshiguma_api::{FumeExtractionFan, FumeExtractionMode, MachinePower, MachineRun};
+use hoshiguma_common::maybe_timer::MaybeTimer;
 
 #[derive(Clone, Format)]
 enum FumeExtractionAutomaticState {

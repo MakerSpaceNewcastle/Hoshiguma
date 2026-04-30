@@ -1,10 +1,10 @@
 use crate::{
-    changed::ObservedValue, devices::accessories::cooler::COOLER_TEMPERATURES_READ,
-    logic::cooling::control::COOLING_DEMAND,
+    devices::accessories::cooler::COOLER_TEMPERATURES_READ, logic::cooling::control::COOLING_DEMAND,
 };
 use defmt::info;
 use embassy_time::{Duration, Instant};
-use hoshiguma_core::types::CoolingDemand;
+use hoshiguma_api::CoolingDemand;
+use hoshiguma_common::changed::ObservedValue;
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

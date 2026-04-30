@@ -6,7 +6,7 @@ use crate::{
     logic::safety::lockout::MACHINE_LOCKOUT_CHANGED,
 };
 use defmt::unwrap;
-use hoshiguma_core::types::{MachineOperationLockout, MachinePower, MachineRun, StatusLamp};
+use hoshiguma_api::{MachineOperationLockout, MachinePower, MachineRun};
 
 #[embassy_executor::task]
 pub(crate) async fn task() {

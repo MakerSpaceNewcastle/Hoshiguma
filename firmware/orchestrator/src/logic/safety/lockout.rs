@@ -8,10 +8,7 @@ use crate::{
 };
 use defmt::info;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use hoshiguma_core::{
-    telemetry::AsTelemetry,
-    types::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun, Severity},
-};
+use hoshiguma_api::{LaserEnable, MachineEnable, MachineOperationLockout, MachineRun, Severity};
 
 pub(crate) static MACHINE_LOCKOUT_CHANGED: Watch<
     CriticalSectionRawMutex,

@@ -1,13 +1,11 @@
-use crate::{
-    devices::{
-        air_assist_demand_detector::AIR_ASSIST_DEMAND_CHANGED, air_assist_pump::AIR_ASSIST_PUMP,
-        machine_power_detector::MACHINE_POWER_CHANGED,
-    },
-    maybe_timer::MaybeTimer,
+use crate::devices::{
+    air_assist_demand_detector::AIR_ASSIST_DEMAND_CHANGED, air_assist_pump::AIR_ASSIST_PUMP,
+    machine_power_detector::MACHINE_POWER_CHANGED,
 };
 use defmt::{Format, debug, info, unwrap};
 use embassy_time::{Duration, Instant};
-use hoshiguma_core::types::{AirAssistDemand, AirAssistPump, MachinePower};
+use hoshiguma_api::{AirAssistDemand, AirAssistPump, MachinePower};
+use hoshiguma_common::maybe_timer::MaybeTimer;
 
 #[derive(Clone, Format)]
 enum AirAssistState {

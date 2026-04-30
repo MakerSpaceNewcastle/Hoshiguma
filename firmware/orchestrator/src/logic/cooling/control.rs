@@ -1,5 +1,4 @@
 use crate::{
-    changed::ObservedValue,
     devices::{
         accessories::cooler::{COOLER_CONTROL_COMMAND, CoolerControlCommand},
         machine_power_detector::MACHINE_POWER_CHANGED,
@@ -10,11 +9,11 @@ use crate::{
 use defmt::{info, unwrap};
 use embassy_futures::select::{Either3, select3};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, pubsub::Publisher, watch::Watch};
-use hoshiguma_core::{
-    accessories::cooler::types::{CompressorState, CoolantPumpState, RadiatorFanState},
-    telemetry::AsTelemetry,
-    types::{CoolingDemand, CoolingEnable, MachinePower, MonitorKind, Severity},
+use hoshiguma_api::{
+    CoolingDemand, CoolingEnable, MachinePower, MonitorKind, Severity,
+    cooler::{CompressorState, CoolantPumpState, RadiatorFanState},
 };
+use hoshiguma_common::changed::ObservedValue;
 
 pub(crate) static COOLING_DEMAND: Watch<CriticalSectionRawMutex, CoolingDemand, 1> = Watch::new();
 

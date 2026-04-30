@@ -9,6 +9,7 @@ mod self_telemetry;
 mod telemetry;
 #[cfg(feature = "trace")]
 mod trace;
+mod wall_time;
 
 use assign_resources::assign_resources;
 use core::sync::atomic::Ordering;

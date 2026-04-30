@@ -6,20 +6,15 @@ pub(crate) mod power;
 pub(crate) mod temperatures_a;
 pub(crate) mod temperatures_b;
 
-use crate::{
-    changed::{Changed, ObservedValue, checked_set},
-    telemetry::queue_telemetry_data_point,
-};
+use crate::telemetry::queue_telemetry_data_point;
 use defmt::{debug, info, unwrap, warn};
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex,
     pubsub::{PubSubChannel, WaitResult},
     watch::Watch,
 };
-use hoshiguma_core::{
-    telemetry::AsTelemetry,
-    types::{MonitorKind, Monitors, Severity, TemperatureReading},
-};
+use hoshiguma_api::{MonitorKind, Monitors, Severity};
+use hoshiguma_common::changed::{Changed, ObservedValue, checked_set};
 
 pub(crate) static NEW_MONITOR_STATUS: PubSubChannel<
     CriticalSectionRawMutex,
