@@ -25,14 +25,14 @@ pub(crate) async fn task() {
     {
         let git_revision: GitRevisionString = git_version::git_version!().try_into().unwrap();
         queue_telemetry_data_point(format_influx_line_str(
-            "peripheral_controller_git_revision",
+            "orchestrator_git_revision",
             "value",
             git_revision,
             None,
         ));
 
         queue_telemetry_data_point(format_influx_line_str(
-            "peripheral_controller_boot_reason",
+            "orchestrator_boot_reason",
             "value",
             crate::boot_reason().telemetry_str(),
             None,
@@ -41,21 +41,21 @@ pub(crate) async fn task() {
 
     loop {
         queue_telemetry_data_point(format_influx_line(
-            "peripheral_controller_uptime",
+            "orchestrator_uptime",
             "value",
             Instant::now().as_millis(),
             None,
         ));
 
         queue_telemetry_data_point(format_influx_line(
-            "peripheral_controller_data_points_discarded,reason=format_error",
+            "orchestrator_data_points_discarded,reason=format_error",
             "value",
             DATA_POINTS_DISCARDED_FORMAT.load(Ordering::Relaxed),
             None,
         ));
 
         queue_telemetry_data_point(format_influx_line(
-            "peripheral_controller_data_points_discarded,reason=buffer_capacity",
+            "orchestrator_data_points_discarded,reason=buffer_capacity",
             "value",
             DATA_POINTS_DISCARDED_BUFFER.load(Ordering::Relaxed),
             None,

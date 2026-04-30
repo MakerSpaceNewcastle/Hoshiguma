@@ -5,13 +5,15 @@ use defmt::warn;
 use embassy_net::Stack;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
-use hoshiguma_api::telemetry_bridge::FormattedTelemetryDataPoint;
+use hoshiguma_api::telemetry_bridge::{FormattedTelemetryDataPoint, TELEMETRY_DATA_POINT_MAX_LEN};
 use hoshiguma_common::telemetry::FormatInfluxResult;
 
 static TELEMETRY_TX: Channel<CriticalSectionRawMutex, FormattedTelemetryDataPoint, 64> =
     Channel::new();
 
-pub(crate) fn queue_telemetry_data_point(data_point: FormatInfluxResult<256>) {
+pub(crate) fn queue_telemetry_data_point(
+    data_point: FormatInfluxResult<TELEMETRY_DATA_POINT_MAX_LEN>,
+) {
     if let Ok(data_point) = data_point {
         if let Err(e) = TELEMETRY_TX.try_send(FormattedTelemetryDataPoint(data_point)) {
             warn!("Data point discarded: {}", e);
