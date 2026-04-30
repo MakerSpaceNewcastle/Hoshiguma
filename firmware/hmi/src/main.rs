@@ -1,17 +1,17 @@
 #![no_std]
 #![no_main]
 
+mod api;
 mod devices;
 mod network;
 
-use crate::network::NUM_LISTENERS;
+use crate::api::{NUM_LISTENERS, NUM_NOTIFIERS};
 use assign_resources::assign_resources;
 use defmt::{Format, info};
 use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
-use heapless::Vec;
 use hoshiguma_api::{AccessControlRawInput, AccessControlState, BootReason};
 use panic_probe as _;
 use peek_o_display_bsp::{
@@ -57,6 +57,8 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
+    let net_stack = network::init(spawner, r.ethernet).await;
+
     let spi = board.board_spi();
 
     let display_rotation = Rotation::Deg0;
@@ -79,18 +81,15 @@ async fn main(spawner: Spawner) {
             .unwrap(),
     );
 
-    let mut comm = Vec::new();
-    for i in 0..network::NUM_LISTENERS {
-        if comm
-            .push(DeviceCommunicator {
-                backlight: backlight_comm[i].side_a(),
-            })
-            .is_err()
-        {
-            panic!();
-        }
+    for idx in 0..NUM_LISTENERS {
+        let comm = DeviceCommunicator {
+            backlight: backlight_comm[idx].side_a(),
+        };
+        spawner.spawn(api::listen_task(net_stack, idx, comm).unwrap());
     }
-    network::init(spawner, r.ethernet, NOTIFICATION_CHANNEL.receiver(), comm).await;
+    for idx in 0..NUM_NOTIFIERS {
+        spawner.spawn(api::notify_task(net_stack, idx, NOTIFICATION_CHANNEL.receiver()).unwrap());
+    }
 
     spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }

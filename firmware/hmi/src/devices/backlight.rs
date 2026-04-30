@@ -1,4 +1,4 @@
-use crate::network::NUM_LISTENERS;
+use crate::api::NUM_LISTENERS;
 use defmt::{Format, info, warn};
 use embassy_futures::select::Either;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;

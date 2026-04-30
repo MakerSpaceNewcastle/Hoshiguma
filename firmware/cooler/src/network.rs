@@ -1,13 +1,4 @@
-use crate::{
-    DeviceCommunicator, EthernetResources,
-    devices::{
-        compressor::CompressorInterfaceChannel, coolant_pump::CoolantPumpInterfaceChannel,
-        coolant_rate_sensors::CoolantRateInterfaceChannel,
-        radiator_fan::RadiatorFanInterfaceChannel,
-        temperature_sensors::TemperatureInterfaceChannel,
-    },
-};
-use defmt::warn;
+use crate::EthernetResources;
 use embassy_executor::Spawner;
 use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};
@@ -21,21 +12,15 @@ use embassy_rp::{
     spi::Config as SpiConfig,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
-use embassy_time::Instant;
 use heapless::Vec;
-use hoshiguma_api::{
-    COOLER_IP_ADDRESS, Message,
-    cooler::{Request, Response, ResponseData},
-};
-use hoshiguma_common::network::{COOLER_MAC_ADDRESS, message_handler_loop};
+use hoshiguma_api::COOLER_IP_ADDRESS;
+use hoshiguma_common::network::COOLER_MAC_ADDRESS;
 use static_cell::StaticCell;
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
     DMA_IRQ_0 => embassy_rp::dma::InterruptHandler<DMA_CH0>, embassy_rp::dma::InterruptHandler<DMA_CH1>;
 });
-
-pub(crate) const NUM_LISTENERS: usize = 3;
 
 type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
     'static,
@@ -44,11 +29,7 @@ type SpiDevice = embassy_embedded_hal::shared_bus::asynch::spi::SpiDevice<
     Output<'static>,
 >;
 
-pub(super) async fn init(
-    spawner: Spawner,
-    r: EthernetResources,
-    mut comm: Vec<DeviceCommunicator, NUM_LISTENERS>,
-) {
+pub(super) async fn init(spawner: Spawner, r: EthernetResources) -> Stack<'static> {
     let mut rng = RoscRng;
 
     let mut spi_cfg = SpiConfig::default();
@@ -105,9 +86,7 @@ pub(super) async fn init(
 
     spawner.spawn(net_task(runner).unwrap());
 
-    for idx in 0..NUM_LISTENERS {
-        spawner.spawn(listen_task(stack, idx, comm.pop().unwrap()).unwrap());
-    }
+    stack
 }
 
 #[embassy_executor::task]
@@ -120,103 +99,4 @@ async fn ethernet_task(
 #[embassy_executor::task]
 async fn net_task(mut runner: embassy_net::Runner<'static, Device<'static>>) -> ! {
     runner.run().await
-}
-
-// TODO: split comms out as per telemetry bridge
-
-#[embassy_executor::task(pool_size = NUM_LISTENERS)]
-async fn listen_task(stack: Stack<'static>, id: usize, mut comm: DeviceCommunicator) {
-    message_handler_loop(stack, id, async |mut message| {
-        let request = match message.payload::<Request>() {
-            Ok(request) => request,
-            Err(_) => {
-                warn!("socket {}: failed to parse request", id);
-                return Message::new(&Response(Err(()))).unwrap();
-            }
-        };
-
-        let _ = crate::COMM_GOOD_INDICATOR.try_send(());
-
-        let response = match request {
-            Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
-                git_version::git_version!().try_into().unwrap(),
-            ))),
-            Request::GetUptime => Response(Ok(ResponseData::Uptime(
-                Instant::now().duration_since(Instant::MIN).into(),
-            ))),
-            Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
-            Request::GetRadiatorFanState => Response(
-                comm.radiator_fan
-                    .get()
-                    .await
-                    .map(ResponseData::RadiatorFanState)
-                    .map_err(|_| ()),
-            ),
-            Request::SetRadiatorFanState(state) => Response(
-                comm.radiator_fan
-                    .set(state)
-                    .await
-                    .map(ResponseData::RadiatorFanState)
-                    .map_err(|_| ()),
-            ),
-            Request::GetCompressorState => Response(
-                comm.compressor
-                    .get()
-                    .await
-                    .map(ResponseData::CompressorState)
-                    .map_err(|_| ()),
-            ),
-            Request::SetCompressorState(state) => Response(
-                comm.compressor
-                    .set(state)
-                    .await
-                    .map(ResponseData::CompressorState)
-                    .map_err(|_| ()),
-            ),
-            Request::GetCoolantPumpState => Response(
-                comm.coolant_pump
-                    .get()
-                    .await
-                    .map(ResponseData::CoolantPumpState)
-                    .map_err(|_| ()),
-            ),
-            Request::SetCoolantPumpState(state) => Response(
-                comm.coolant_pump
-                    .set(state)
-                    .await
-                    .map(ResponseData::CoolantPumpState)
-                    .map_err(|_| ()),
-            ),
-            Request::GetTemperatures => Response(
-                comm.temperatures
-                    .get()
-                    .await
-                    .map(ResponseData::Temperatures)
-                    .map_err(|_| ()),
-            ),
-            Request::GetCoolantFlowRate => Response(
-                comm.coolant_flow_rate
-                    .get()
-                    .await
-                    .map(ResponseData::CoolantFlowRate)
-                    .map_err(|_| ()),
-            ),
-            Request::GetCoolantReturnRate => Response(
-                comm.coolant_return_rate
-                    .get()
-                    .await
-                    .map(ResponseData::CoolantReturnRate)
-                    .map_err(|_| ()),
-            ),
-        };
-
-        match Message::new(&response) {
-            Ok(message) => message,
-            Err(_) => {
-                warn!("socket {}: failed to serialize response", id);
-                Message::new(&Response(Err(()))).unwrap()
-            }
-        }
-    })
-    .await
 }

@@ -369,6 +369,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0641612053b2f34fc250bb63f6630ae75de46e02ade7f457268447081d709ce"
 dependencies = [
+ "defmt 1.0.1",
  "embassy-futures",
  "embassy-hal-internal 0.4.0",
  "embassy-sync",
@@ -889,6 +890,7 @@ dependencies = [
  "defmt 1.0.1",
  "defmt-rtt",
  "ds18b20",
+ "embassy-embedded-hal",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",
@@ -898,6 +900,7 @@ dependencies = [
  "embassy-time",
  "embassy-time-driver",
  "git-version",
+ "heapless",
  "hoshiguma-api",
  "hoshiguma-common",
  "one-wire-bus",

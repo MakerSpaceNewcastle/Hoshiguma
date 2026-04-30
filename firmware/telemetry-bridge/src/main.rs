@@ -90,7 +90,7 @@ async fn main(spawner: Spawner) {
     );
 
     for idx in 0..api::NUM_LISTENERS {
-        spawner.spawn(api::listen_task(net_stack_internal, net_stack_external, idx).unwrap());
+        spawner.spawn(api::task(net_stack_internal, net_stack_external, idx).unwrap());
     }
 
     info!("Waiting for DHCP");

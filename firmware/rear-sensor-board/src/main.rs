@@ -1,10 +1,11 @@
 #![no_std]
 #![no_main]
 
+mod api;
 mod devices;
 mod network;
 
-use crate::network::NUM_LISTENERS;
+use crate::api::NUM_LISTENERS;
 use assign_resources::assign_resources;
 use defmt::info;
 use defmt_rtt as _;
@@ -17,7 +18,6 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
-use heapless::Vec;
 use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
@@ -85,6 +85,8 @@ async fn main(spawner: Spawner) {
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
 
+    let net_stack = network::init(spawner, r.ethernet).await;
+
     static AIRFLOW_COMM: StaticCell<[devices::airflow_sensor::Channel; NUM_LISTENERS]> =
         StaticCell::new();
     let airflow_comm = AIRFLOW_COMM.init(Default::default());
@@ -103,20 +105,14 @@ async fn main(spawner: Spawner) {
     let temperatures_comm_b = temperatures_comm.each_ref().map(|comm| comm.side_b());
     spawner.spawn(devices::temperature_sensors::task(r.onewire, temperatures_comm_b).unwrap());
 
-    let mut comm = Vec::new();
-    for i in 0..network::NUM_LISTENERS {
-        if comm
-            .push(DeviceCommunicator {
-                airflow: airflow_comm[i].side_a(),
-                status_light: status_light_comm[i].side_a(),
-                temperatures: temperatures_comm[i].side_a(),
-            })
-            .is_err()
-        {
-            panic!();
-        }
+    for idx in 0..NUM_LISTENERS {
+        let comm = DeviceCommunicator {
+            airflow: airflow_comm[idx].side_a(),
+            status_light: status_light_comm[idx].side_a(),
+            temperatures: temperatures_comm[idx].side_a(),
+        };
+        spawner.spawn(api::task(net_stack, idx, comm).unwrap());
     }
-    network::init(spawner, r.ethernet, comm).await;
 
     spawner.spawn(watchdog_feed_task(r.status).unwrap());
 }

@@ -1,4 +1,4 @@
-use crate::{Sdp810Resources, network::NUM_LISTENERS};
+use crate::{Sdp810Resources, api::NUM_LISTENERS};
 use defmt::{Format, debug, info, warn};
 use embassy_rp::{
     bind_interrupts,

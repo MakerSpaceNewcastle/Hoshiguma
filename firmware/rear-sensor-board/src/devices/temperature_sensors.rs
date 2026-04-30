@@ -1,4 +1,4 @@
-use crate::{OnewireResources, network::NUM_LISTENERS};
+use crate::{OnewireResources, api::NUM_LISTENERS};
 use defmt::{Format, info, warn};
 use embassy_rp::{
     bind_interrupts,

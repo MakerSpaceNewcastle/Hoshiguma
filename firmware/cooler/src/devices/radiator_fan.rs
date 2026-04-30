@@ -1,4 +1,4 @@
-use crate::{RadiatorFanResources, network::NUM_LISTENERS};
+use crate::{RadiatorFanResources, api::NUM_LISTENERS};
 use defmt::{Format, warn};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;

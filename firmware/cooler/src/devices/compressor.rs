@@ -1,4 +1,4 @@
-use crate::{CompressorResources, network::NUM_LISTENERS};
+use crate::{CompressorResources, api::NUM_LISTENERS};
 use defmt::{Format, warn};
 use embassy_rp::gpio::{Level, Output};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;

@@ -3,6 +3,7 @@
 
 // mod devices;
 // mod logic;
+mod network;
 mod polled_input;
 // mod self_telemetry; TODO
 // mod telemetry; TODO
@@ -177,6 +178,8 @@ fn main() -> ! {
     #[cfg(feature = "trace")]
     trace::identify_core_0_executor(executor_0.id() as u32);
     let spawner = executor_0.spawner();
+
+    // let net_stack = network::init(spawner, r.ethernet).await;
 
     // Telemetry reporting
     // spawner.spawn(self_telemetry::task().unwrap()); TODO
