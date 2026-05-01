@@ -13,7 +13,6 @@ pub async fn try_connect<'a>(
     port: u16,
 ) -> Result<TcpSocket<'a>, Error> {
     let mut socket = TcpSocket::new(stack, rx_buffer, tx_buffer);
-    socket.set_keep_alive(Some(Duration::from_millis(100)));
     socket.set_timeout(Some(Duration::from_secs(1)));
 
     'connect: for attempt in 1..=50 {
@@ -21,7 +20,7 @@ pub async fn try_connect<'a>(
         match socket.connect((addr, port)).await {
             Ok(_) => break 'connect,
             Err(e) => {
-                warn!("Failed to connect to TCP {}:{}: {:?}", addr, port, e);
+                warn!("Failed to connect to TCP {}:{}: {}", addr, port, e);
                 Timer::after_millis(10).await;
                 continue 'connect;
             }
@@ -63,9 +62,8 @@ pub(super) async fn receive_one<'a>(
                 return Err(Error::SocketReadEof);
             }
             Ok(n) => n,
-            Err(e) => {
-                warn!("{}", e);
-                return Err(Error::SocketRead);
+            Err(embassy_net::tcp::Error::ConnectionReset) => {
+                return Err(Error::ConnectionReset);
             }
         };
 

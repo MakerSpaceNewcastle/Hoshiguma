@@ -1,5 +1,5 @@
 use hoshiguma_api::{
-    CONTROL_PORT, TELEMETRY_MODULE_IP_ADDRESS,
+    CONTROL_PORT, TELEMETRY_BRIDGE_IP_ADDRESS,
     telemetry_bridge::{FormattedTelemetryDataPoint, Request, Response},
 };
 use hoshiguma_api_client::send_command;
@@ -12,7 +12,7 @@ async fn main() {
 
     let a = tokio::spawn(async {
         loop {
-            let mut stream = TcpStream::connect((TELEMETRY_MODULE_IP_ADDRESS, CONTROL_PORT))
+            let mut stream = TcpStream::connect((TELEMETRY_BRIDGE_IP_ADDRESS, CONTROL_PORT))
                 .await
                 .unwrap();
             send_command::<_, Response>(&mut stream, Request::IsReady).await;
@@ -27,7 +27,7 @@ async fn main() {
         let mut data_point_count = 0usize;
 
         loop {
-            let mut stream = TcpStream::connect((TELEMETRY_MODULE_IP_ADDRESS, CONTROL_PORT))
+            let mut stream = TcpStream::connect((TELEMETRY_BRIDGE_IP_ADDRESS, CONTROL_PORT))
                 .await
                 .unwrap();
             for _ in 0..10 {

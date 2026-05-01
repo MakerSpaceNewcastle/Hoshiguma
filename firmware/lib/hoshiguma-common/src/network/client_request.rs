@@ -25,6 +25,9 @@ pub async fn send_request<
     let rx_result = receive_one(&mut framer, &mut socket).await;
 
     socket.close();
+    if let Err(e) = socket.flush().await {
+        warn!("Failed to flush socket after closing: {}", e);
+    }
     drop(socket);
 
     if rx_result.is_ok() && !framer.is_empty() {

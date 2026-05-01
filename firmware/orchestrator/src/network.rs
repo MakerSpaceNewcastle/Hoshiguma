@@ -1,5 +1,4 @@
 use crate::EthernetResources;
-use defmt::info;
 use embassy_executor::Spawner;
 use embassy_net::{Ipv4Cidr, Stack, StackResources, StaticConfigV4};
 use embassy_net_wiznet::{Device, Runner, State, chip::W5500};

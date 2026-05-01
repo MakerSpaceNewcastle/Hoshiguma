@@ -15,7 +15,6 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
     let mut framer = CobsFramer::<4096>::default();
 
     let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-    socket.set_keep_alive(Some(Duration::from_millis(100)));
     socket.set_timeout(Some(Duration::from_secs(1)));
 
     'conn: loop {
@@ -39,14 +38,16 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
         loop {
             let message = match receive_one(&mut framer, &mut socket).await {
                 Ok(message) => message,
-                Err(Error::SocketReadEof) => {
+                Err(Error::SocketReadEof) | Err(Error::ConnectionReset) => {
                     info!("socket {}: connection closed by peer", id);
                     socket.close();
+                    socket.flush().await;
                     continue 'conn;
                 }
                 Err(e) => {
                     warn!("socket {}: failed to receive message: {}", id, e);
                     socket.close();
+                    socket.flush().await;
                     continue 'conn;
                 }
             };
@@ -56,6 +57,7 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
             if let Err(e) = send_one(&mut socket, &message).await {
                 warn!("socket {}: failed to send response: {}", id, e);
                 socket.close();
+                socket.flush().await;
                 continue 'conn;
             };
         }

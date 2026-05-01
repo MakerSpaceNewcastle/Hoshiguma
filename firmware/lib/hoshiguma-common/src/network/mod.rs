@@ -15,7 +15,7 @@ use defmt::Format;
 #[derive(Debug, Format, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     NotConnected,
-    SocketRead,
+    ConnectionReset,
     SocketReadEof,
     SocketWrite,
     MessageDeserialize,
