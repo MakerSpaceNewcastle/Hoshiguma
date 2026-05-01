@@ -12,9 +12,9 @@ use embassy_rp::{
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex};
 use heapless::Vec;
-use hoshiguma_api::TELEMETRY_MODULE_IP_ADDRESS;
+use hoshiguma_api::TELEMETRY_BRIDGE_IP_ADDRESS;
 use hoshiguma_common::network::{
-    TELEMETRY_MODULE_MAC_ADDRESS, TELEMETRY_MODULE_MAC_ADDRESS_PUBLIC,
+    TELEMETRY_BRIDGE_MAC_ADDRESS, TELEMETRY_BRIDGE_MAC_ADDRESS_PUBLIC,
 };
 use static_cell::StaticCell;
 
@@ -60,7 +60,7 @@ pub(crate) async fn init_internal(
     let state = STATE.init(State::<8, 8>::new());
 
     let (device, runner) = embassy_net_wiznet::new(
-        TELEMETRY_MODULE_MAC_ADDRESS,
+        TELEMETRY_BRIDGE_MAC_ADDRESS,
         state,
         device,
         w5500_int,
@@ -75,7 +75,7 @@ pub(crate) async fn init_internal(
     let (stack, runner) = embassy_net::new(
         device,
         Config::ipv4_static(StaticConfigV4 {
-            address: Ipv4Cidr::new(TELEMETRY_MODULE_IP_ADDRESS, 24),
+            address: Ipv4Cidr::new(TELEMETRY_BRIDGE_IP_ADDRESS, 24),
             gateway: None,
             dns_servers: Vec::default(),
         }),
@@ -117,7 +117,7 @@ pub(crate) async fn init_external(
     let state = STATE.init(State::<8, 8>::new());
 
     let (device, runner) = embassy_net_wiznet::new(
-        TELEMETRY_MODULE_MAC_ADDRESS_PUBLIC,
+        TELEMETRY_BRIDGE_MAC_ADDRESS_PUBLIC,
         state,
         device,
         w5500_int,

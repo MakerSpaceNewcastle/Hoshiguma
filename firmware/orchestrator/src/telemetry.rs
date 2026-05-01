@@ -1,11 +1,11 @@
-use crate::self_telemetry::{DATA_POINTS_DISCARDED_BUFFER, DATA_POINTS_DISCARDED_FORMAT};
+use crate::self_telemetry::{DATA_POINTS_DISCARDED_BUFFER, DATA_POINTS_DISCARDED_FORMAT_FAIL};
 use core::sync::atomic::Ordering;
-use defmt::{info, warn};
+use defmt::{debug, info, warn};
 use embassy_net::Stack;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
 use hoshiguma_api::{
-    CONTROL_PORT, TELEMETRY_MODULE_IP_ADDRESS,
+    CONTROL_PORT, TELEMETRY_BRIDGE_IP_ADDRESS,
     telemetry_bridge::{
         FormattedTelemetryDataPoint, Request, Response, ResponseData, TELEMETRY_DATA_POINT_MAX_LEN,
     },
@@ -25,7 +25,7 @@ pub(crate) fn queue_telemetry_data_point(
         }
     } else {
         warn!("Data point discarded: failed to format data point");
-        DATA_POINTS_DISCARDED_FORMAT.fetch_add(1, Ordering::Relaxed);
+        DATA_POINTS_DISCARDED_FORMAT_FAIL.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -36,34 +36,59 @@ pub(super) async fn task(stack: Stack<'static>) {
 
     let telem_rx = TELEMETRY_TX.receiver();
 
+    // TODO
     // let status_tx = unwrap!(NEW_MONITOR_STATUS.publisher());
 
     'connection: loop {
-        //         // Report telemetry inoperative
-        //         status_tx
-        //             .publish((MonitorKind::TelemetryInop, Severity::Information))
-        //             .await;
+        // Report telemetry inoperative
+        // TODO
+        // status_tx
+        //     .publish((MonitorKind::TelemetryInop, Severity::Information))
+        //     .await;
 
-        // Wait for telemetry module to come online
-        wait_for_telemetry_module_ready(stack).await;
+        // Wait for telemetry bridge to come online
+        wait_for_telemetry_bridge_ready(stack).await;
 
-        //         // Report telemetry ready
-        //         status_tx
-        //             .publish((MonitorKind::TelemetryInop, Severity::Normal))
-        //             .await;
+        // Report telemetry ready
+        // TODO
+        // status_tx
+        //     .publish((MonitorKind::TelemetryInop, Severity::Normal))
+        //     .await;
 
         // Receive data points from queue
         loop {
-            let data_point = TELEMETRY_TX.receive().await;
+            let data_point = telem_rx.receive().await;
 
-            // TODO
+            info!("Sending data point: {}", data_point.0);
+
+            match send_request::<_, Response>(
+                stack,
+                TELEMETRY_BRIDGE_IP_ADDRESS,
+                CONTROL_PORT,
+                &Request::SendTelemetryDataPoint(data_point),
+            )
+            .await
+            {
+                Ok(response) => match response.0 {
+                    Ok(ResponseData::TelementryDataPointAck) => {
+                        debug!("Data point ack");
+                    }
+                    response => {
+                        warn!("Unexpected response: {}", response);
+                    }
+                },
+                Err(e) => {
+                    warn!("Failed to send request: {}", e);
+                    continue 'connection;
+                }
+            }
         }
     }
 }
 
-async fn wait_for_telemetry_module_ready(stack: Stack<'static>) {
+async fn wait_for_telemetry_bridge_ready(stack: Stack<'static>) {
     loop {
-        if is_telemetry_module_ready(stack).await {
+        if is_telemetry_bridge_ready(stack).await {
             return;
         }
 
@@ -71,10 +96,10 @@ async fn wait_for_telemetry_module_ready(stack: Stack<'static>) {
     }
 }
 
-async fn is_telemetry_module_ready(stack: Stack<'static>) -> bool {
+async fn is_telemetry_bridge_ready(stack: Stack<'static>) -> bool {
     match send_request::<_, Response>(
         stack,
-        TELEMETRY_MODULE_IP_ADDRESS,
+        TELEMETRY_BRIDGE_IP_ADDRESS,
         CONTROL_PORT,
         &Request::IsReady,
     )
@@ -85,13 +110,13 @@ async fn is_telemetry_module_ready(stack: Stack<'static>) -> bool {
                 info!("Telemetry module ready: {}", ready);
                 ready
             }
-            _ => {
-                warn!("Failed to parse response from telemetry module");
+            response => {
+                warn!("Unexpected response: {}", response);
                 false
             }
         },
         Err(e) => {
-            warn!("Failed to send request to telemetry module: {}", e);
+            warn!("Failed to send request: {}", e);
             false
         }
     }

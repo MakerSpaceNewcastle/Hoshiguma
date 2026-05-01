@@ -16,8 +16,9 @@ use hoshiguma_api::{GitRevisionString, TelemetryString};
 use hoshiguma_common::telemetry::{format_influx_line, format_influx_line_str};
 use portable_atomic::AtomicUsize;
 
-pub(crate) static DATA_POINTS_DISCARDED_FORMAT: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static DATA_POINTS_DISCARDED_FORMAT_FAIL: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static DATA_POINTS_DISCARDED_BUFFER: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static DATA_POINTS_DISCARDED_TX_FAIL: AtomicUsize = AtomicUsize::new(0);
 
 #[embassy_executor::task]
 pub(crate) async fn task() {
@@ -50,7 +51,7 @@ pub(crate) async fn task() {
         queue_telemetry_data_point(format_influx_line(
             "orchestrator_data_points_discarded,reason=format_error",
             "value",
-            DATA_POINTS_DISCARDED_FORMAT.load(Ordering::Relaxed),
+            DATA_POINTS_DISCARDED_FORMAT_FAIL.load(Ordering::Relaxed),
             None,
         ));
 
@@ -58,6 +59,13 @@ pub(crate) async fn task() {
             "orchestrator_data_points_discarded,reason=buffer_capacity",
             "value",
             DATA_POINTS_DISCARDED_BUFFER.load(Ordering::Relaxed),
+            None,
+        ));
+
+        queue_telemetry_data_point(format_influx_line(
+            "orchestrator_data_points_discarded,reason=tx_fail",
+            "value",
+            DATA_POINTS_DISCARDED_TX_FAIL.load(Ordering::Relaxed),
             None,
         ));
 

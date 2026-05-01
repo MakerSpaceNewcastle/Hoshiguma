@@ -1,6 +1,6 @@
 use core::net::Ipv4Addr;
 
-pub const TELEMETRY_MODULE_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 1);
+pub const TELEMETRY_BRIDGE_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 1);
 pub const ORCHESTRATOR_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 2);
 pub const RUIDA_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 3);
 pub const HMI_IP_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 69, 69, 4);
