@@ -1,4 +1,4 @@
-use crate::self_telemetry::{DATA_POINTS_DISCARDED_BUFFER, DATA_POINTS_DISCARDED_FORMAT_FAIL};
+use crate::self_telemetry::{DATA_POINTS_DISCARDED_FORMAT_FAIL, DATA_POINTS_DISCARDED_QUEUE_FULL};
 use core::sync::atomic::Ordering;
 use defmt::{debug, info, warn};
 use embassy_net::Stack;
@@ -21,7 +21,7 @@ pub(crate) fn queue_telemetry_data_point(
     if let Ok(data_point) = data_point {
         if let Err(e) = TELEMETRY_TX.try_send(FormattedTelemetryDataPoint(data_point)) {
             warn!("Data point discarded: {}", e);
-            DATA_POINTS_DISCARDED_BUFFER.fetch_add(1, Ordering::Relaxed);
+            DATA_POINTS_DISCARDED_QUEUE_FULL.fetch_add(1, Ordering::Relaxed);
         }
     } else {
         warn!("Data point discarded: failed to format data point");

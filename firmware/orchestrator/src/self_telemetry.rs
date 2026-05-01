@@ -6,6 +6,7 @@
 //!
 //! Sent at a 1 minute interval:
 //! - uptime
+//! - wall time
 //! - number of data points discarded due to formatting failures
 //! - number of data points discarded due to buffer capacity
 
@@ -17,7 +18,7 @@ use hoshiguma_common::telemetry::{format_influx_line, format_influx_line_str};
 use portable_atomic::AtomicUsize;
 
 pub(crate) static DATA_POINTS_DISCARDED_FORMAT_FAIL: AtomicUsize = AtomicUsize::new(0);
-pub(crate) static DATA_POINTS_DISCARDED_BUFFER: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static DATA_POINTS_DISCARDED_QUEUE_FULL: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static DATA_POINTS_DISCARDED_TX_FAIL: AtomicUsize = AtomicUsize::new(0);
 
 #[embassy_executor::task]
@@ -48,6 +49,14 @@ pub(crate) async fn task() {
             None,
         ));
 
+        // TODO
+        queue_telemetry_data_point(format_influx_line(
+            "orchestrator_wall_time",
+            "value",
+            0, //crate::wall_time::now().unwrap_or_default().timestamp(),
+            None,
+        ));
+
         queue_telemetry_data_point(format_influx_line(
             "orchestrator_data_points_discarded,reason=format_error",
             "value",
@@ -56,9 +65,9 @@ pub(crate) async fn task() {
         ));
 
         queue_telemetry_data_point(format_influx_line(
-            "orchestrator_data_points_discarded,reason=buffer_capacity",
+            "orchestrator_data_points_discarded,reason=queue_full",
             "value",
-            DATA_POINTS_DISCARDED_BUFFER.load(Ordering::Relaxed),
+            DATA_POINTS_DISCARDED_QUEUE_FULL.load(Ordering::Relaxed),
             None,
         ));
 

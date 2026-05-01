@@ -274,6 +274,7 @@ async fn watchdog_feed_task(r: StatusResources) {
 #[embassy_executor::task]
 async fn network_tasks(spawner: Spawner, r: EthernetResources) {
     let net_stack = network::init(spawner, r).await;
+    spawner.spawn(wall_time::task(net_stack).unwrap());
     spawner.spawn(telemetry::task(net_stack).unwrap());
 }
 
