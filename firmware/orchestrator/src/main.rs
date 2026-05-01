@@ -283,7 +283,7 @@ async fn network_tasks(spawner: Spawner, r: EthernetResources) {
     // spawner.spawn(telemetry::task(net_stack).unwrap());
     //
     loop {
-        embassy_time::Timer::after_millis(100).await;
+        embassy_time::Timer::after_millis(10).await;
 
         match send_request::<_, Response>(
             net_stack,
