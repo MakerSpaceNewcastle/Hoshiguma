@@ -7,6 +7,7 @@ mod network;
 mod polled_input;
 mod self_telemetry;
 mod telemetry;
+mod telemetry_bridge_comm;
 #[cfg(feature = "trace")]
 mod trace;
 mod wall_time;

@@ -1,0 +1,10 @@
+default: build
+
+build:
+    cargo build --release
+
+run:
+    cargo run --release
+
+attach:
+    probe-rs attach --chip RP2040 ./target/thumbv6m-none-eabi/release/hoshiguma-telemetry-bridge

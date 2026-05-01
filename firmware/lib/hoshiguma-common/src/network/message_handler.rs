@@ -14,10 +14,11 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
 
     let mut framer = CobsFramer::<4096>::default();
 
-    'conn: loop {
-        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
-        socket.set_timeout(Some(Duration::from_secs(1)));
+    let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    socket.set_keep_alive(Some(Duration::from_millis(100)));
+    socket.set_timeout(Some(Duration::from_secs(1)));
 
+    'conn: loop {
         debug!("socket {}: listening on TCP {}...", id, CONTROL_PORT);
         if let Err(e) = socket.accept(CONTROL_PORT).await {
             warn!("socket {}: accept error: {:?}", id, e);

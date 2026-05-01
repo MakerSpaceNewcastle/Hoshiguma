@@ -49,11 +49,10 @@ pub(crate) async fn task() {
             None,
         ));
 
-        // TODO
         queue_telemetry_data_point(format_influx_line(
             "orchestrator_wall_time",
             "value",
-            0, //crate::wall_time::now().unwrap_or_default().timestamp(),
+            crate::wall_time::now().unwrap_or_default().timestamp(),
             None,
         ));
 

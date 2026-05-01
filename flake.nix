@@ -7,6 +7,9 @@
   in {
     devShells.${system}.default = pkgs.mkShell {
       packages = with pkgs; [
+        # General tools
+        just
+
         # Code formatting tools
         treefmt
         alejandra
@@ -18,8 +21,7 @@
         rustup
         probe-rs-tools
 
-        # Other tools
-        just
+        # CAD tools
         openscad
       ];
     };

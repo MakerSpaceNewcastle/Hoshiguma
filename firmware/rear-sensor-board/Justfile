@@ -1,0 +1,10 @@
+default: build
+
+build:
+    cargo build --release
+
+run:
+    cargo run --release
+
+attach:
+    probe-rs attach --chip RP235x ./target/thumbv8m.main-none-eabihf/release/hoshiguma-rear-sensor-board

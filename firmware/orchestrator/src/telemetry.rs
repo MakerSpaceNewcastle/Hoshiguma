@@ -1,16 +1,25 @@
-use crate::self_telemetry::{DATA_POINTS_DISCARDED_FORMAT_FAIL, DATA_POINTS_DISCARDED_QUEUE_FULL};
+use crate::{
+    self_telemetry::{DATA_POINTS_DISCARDED_FORMAT_FAIL, DATA_POINTS_DISCARDED_QUEUE_FULL},
+    telemetry_bridge_comm::wait_for_telemetry_bridge_ready,
+};
 use core::sync::atomic::Ordering;
-use defmt::{debug, info, warn};
-use embassy_net::Stack;
+use defmt::{debug, error, info, warn};
+use embassy_net::{
+    Stack,
+    tcp::{State, TcpSocket},
+};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
-use embassy_time::Timer;
+use embassy_time::Duration;
 use hoshiguma_api::{
     CONTROL_PORT, TELEMETRY_BRIDGE_IP_ADDRESS,
     telemetry_bridge::{
         FormattedTelemetryDataPoint, Request, Response, ResponseData, TELEMETRY_DATA_POINT_MAX_LEN,
     },
 };
-use hoshiguma_common::{network::send_request, telemetry::FormatInfluxResult};
+use hoshiguma_common::{
+    network::{send_request_socket, try_connect},
+    telemetry::FormatInfluxResult,
+};
 
 static TELEMETRY_TX: Channel<CriticalSectionRawMutex, FormattedTelemetryDataPoint, 64> =
     Channel::new();
@@ -55,16 +64,29 @@ pub(super) async fn task(stack: Stack<'static>) {
         //     .publish((MonitorKind::TelemetryInop, Severity::Normal))
         //     .await;
 
+        let mut rx_buffer = [0; 4096];
+        let mut tx_buffer = [0; 4096];
+
+        let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+        socket.set_keep_alive(Some(Duration::from_millis(100)));
+        socket.set_timeout(Some(Duration::from_secs(1)));
+
         // Receive data points from queue
         loop {
             let data_point = telem_rx.receive().await;
 
-            info!("Sending data point: {}", data_point.0);
+            if socket.state() == State::Closed {
+                if let Err(e) =
+                    try_connect(&mut socket, TELEMETRY_BRIDGE_IP_ADDRESS, CONTROL_PORT).await
+                {
+                    error!("Failed to connect to telemetry bridge: {}", e);
+                    continue 'connection;
+                }
+            }
 
-            match send_request::<_, Response>(
-                stack,
-                TELEMETRY_BRIDGE_IP_ADDRESS,
-                CONTROL_PORT,
+            info!("Sending data point: {}", data_point.0);
+            match send_request_socket::<_, Response>(
+                &mut socket,
                 &Request::SendTelemetryDataPoint(data_point),
             )
             .await
@@ -82,42 +104,10 @@ pub(super) async fn task(stack: Stack<'static>) {
                     continue 'connection;
                 }
             }
-        }
-    }
-}
 
-async fn wait_for_telemetry_bridge_ready(stack: Stack<'static>) {
-    loop {
-        if is_telemetry_bridge_ready(stack).await {
-            return;
-        }
-
-        Timer::after_secs(1).await;
-    }
-}
-
-async fn is_telemetry_bridge_ready(stack: Stack<'static>) -> bool {
-    match send_request::<_, Response>(
-        stack,
-        TELEMETRY_BRIDGE_IP_ADDRESS,
-        CONTROL_PORT,
-        &Request::IsReady,
-    )
-    .await
-    {
-        Ok(response) => match response.0 {
-            Ok(ResponseData::Ready(ready)) => {
-                info!("Telemetry module ready: {}", ready);
-                ready
+            if telem_rx.is_empty() {
+                socket.close();
             }
-            response => {
-                warn!("Unexpected response: {}", response);
-                false
-            }
-        },
-        Err(e) => {
-            warn!("Failed to send request: {}", e);
-            false
         }
     }
 }

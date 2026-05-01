@@ -1,6 +1,6 @@
-use super::{Error, receive_one, send_one};
-use defmt::{debug, error, info, warn};
-use embassy_net::{Stack, tcp::TcpSocket};
+use super::{Error, receive_one, send_one, try_connect};
+use defmt::warn;
+use embassy_net::{Ipv4Address, Stack, tcp::TcpSocket};
 use embassy_time::Duration;
 use hoshiguma_api::{CobsFramer, Message, MessagePayload};
 use serde::{Serialize, de::DeserializeOwned};
@@ -10,7 +10,7 @@ pub async fn send_request<
     Response: MessagePayload + DeserializeOwned,
 >(
     stack: Stack<'static>,
-    addr: embassy_net::Ipv4Address,
+    addr: Ipv4Address,
     port: u16,
     request: &Request,
 ) -> Result<Response, Error> {
@@ -18,33 +18,42 @@ pub async fn send_request<
     let mut tx_buffer = [0; 4096];
 
     let mut socket = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+    socket.set_keep_alive(Some(Duration::from_millis(100)));
     socket.set_timeout(Some(Duration::from_secs(1)));
 
-    'connect: for attempt in 1..=5 {
-        debug!("Connecting to TCP {}:{} (attempt {})", addr, port, attempt);
-        match socket.connect((addr, port)).await {
-            Ok(_) => break 'connect,
-            Err(e) => {
-                warn!("Failed to connect to TCP {}:{}: {:?}", addr, port, e);
-                continue 'connect;
-            }
-        };
-    }
-
-    if socket.remote_endpoint().is_none() {
-        error!(
-            "Failed to connect to TCP {}:{} after multiple attempts",
-            addr, port
-        );
-        return Err(Error::NotConnected);
-    }
-    info!("Connected to TCP {}:{}", addr, port);
+    try_connect(&mut socket, addr, port).await?;
 
     let tx_message = Message::new(request).map_err(|_| Error::MessageSerialize)?;
     send_one(&mut socket, &tx_message).await?;
 
     let mut framer = CobsFramer::<4096>::default();
     let rx_result = receive_one(&mut framer, &mut socket).await;
+
+    drop(socket);
+
+    if rx_result.is_ok() && !framer.is_empty() {
+        warn!(
+            "Framer buffer not empty after receiving single message: {} bytes left",
+            framer.len()
+        );
+    }
+
+    rx_result?.payload().map_err(|_| Error::MessageDeserialize)
+}
+
+pub async fn send_request_socket<
+    'a,
+    Request: MessagePayload + Serialize,
+    Response: MessagePayload + DeserializeOwned,
+>(
+    socket: &mut TcpSocket<'a>,
+    request: &Request,
+) -> Result<Response, Error> {
+    let tx_message = Message::new(request).map_err(|_| Error::MessageSerialize)?;
+    send_one(socket, &tx_message).await?;
+
+    let mut framer = CobsFramer::<4096>::default();
+    let rx_result = receive_one(&mut framer, socket).await;
 
     if rx_result.is_ok() && !framer.is_empty() {
         warn!(

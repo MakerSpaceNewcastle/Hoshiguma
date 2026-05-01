@@ -1,8 +1,38 @@
 use super::Error;
-use defmt::warn;
-use embassy_net::tcp::TcpSocket;
+use defmt::{debug, error, info, warn};
+use embassy_net::{Ipv4Address, tcp::TcpSocket};
+use embassy_time::Timer;
 use embedded_io_async::Write;
 use hoshiguma_api::{CobsFramer, Message};
+
+pub async fn try_connect<'a>(
+    socket: &mut TcpSocket<'a>,
+    addr: Ipv4Address,
+    port: u16,
+) -> Result<(), Error> {
+    'connect: for attempt in 1..=50 {
+        debug!("Connecting to TCP {}:{} (attempt {})", addr, port, attempt);
+        match socket.connect((addr, port)).await {
+            Ok(_) => break 'connect,
+            Err(e) => {
+                warn!("Failed to connect to TCP {}:{}: {:?}", addr, port, e);
+                Timer::after_millis(10).await;
+                continue 'connect;
+            }
+        };
+    }
+
+    if socket.remote_endpoint().is_none() {
+        error!(
+            "Failed to connect to TCP {}:{} after multiple attempts",
+            addr, port
+        );
+        Err(Error::NotConnected)
+    } else {
+        info!("Connected to TCP {}:{}", addr, port);
+        Ok(())
+    }
+}
 
 pub(super) async fn send_one<'a>(
     socket: &mut TcpSocket<'a>,

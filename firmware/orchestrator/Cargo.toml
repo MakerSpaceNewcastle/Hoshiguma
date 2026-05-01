@@ -11,6 +11,8 @@ test = false
 bench = false
 
 [features]
+# TODO
+default = ["panic-probe"]
 trace = ["embassy-executor/trace"]
 panic-probe = ["dep:panic-probe"]
 test-panic-on-core-0 = []
