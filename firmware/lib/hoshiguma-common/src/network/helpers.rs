@@ -39,6 +39,13 @@ pub async fn try_connect<'a>(
     }
 }
 
+pub(super) async fn try_close<'a>(socket: &mut TcpSocket<'a>) {
+    socket.close();
+    if let Err(e) = socket.flush().await {
+        warn!("Failed to flush socket after closing: {}", e);
+    }
+}
+
 pub(super) async fn send_one<'a>(
     socket: &mut TcpSocket<'a>,
     message: &Message,

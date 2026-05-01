@@ -1,4 +1,4 @@
-use super::{Error, receive_one, send_one};
+use super::{Error, receive_one, send_one, try_close};
 use defmt::{debug, info, warn};
 use embassy_net::{Stack, tcp::TcpSocket};
 use embassy_time::{Duration, Timer};
@@ -40,14 +40,12 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
                 Ok(message) => message,
                 Err(Error::SocketReadEof) | Err(Error::ConnectionReset) => {
                     info!("socket {}: connection closed by peer", id);
-                    socket.close();
-                    socket.flush().await;
+                    try_close(&mut socket).await;
                     continue 'conn;
                 }
                 Err(e) => {
                     warn!("socket {}: failed to receive message: {}", id, e);
-                    socket.close();
-                    socket.flush().await;
+                    try_close(&mut socket).await;
                     continue 'conn;
                 }
             };
@@ -56,8 +54,7 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
 
             if let Err(e) = send_one(&mut socket, &message).await {
                 warn!("socket {}: failed to send response: {}", id, e);
-                socket.close();
-                socket.flush().await;
+                try_close(&mut socket).await;
                 continue 'conn;
             };
         }

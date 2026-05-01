@@ -25,11 +25,7 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_api::{
-    BootReason, CONTROL_PORT, TELEMETRY_BRIDGE_IP_ADDRESS,
-    telemetry_bridge::{Request, Response},
-};
-use hoshiguma_common::network::send_request;
+use hoshiguma_api::BootReason;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic::AtomicBool;
@@ -279,28 +275,8 @@ async fn watchdog_feed_task(r: StatusResources) {
 #[embassy_executor::task]
 async fn network_tasks(spawner: Spawner, r: EthernetResources) {
     let net_stack = network::init(spawner, r).await;
-    // spawner.spawn(wall_time::task(net_stack).unwrap());
-    // spawner.spawn(telemetry::task(net_stack).unwrap());
-    //
-    loop {
-        embassy_time::Timer::after_millis(10).await;
-
-        match send_request::<_, Response>(
-            net_stack,
-            TELEMETRY_BRIDGE_IP_ADDRESS,
-            CONTROL_PORT,
-            &Request::IsReady,
-        )
-        .await
-        {
-            Ok(response) => {
-                info!("Response: {}", response);
-            }
-            Err(e) => {
-                warn!("Failed to send request: {}", e);
-            }
-        }
-    }
+    spawner.spawn(wall_time::task(net_stack).unwrap());
+    spawner.spawn(telemetry::task(net_stack).unwrap());
 }
 
 #[embassy_executor::task]
