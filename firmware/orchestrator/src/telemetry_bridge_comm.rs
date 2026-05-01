@@ -1,16 +1,16 @@
 use chrono::{DateTime, Utc};
 use defmt::{info, warn};
-use embassy_net::Stack;
+use embassy_net::{Stack, tcp::TcpSocket};
 use embassy_time::Timer;
 use hoshiguma_api::{
     CONTROL_PORT, TELEMETRY_BRIDGE_IP_ADDRESS,
     telemetry_bridge::{Request, Response, ResponseData},
 };
-use hoshiguma_common::network::send_request;
+use hoshiguma_common::network::{send_request, send_request_socket};
 
-pub(crate) async fn wait_for_telemetry_bridge_ready(stack: Stack<'static>) {
+pub(crate) async fn wait_for_telemetry_bridge_ready<'a>(socket: &mut TcpSocket<'a>) {
     loop {
-        if is_telemetry_bridge_ready(stack).await {
+        if is_telemetry_bridge_ready(socket).await {
             return;
         }
 
@@ -18,15 +18,8 @@ pub(crate) async fn wait_for_telemetry_bridge_ready(stack: Stack<'static>) {
     }
 }
 
-pub(crate) async fn is_telemetry_bridge_ready(stack: Stack<'static>) -> bool {
-    match send_request::<_, Response>(
-        stack,
-        TELEMETRY_BRIDGE_IP_ADDRESS,
-        CONTROL_PORT,
-        &Request::IsReady,
-    )
-    .await
-    {
+pub(crate) async fn is_telemetry_bridge_ready<'a>(socket: &mut TcpSocket<'a>) -> bool {
+    match send_request_socket::<_, Response>(socket, &Request::IsReady).await {
         Ok(response) => match response.0 {
             Ok(ResponseData::Ready(ready)) => {
                 info!("Telemetry module ready: {}", ready);

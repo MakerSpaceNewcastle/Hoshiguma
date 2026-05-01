@@ -83,7 +83,7 @@ pub(super) async fn task(stack: Stack<'static>) {
                 }
                 Either::Second(_) => {
                     debug!("Submitting buffered telemetry data");
-                    telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
+                    // telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
 
                     if !stack.is_config_up() {
                         warn!("Network down");

@@ -1,7 +1,7 @@
 use super::{Error, receive_one, send_one};
 use defmt::{debug, info, warn};
 use embassy_net::{Stack, tcp::TcpSocket};
-use embassy_time::Duration;
+use embassy_time::{Duration, Timer};
 use hoshiguma_api::{CONTROL_PORT, CobsFramer, Message};
 
 pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
@@ -21,11 +21,17 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
     'conn: loop {
         debug!("socket {}: listening on TCP {}...", id, CONTROL_PORT);
         if let Err(e) = socket.accept(CONTROL_PORT).await {
-            warn!("socket {}: accept error: {:?}", id, e);
+            warn!(
+                "socket {}: accept error: {} (state {})",
+                id,
+                e,
+                socket.state()
+            );
+            Timer::after(Duration::from_millis(500)).await;
             continue;
         }
         info!(
-            "socket {}: connection from {:?}",
+            "socket {}: connection from {}",
             id,
             socket.remote_endpoint()
         );
@@ -35,10 +41,12 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
                 Ok(message) => message,
                 Err(Error::SocketReadEof) => {
                     info!("socket {}: connection closed by peer", id);
+                    socket.close();
                     continue 'conn;
                 }
                 Err(e) => {
                     warn!("socket {}: failed to receive message: {}", id, e);
+                    socket.close();
                     continue 'conn;
                 }
             };
@@ -47,6 +55,7 @@ pub async fn message_handler_loop<F: AsyncFnMut(Message) -> Message>(
 
             if let Err(e) = send_one(&mut socket, &message).await {
                 warn!("socket {}: failed to send response: {}", id, e);
+                socket.close();
                 continue 'conn;
             };
         }

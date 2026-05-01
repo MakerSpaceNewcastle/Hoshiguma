@@ -1,15 +1,21 @@
 use super::Error;
 use defmt::{debug, error, info, warn};
-use embassy_net::{Ipv4Address, tcp::TcpSocket};
-use embassy_time::Timer;
+use embassy_net::{Ipv4Address, Stack, tcp::TcpSocket};
+use embassy_time::{Duration, Timer};
 use embedded_io_async::Write;
 use hoshiguma_api::{CobsFramer, Message};
 
 pub async fn try_connect<'a>(
-    socket: &mut TcpSocket<'a>,
+    stack: Stack<'static>,
+    rx_buffer: &'a mut [u8],
+    tx_buffer: &'a mut [u8],
     addr: Ipv4Address,
     port: u16,
-) -> Result<(), Error> {
+) -> Result<TcpSocket<'a>, Error> {
+    let mut socket = TcpSocket::new(stack, rx_buffer, tx_buffer);
+    socket.set_keep_alive(Some(Duration::from_millis(100)));
+    socket.set_timeout(Some(Duration::from_secs(1)));
+
     'connect: for attempt in 1..=50 {
         debug!("Connecting to TCP {}:{} (attempt {})", addr, port, attempt);
         match socket.connect((addr, port)).await {
@@ -30,7 +36,7 @@ pub async fn try_connect<'a>(
         Err(Error::NotConnected)
     } else {
         info!("Connected to TCP {}:{}", addr, port);
-        Ok(())
+        Ok(socket)
     }
 }
 
@@ -41,7 +47,7 @@ pub(super) async fn send_one<'a>(
     let response_bytes = message.to_bytes().map_err(|_| Error::MessageSerialize)?;
 
     socket.write_all(&response_bytes).await.map_err(|e| {
-        warn!("{:?}", e);
+        warn!("{}", e);
         Error::SocketWrite
     })
 }
@@ -58,7 +64,7 @@ pub(super) async fn receive_one<'a>(
             }
             Ok(n) => n,
             Err(e) => {
-                warn!("{:?}", e);
+                warn!("{}", e);
                 return Err(Error::SocketRead);
             }
         };
