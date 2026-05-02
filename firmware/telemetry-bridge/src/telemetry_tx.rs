@@ -34,6 +34,8 @@ pub(crate) static TELEMETRY_TX: PubSubChannel<
 pub(super) async fn task(stack: Stack<'static>) {
     let mut rng = RoscRng;
 
+    let mut telegraf_buffer = TelegrafBuffer::default();
+
     'connection: loop {
         let mut rx_buffer = [0; 8192];
         let mut tls_read_buffer = [0; 16640];
@@ -52,8 +54,6 @@ pub(super) async fn task(stack: Stack<'static>) {
         let mut http_client = HttpClient::new_with_tls(&tcp_client, &dns_client, tls_config);
 
         let mut data_point_line_rx = TELEMETRY_TX.subscriber().unwrap();
-
-        let mut telegraf_buffer = TelegrafBuffer::default();
 
         const TX_INTERVAL: Duration = Duration::from_millis(800);
         let mut next_tx = Instant::now() + TX_INTERVAL;

@@ -45,7 +45,7 @@ impl TelegrafBuffer {
         const TELEGRAF_USERNAME: &str = env!("TELEGRAF_USERNAME");
         const TELEGRAF_PASSWORD: &str = env!("TELEGRAF_PASSWORD");
 
-        debug!("Submitting metrics to {}", &TELEGRAF_URL);
+        info!("Submitting metrics to {}", &TELEGRAF_URL);
 
         let mut request = match embassy_time::with_timeout(
             Duration::from_secs(3),
