@@ -1,31 +1,5 @@
 use </home/dan/git/SCAD_Lib/rj45_panel_mount.scad>;
 
-module UsbConnector() {
-  // Connector
-  square([15, 8], center = true);
-
-  // Connector mounting holes
-  dx = 28 / 2;
-  for(x = [-dx, dx]) {
-    translate([x, 0]) {
-      circle(d = 3.1, $fn = 16);
-    }
-  }
-}
-
-module DinConnector() {
-  // Connector
-  circle(d = 16);
-
-  // Connector mounting holes
-  dx = 22 / 2;
-  for(x = [-dx, dx]) {
-    translate([x, 0]) {
-      circle(d = 3.1, $fn = 16);
-    }
-  }
-}
-
 module IecC14() {
   // Connector
   square([27, 19.3], center = true);
@@ -62,25 +36,22 @@ difference() {
   }
 
   // PC USB socket
-  translate([-35, 70]) {
-    UsbConnector();
+  translate([0, 80]) {
+    Rj45Connector();
   }
 
-  // Network socket
-  translate([-35, 20]) {
-    Rj45Connector();
+  // Network sockets
+  for(x = [-30, 30]) {
+    for(y = [-10, 30]) {
+      translate([x, 10 + y]) {
+        Rj45Connector();
+      }
+    }
   }
 
   // Mains in socket
   translate([-35, -70]) {
     IecC14();
-  }
-
-  // Accessory sockets
-  for(y = [0, 32, 64]) {
-    translate([30, 10 + y]) {
-      DinConnector();
-    }
   }
 
   // Fume extraction fan outlet
