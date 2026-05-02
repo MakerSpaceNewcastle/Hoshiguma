@@ -9,6 +9,7 @@ use embassy_futures::select::{Either, select};
 use embassy_net::Stack;
 use embassy_sync::pubsub::WaitResult;
 use embassy_time::{Duration, Instant, Ticker};
+use hoshiguma_api::TelemetryString;
 
 pub(crate) struct Context {
     pub(crate) network_external: Stack<'static>,
@@ -71,6 +72,7 @@ pub(crate) async fn task(ctx: Context) -> ! {
 
 enum Page {
     DeviceInfo,
+    DeviceStatus,
     DateTime,
     ExternalNetwork,
 }
@@ -78,7 +80,8 @@ enum Page {
 impl Page {
     fn next(self) -> Self {
         match self {
-            Page::DeviceInfo => Page::DateTime,
+            Page::DeviceInfo => Page::DeviceStatus,
+            Page::DeviceStatus => Page::DateTime,
             Page::DateTime => Page::ExternalNetwork,
             Page::ExternalNetwork => Page::DeviceInfo,
         }
@@ -91,6 +94,16 @@ impl Page {
             Page::DeviceInfo => {
                 text.write_str("Hoshiguma\nTelemetry Bridge\n\n").unwrap();
                 text.write_str(git_version::git_version!()).unwrap();
+                text.write_char('\n').unwrap();
+            }
+            Page::DeviceStatus => {
+                text.write_str("Uptime: ").unwrap();
+                text.write_fmt(format_args!("{}s\n", Instant::now().as_secs()))
+                    .unwrap();
+
+                text.write_str("Boot: ").unwrap();
+                text.write_str(crate::boot_reason().telemetry_str())
+                    .unwrap();
                 text.write_char('\n').unwrap();
             }
             Page::DateTime => {
