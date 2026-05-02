@@ -93,11 +93,6 @@ async fn main(spawner: Spawner) {
         spawner.spawn(api::task(net_stack_internal, net_stack_external, idx).unwrap());
     }
 
-    info!("Waiting for DHCP");
-    net_stack_external.wait_config_up().await;
-    let address = net_stack_external.config_v4().unwrap().address.address();
-    info!("IP address: {}", address);
-
     spawner.spawn(wall_time::ntp_task(net_stack_external).unwrap());
     spawner.spawn(self_telemetry::task().unwrap());
     spawner.spawn(telemetry_tx::task(net_stack_external).unwrap());
