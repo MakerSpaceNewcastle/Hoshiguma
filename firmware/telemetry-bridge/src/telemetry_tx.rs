@@ -4,7 +4,7 @@ use crate::{
     telegraf_buffer::TelegrafBuffer,
 };
 use core::sync::atomic::Ordering;
-use defmt::{debug, warn};
+use defmt::{trace, warn};
 use embassy_futures::select::{Either, select};
 use embassy_net::{
     Stack,
@@ -82,8 +82,8 @@ pub(super) async fn task(stack: Stack<'static>) {
                     warn!("Subscriber lagged, lost {} messages", n);
                 }
                 Either::Second(_) => {
-                    debug!("Submitting buffered telemetry data");
-                    // telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
+                    trace!("Submitting buffered telemetry data");
+                    telegraf_buffer.tx(&mut http_client, &mut rx_buffer).await;
 
                     if !stack.is_config_up() {
                         warn!("Network down");
