@@ -42,9 +42,7 @@ async fn main() {
             let mut stream = TcpStream::connect((COOLER_IP_ADDRESS, CONTROL_PORT))
                 .await
                 .unwrap();
-            send_command::<_, Response>(&mut stream, Request::GetGitRevision).await;
-            send_command::<_, Response>(&mut stream, Request::GetBootReason).await;
-            send_command::<_, Response>(&mut stream, Request::GetUptime).await;
+            send_command::<_, Response>(&mut stream, Request::GetSystemInformation).await;
             send_command::<_, Response>(&mut stream, Request::GetCompressorState).await;
             drop(stream);
 

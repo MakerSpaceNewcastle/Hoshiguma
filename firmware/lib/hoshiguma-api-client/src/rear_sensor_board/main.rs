@@ -52,9 +52,7 @@ async fn main() {
             let mut stream = TcpStream::connect((REAR_SENSOR_BOARD_IP_ADDRESS, CONTROL_PORT))
                 .await
                 .unwrap();
-            send_command::<_, Response>(&mut stream, Request::GetGitRevision).await;
-            send_command::<_, Response>(&mut stream, Request::GetBootReason).await;
-            send_command::<_, Response>(&mut stream, Request::GetUptime).await;
+            send_command::<_, Response>(&mut stream, Request::GetSystemInformation).await;
             send_command::<_, Response>(&mut stream, Request::GetTemperatures).await;
             drop(stream);
 

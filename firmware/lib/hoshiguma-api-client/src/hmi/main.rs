@@ -14,9 +14,7 @@ async fn main() {
             let mut stream = TcpStream::connect((HMI_IP_ADDRESS, CONTROL_PORT))
                 .await
                 .unwrap();
-            send_command::<_, Response>(&mut stream, Request::GetGitRevision).await;
-            send_command::<_, Response>(&mut stream, Request::GetBootReason).await;
-            send_command::<_, Response>(&mut stream, Request::GetUptime).await;
+            send_command::<_, Response>(&mut stream, Request::GetSystemInformation).await;
             drop(stream);
 
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
