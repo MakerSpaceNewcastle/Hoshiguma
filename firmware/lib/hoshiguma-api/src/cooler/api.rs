@@ -1,13 +1,10 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
 use crate::{MessageId, MessagePayload};
-use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Request {
-    GetGitRevision,
-    GetUptime,
-    GetBootReason,
+    GetSystemInformation,
 
     GetRadiatorFanState,
     SetRadiatorFanState(RadiatorFanState),
@@ -37,9 +34,7 @@ impl MessagePayload for Response {
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {
-    GitRevision(crate::GitRevisionString),
-    Uptime(Duration),
-    BootReason(crate::BootReason),
+    SystemInformation(crate::SystemInformation),
 
     RadiatorFanState(super::RadiatorFanState),
     CompressorState(super::CompressorState),

@@ -4,7 +4,7 @@ use embassy_net::{Stack, tcp::TcpSocket};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Receiver};
 use embassy_time::{Duration, Instant};
 use hoshiguma_api::{
-    Message,
+    Message, SystemInformation,
     hmi::to_hmi::{Request, Response, ResponseData},
 };
 use hoshiguma_common::network::{message_handler_loop, send_request};
@@ -26,13 +26,13 @@ pub(super) async fn listen_task(stack: Stack<'static>, id: usize, mut comm: Devi
         let _ = crate::COMM_GOOD_INDICATOR.try_send(());
 
         let response = match request {
-            Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
-                git_version::git_version!().try_into().unwrap(),
-            ))),
-            Request::GetUptime => Response(Ok(ResponseData::Uptime(
-                Instant::now().duration_since(Instant::MIN).into(),
-            ))),
-            Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
+            Request::GetSystemInformation => {
+                Response(Ok(ResponseData::SystemInformation(SystemInformation {
+                    git_revision: git_version::git_version!().try_into().unwrap(),
+                    uptime: Instant::now().duration_since(Instant::MIN).into(),
+                    boot_reason: crate::boot_reason(),
+                })))
+            }
             Request::SetBacklightMode(mode) => Response(
                 comm.backlight
                     .set_mode(mode)

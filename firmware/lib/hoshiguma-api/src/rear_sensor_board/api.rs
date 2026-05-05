@@ -1,12 +1,9 @@
 use crate::{MessageId, MessagePayload};
-use core::time::Duration;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Request {
-    GetGitRevision,
-    GetUptime,
-    GetBootReason,
+    GetSystemInformation,
 
     SetStatusLight(super::StatusLightSettings),
     GetExtractionAirflow,
@@ -30,9 +27,7 @@ impl MessagePayload for Response {
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {
-    GitRevision(crate::GitRevisionString),
-    Uptime(Duration),
-    BootReason(crate::BootReason),
+    SystemInformation(crate::SystemInformation),
 
     StatusLightSettings(super::StatusLightSettings),
     ExtractionAriflow(crate::AirflowSensorMeasurement),

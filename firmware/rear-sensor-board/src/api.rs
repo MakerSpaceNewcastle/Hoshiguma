@@ -9,7 +9,7 @@ use defmt::warn;
 use embassy_net::Stack;
 use embassy_time::Instant;
 use hoshiguma_api::{
-    Message,
+    Message, SystemInformation,
     rear_sensor_board::{Request, Response, ResponseData},
 };
 use hoshiguma_common::network::message_handler_loop;
@@ -30,13 +30,13 @@ pub(super) async fn task(stack: Stack<'static>, id: usize, mut comm: DeviceCommu
         let _ = crate::COMM_GOOD_INDICATOR.try_send(());
 
         let response = match request {
-            Request::GetGitRevision => Response(Ok(ResponseData::GitRevision(
-                git_version::git_version!().try_into().unwrap(),
-            ))),
-            Request::GetUptime => Response(Ok(ResponseData::Uptime(
-                Instant::now().duration_since(Instant::MIN).into(),
-            ))),
-            Request::GetBootReason => Response(Ok(ResponseData::BootReason(crate::boot_reason()))),
+            Request::GetSystemInformation => {
+                Response(Ok(ResponseData::SystemInformation(SystemInformation {
+                    git_revision: git_version::git_version!().try_into().unwrap(),
+                    uptime: Instant::now().duration_since(Instant::MIN).into(),
+                    boot_reason: crate::boot_reason(),
+                })))
+            }
             Request::SetStatusLight(settings) => Response(
                 comm.status_light
                     .set(settings)

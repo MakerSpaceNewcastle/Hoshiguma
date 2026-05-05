@@ -13,6 +13,7 @@ pub use monitors::*;
 mod onewire_temperature;
 pub use onewire_temperature::*;
 
+use core::time::Duration;
 use defmt::Format;
 use heapless::String;
 use serde::{Deserialize, Serialize};
@@ -28,6 +29,13 @@ pub enum BootReason {
     Normal,
     WatchdogTimeout,
     WatchdogForced,
+}
+
+#[derive(Debug, Format, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SystemInformation {
+    pub git_revision: GitRevisionString,
+    pub uptime: Duration,
+    pub boot_reason: BootReason,
 }
 
 impl TelemetryString for BootReason {

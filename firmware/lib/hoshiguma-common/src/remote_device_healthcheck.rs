@@ -1,0 +1,1 @@
+// TODO: functionality to get information about a device, keep counters of the type of comm failures (device restarted, network loss), generate telemetry data points for counters, boot reason, git revision and uptime, notify when it is unreachable
