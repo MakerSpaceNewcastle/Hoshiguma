@@ -1,4 +1,4 @@
-use crate::{MessageId, MessagePayload};
+use crate::{MessageId, MessagePayload, SystemInformation, SystemInformationMessage};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
@@ -27,9 +27,18 @@ impl MessagePayload for Response {
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {
-    SystemInformation(crate::SystemInformation),
+    SystemInformation(SystemInformation),
 
     StatusLightSettings(super::StatusLightSettings),
     ExtractionAriflow(crate::AirflowSensorMeasurement),
     Temperatures(crate::OnewireTemperatureSensorReadings),
+}
+
+impl SystemInformationMessage for ResponseData {
+    fn system_information(self) -> Option<SystemInformation> {
+        match self {
+            ResponseData::SystemInformation(info) => Some(info),
+            _ => None,
+        }
+    }
 }

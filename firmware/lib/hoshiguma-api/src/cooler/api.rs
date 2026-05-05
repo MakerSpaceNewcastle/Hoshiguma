@@ -1,5 +1,5 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
-use crate::{MessageId, MessagePayload};
+use crate::{MessageId, MessagePayload, SystemInformation, SystemInformationMessage};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
@@ -34,7 +34,7 @@ impl MessagePayload for Response {
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ResponseData {
-    SystemInformation(crate::SystemInformation),
+    SystemInformation(SystemInformation),
 
     RadiatorFanState(super::RadiatorFanState),
     CompressorState(super::CompressorState),
@@ -42,4 +42,13 @@ pub enum ResponseData {
     Temperatures(crate::OnewireTemperatureSensorReadings),
     CoolantFlowRate(super::CoolantRate),
     CoolantReturnRate(super::CoolantRate),
+}
+
+impl SystemInformationMessage for ResponseData {
+    fn system_information(self) -> Option<SystemInformation> {
+        match self {
+            ResponseData::SystemInformation(info) => Some(info),
+            _ => None,
+        }
+    }
 }
