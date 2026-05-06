@@ -25,7 +25,8 @@ use embassy_rp::{
     watchdog::Watchdog,
 };
 use embassy_time::{Duration, Instant, Ticker};
-use hoshiguma_api::BootReason;
+use hoshiguma_api::{BootReason, COOLER_IP_ADDRESS};
+use hoshiguma_common::remote_device_healthcheck::RemoteDeviceHealthCheck;
 #[cfg(feature = "panic-probe")]
 use panic_probe as _;
 use portable_atomic::AtomicBool;
@@ -277,6 +278,9 @@ async fn network_tasks(spawner: Spawner, r: EthernetResources) {
     let net_stack = network::init(spawner, r).await;
     spawner.spawn(wall_time::task(net_stack).unwrap());
     spawner.spawn(telemetry::task(net_stack).unwrap());
+
+    // TODO
+    spawner.spawn(cooler_monitor_task(net_stack).unwrap());
 }
 
 #[embassy_executor::task]
@@ -295,4 +299,28 @@ fn boot_reason() -> BootReason {
     } else {
         BootReason::Normal
     }
+}
+
+#[embassy_executor::task]
+async fn cooler_monitor_task(stack: embassy_net::Stack<'static>) -> ! {
+    let obs = RemoteDeviceHealthCheck::<
+        hoshiguma_api::cooler::Request,
+        hoshiguma_api::cooler::Response,
+        _,
+        _,
+    >::new(
+        stack,
+        "cooler",
+        COOLER_IP_ADDRESS,
+        async |severity| {
+            // TODO
+            info!("TODO cooler severity: {}", severity);
+        },
+        |telem_str| {
+            // TODO
+            info!("TODO cooler telemetry: {}", telem_str.unwrap());
+        },
+    );
+
+    obs.run().await
 }

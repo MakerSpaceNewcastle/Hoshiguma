@@ -1,5 +1,8 @@
 use super::types::{CompressorState, CoolantPumpState, RadiatorFanState};
-use crate::{MessageId, MessagePayload, SystemInformation, SystemInformationMessage};
+use crate::{
+    MessageId, MessagePayload, SystemInformation, SystemInformationRequestPayload,
+    SystemInformationResponsePayload,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
@@ -23,12 +26,27 @@ impl MessagePayload for Request {
     }
 }
 
+impl SystemInformationRequestPayload for Request {
+    fn system_information() -> Self {
+        Self::GetSystemInformation
+    }
+}
+
 #[derive(Debug, defmt::Format, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Response(pub Result<ResponseData, ()>);
 
 impl MessagePayload for Response {
     fn id() -> &'static MessageId {
         b"clrP"
+    }
+}
+
+impl SystemInformationResponsePayload for Response {
+    fn system_information(self) -> Option<SystemInformation> {
+        match self.0 {
+            Ok(ResponseData::SystemInformation(info)) => Some(info),
+            _ => None,
+        }
     }
 }
 
@@ -42,13 +60,4 @@ pub enum ResponseData {
     Temperatures(crate::OnewireTemperatureSensorReadings),
     CoolantFlowRate(super::CoolantRate),
     CoolantReturnRate(super::CoolantRate),
-}
-
-impl SystemInformationMessage for ResponseData {
-    fn system_information(self) -> Option<SystemInformation> {
-        match self {
-            ResponseData::SystemInformation(info) => Some(info),
-            _ => None,
-        }
-    }
 }

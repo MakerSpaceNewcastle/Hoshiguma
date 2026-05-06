@@ -1,4 +1,3 @@
-use core::future::Future;
 use defmt::Format;
 
 #[derive(PartialEq, Eq, Format)]
@@ -21,12 +20,6 @@ pub struct ObservedValue<T: Clone + PartialEq> {
     value: Option<T>,
 }
 
-impl<T: Clone + PartialEq> Default for ObservedValue<T> {
-    fn default() -> Self {
-        Self { value: None }
-    }
-}
-
 impl<T: Clone + PartialEq> core::ops::Deref for ObservedValue<T> {
     type Target = Option<T>;
 
@@ -36,6 +29,10 @@ impl<T: Clone + PartialEq> core::ops::Deref for ObservedValue<T> {
 }
 
 impl<T: Clone + PartialEq> ObservedValue<T> {
+    pub fn default() -> Self {
+        Self { value: None }
+    }
+
     pub fn new(initial: T) -> Self {
         Self {
             value: Some(initial),
@@ -53,14 +50,15 @@ impl<T: Clone + PartialEq> ObservedValue<T> {
         }
     }
 
-    pub async fn update_and_async<F, Fut>(&mut self, new_value: T, on_change: F)
+    pub async fn update_and_async<F>(&mut self, new_value: T, on_change: F)
     where
-        F: FnOnce(T) -> Fut,
-        Fut: Future<Output = ()>,
+        F: AsyncFnOnce(T) -> (),
     {
         if self.update(new_value) == Changed::Yes {
             // Will always have a value when changed
-            on_change(self.value.clone().unwrap()).await;
+            let value = self.value.clone().unwrap();
+
+            on_change(value).await;
         }
     }
 }

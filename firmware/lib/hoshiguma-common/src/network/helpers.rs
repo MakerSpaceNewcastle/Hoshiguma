@@ -15,7 +15,7 @@ pub async fn try_connect<'a>(
     let mut socket = TcpSocket::new(stack, rx_buffer, tx_buffer);
     socket.set_timeout(Some(Duration::from_secs(1)));
 
-    'connect: for attempt in 1..=50 {
+    'connect: for attempt in 1..=10 {
         debug!("Connecting to TCP {}:{} (attempt {})", addr, port, attempt);
         match socket.connect((addr, port)).await {
             Ok(_) => break 'connect,

@@ -30,6 +30,10 @@ pub struct SystemInformation {
     pub boot_reason: BootReason,
 }
 
-pub trait SystemInformationMessage {
+pub trait SystemInformationRequestPayload {
+    fn system_information() -> Self;
+}
+
+pub trait SystemInformationResponsePayload {
     fn system_information(self) -> Option<SystemInformation>;
 }

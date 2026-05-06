@@ -1,4 +1,7 @@
-use crate::{MessageId, MessagePayload, SystemInformation, SystemInformationMessage};
+use crate::{
+    MessageId, MessagePayload, SystemInformation, SystemInformationRequestPayload,
+    SystemInformationResponsePayload,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -11,6 +14,12 @@ pub enum Request {
 impl MessagePayload for Request {
     fn id() -> &'static MessageId {
         b"hmiQ"
+    }
+}
+
+impl SystemInformationRequestPayload for Request {
+    fn system_information() -> Self {
+        Self::GetSystemInformation
     }
 }
 
@@ -30,7 +39,7 @@ pub enum ResponseData {
     BacklightMode(crate::HmiBacklightMode),
 }
 
-impl SystemInformationMessage for ResponseData {
+impl SystemInformationResponsePayload for ResponseData {
     fn system_information(self) -> Option<SystemInformation> {
         match self {
             ResponseData::SystemInformation(info) => Some(info),
