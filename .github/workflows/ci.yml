@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-slim
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Format
@@ -31,7 +31,7 @@ jobs:
           - core
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Clippy
@@ -61,7 +61,7 @@ jobs:
           - telemetry-bridge
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v22
 
       - name: Clippy
