@@ -42,7 +42,7 @@ assign_resources! {
     },
     onewire: OnewireResources {
         pio: PIO1,
-        pin: PIN_2,
+        pin: PIN_3,
     },
     status_light: StatusLightResources {
         red: PIN_15,
