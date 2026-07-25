@@ -89,7 +89,7 @@ impl<'a> crate::StateMachineRun for StateMachineRunner<'a> {
                 }
                 Either::First(InputMessage::ExtractionAirflowReading(Err(()))) => {}
                 Either::Second(_) => {
-                    info!("shit");
+                    info!("Good reading timer expired");
                 }
             };
 
