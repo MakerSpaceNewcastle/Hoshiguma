@@ -3,6 +3,7 @@ use crate::{
     logic::interlock::update_monitor_severity, telemetry::queue_telemetry_data_point,
 };
 use embassy_rp::gpio::{Input, Level, Pull};
+use embassy_time::Duration;
 use hoshiguma_api::{Doors, Monitor, Severity};
 use hoshiguma_common::telemetry::format_influx_line;
 
@@ -12,7 +13,8 @@ pub(crate) async fn task(r: DoorsDetectResources) {
     crate::trace::name_task("doors detect").await;
 
     let pin = Input::new(r.detect, Pull::Down);
-    let mut input = InputChangeDetector::new(pin);
+    let mut input =
+        InputChangeDetector::new(pin, Duration::from_millis(0), Duration::from_millis(50));
 
     loop {
         let state = input.wait_for_change().await;

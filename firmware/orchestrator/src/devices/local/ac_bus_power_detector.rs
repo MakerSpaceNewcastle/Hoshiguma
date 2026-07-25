@@ -15,7 +15,8 @@ pub(crate) async fn task(r: AcBusPowerDetectResources) {
     crate::trace::name_task("ac bus power detect").await;
 
     let pin = Input::new(r.detect, Pull::Down);
-    let mut input = InputChangeDetector::new(pin);
+    let mut input =
+        InputChangeDetector::new(pin, Duration::from_millis(50), Duration::from_millis(50));
 
     let tx = AC_BUS_POWER.sender();
 
