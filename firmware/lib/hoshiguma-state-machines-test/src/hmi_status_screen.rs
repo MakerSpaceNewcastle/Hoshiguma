@@ -198,7 +198,7 @@ pub(super) async fn test_statuses_to_messages() {
             messages,
             [
                 OnscreenMessage {
-                    text: "Door(s) Open".try_into().unwrap(),
+                    text: "Door Open".try_into().unwrap(),
                     severity: Severity::Critical,
                 },
                 OnscreenMessage {
