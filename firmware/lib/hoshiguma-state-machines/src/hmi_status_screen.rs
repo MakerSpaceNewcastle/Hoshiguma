@@ -126,7 +126,7 @@ fn monitor_to_text(monitor: Monitor) -> &'static str {
     match monitor {
         Monitor::InterlockTripped => "Interlock Tripped",
         Monitor::AcBusPower => "AC Bus Off",
-        Monitor::Doors => "Door(s) Open",
+        Monitor::Doors => "Door Open",
         Monitor::CoolerCommunication => "Cooler INOP",
         Monitor::RearSensorBoardCommunication => "Rear Board INOP",
         Monitor::HmiCommunication => "HMI INOP",
