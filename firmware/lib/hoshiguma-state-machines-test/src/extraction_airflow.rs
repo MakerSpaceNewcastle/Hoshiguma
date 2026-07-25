@@ -43,7 +43,7 @@ pub(super) async fn test_basic() {
         communicator
             .send_input(InputMessage::ExtractionAirflowReading(Ok(
                 AirflowSensorMeasurementInner {
-                    differential_pressure: 90.0,
+                    differential_pressure: 53.0,
                     temperature: 0.0,
                 },
             )))
@@ -54,7 +54,7 @@ pub(super) async fn test_basic() {
         communicator
             .send_input(InputMessage::ExtractionAirflowReading(Ok(
                 AirflowSensorMeasurementInner {
-                    differential_pressure: 80.0,
+                    differential_pressure: 51.0,
                     temperature: 0.0,
                 },
             )))
@@ -69,7 +69,7 @@ pub(super) async fn test_basic() {
         communicator
             .send_input(InputMessage::ExtractionAirflowReading(Ok(
                 AirflowSensorMeasurementInner {
-                    differential_pressure: 60.0,
+                    differential_pressure: 44.0,
                     temperature: 0.0,
                 },
             )))
