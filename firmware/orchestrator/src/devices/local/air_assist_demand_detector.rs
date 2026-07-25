@@ -3,6 +3,7 @@ use crate::{
     telemetry::queue_telemetry_data_point,
 };
 use embassy_rp::gpio::{Input, Level, Pull};
+use embassy_time::Duration;
 use hoshiguma_api::AirAssistDemand;
 use hoshiguma_common::telemetry::format_influx_line;
 
@@ -14,7 +15,8 @@ pub(crate) async fn task(r: AirAssistDemandDetectResources) {
     crate::trace::name_task("air assist demand detect").await;
 
     let pin = Input::new(r.detect, Pull::Down);
-    let mut input = InputChangeDetector::new(pin);
+    let mut input =
+        InputChangeDetector::new(pin, Duration::from_millis(100), Duration::from_millis(100));
 
     let tx = AIR_ASSIST_DEMAND.sender();
 
