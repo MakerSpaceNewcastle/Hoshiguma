@@ -1,7 +1,7 @@
 use crate::self_telemetry::{TELEGRAF_SUBMIT_FAIL, TELEGRAF_SUBMIT_SUCCESS};
 use core::{fmt::Write, sync::atomic::Ordering};
 use defmt::{Format, debug, info, warn};
-use embassy_time::Duration;
+use embassy_time::{Duration, WithTimeout};
 use heapless::String;
 use reqwless::{
     client::HttpClient,
@@ -34,11 +34,11 @@ impl TelegrafBuffer {
         &mut self,
         http_client: &mut HttpClient<'_, T, D>,
         rx_buffer: &mut [u8],
-    ) {
+    ) -> Result<(), ()> {
         if self.body.is_empty() {
             // Buffer is empty, nothing to do
             debug!("No data to submit");
-            return;
+            return Ok(());
         }
 
         const TELEGRAF_URL: &str = env!("TELEGRAF_URL");
@@ -47,11 +47,10 @@ impl TelegrafBuffer {
 
         info!("Submitting metrics to {}", &TELEGRAF_URL);
 
-        let mut request = match embassy_time::with_timeout(
-            Duration::from_secs(3),
-            http_client.request(Method::POST, TELEGRAF_URL),
-        )
-        .await
+        let mut request = match http_client
+            .request(Method::POST, TELEGRAF_URL)
+            .with_timeout(Duration::from_secs(2))
+            .await
         {
             Ok(Ok(request)) => request
                 .basic_auth(TELEGRAF_USERNAME, TELEGRAF_PASSWORD)
@@ -60,16 +59,20 @@ impl TelegrafBuffer {
             Ok(Err(e)) => {
                 warn!("Metrics submission failed: {}", e);
                 TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
-                return;
+                return Err(());
             }
             Err(_) => {
                 warn!("Metrics submission failed: timeout");
                 TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
-                return;
+                return Err(());
             }
         };
 
-        match embassy_time::with_timeout(Duration::from_secs(3), request.send(rx_buffer)).await {
+        match request
+            .send(rx_buffer)
+            .with_timeout(Duration::from_secs(2))
+            .await
+        {
             Ok(Ok(response)) => {
                 if response.status == StatusCode(204) {
                     debug!("Metrics submission success: status={}", response.status);
@@ -84,18 +87,18 @@ impl TelegrafBuffer {
                         self.body.clear();
                     }
 
-                    return;
+                    return Err(());
                 }
             }
             Ok(Err(e)) => {
                 warn!("Metrics submission failed: {}", e);
                 TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
-                return;
+                return Err(());
             }
             Err(_) => {
                 warn!("Metrics submission failed: timeout");
                 TELEGRAF_SUBMIT_FAIL.add(1, Ordering::Relaxed);
-                return;
+                return Err(());
             }
         };
 
@@ -104,5 +107,6 @@ impl TelegrafBuffer {
 
         debug!("Metric submission successful");
         TELEGRAF_SUBMIT_SUCCESS.add(1, Ordering::Relaxed);
+        Ok(())
     }
 }

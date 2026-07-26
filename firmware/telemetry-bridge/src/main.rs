@@ -90,7 +90,7 @@ async fn main(spawner: Spawner) {
     );
 
     for idx in 0..api::NUM_LISTENERS {
-        spawner.spawn(api::task(net_stack_internal, net_stack_external, idx).unwrap());
+        spawner.spawn(api::task(net_stack_internal, idx).unwrap());
     }
 
     spawner.spawn(wall_time::ntp_task(net_stack_external).unwrap());
