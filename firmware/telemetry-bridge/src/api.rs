@@ -10,15 +10,12 @@ use hoshiguma_common::network::message_handler_loop;
 pub(crate) const NUM_LISTENERS: usize = 2;
 
 #[embassy_executor::task(pool_size = NUM_LISTENERS)]
-pub(super) async fn task(stack: Stack<'static>, stack_external: Stack<'static>, id: usize) {
+pub(super) async fn task(stack: Stack<'static>, id: usize) {
     let telem_pub = TELEMETRY_TX.publisher().unwrap();
 
     message_handler_loop(stack, id, async |mut message| {
         let response = if message.payload::<request::IsReady>().is_ok() {
-            Message::new(&response::Ready(
-                stack_external.is_link_up() && stack_external.is_config_up(),
-            ))
-            .ok()
+            Message::new(&response::Ready(crate::telemetry_tx::is_ready())).ok()
         } else if message.payload::<request::GetTime>().is_ok() {
             Message::new(&response::Time(crate::wall_time::now())).ok()
         } else if let Ok(data_point) = message.payload::<request::SendTelemetryDataPoint>() {
