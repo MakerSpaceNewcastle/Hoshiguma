@@ -74,6 +74,7 @@ enum Page {
     DeviceStatus,
     DateTime,
     ExternalNetwork,
+    Telegraf,
 }
 
 impl Page {
@@ -82,7 +83,8 @@ impl Page {
             Page::DeviceInfo => Page::DeviceStatus,
             Page::DeviceStatus => Page::DateTime,
             Page::DateTime => Page::ExternalNetwork,
-            Page::ExternalNetwork => Page::DeviceInfo,
+            Page::ExternalNetwork => Page::Telegraf,
+            Page::Telegraf => Page::DeviceInfo,
         }
     }
 
@@ -155,6 +157,17 @@ impl Page {
                     Some(config) => text.write_fmt(format_args!("{}", config.address)),
                     None => text.write_str("none"),
                 }
+                .unwrap();
+                text.write_char('\n').unwrap();
+            }
+            Page::Telegraf => {
+                text.write_str("Telegraf\n").unwrap();
+
+                text.write_str("Ready: ").unwrap();
+                text.write_str(match crate::telemetry_tx::is_ready() {
+                    true => "yes",
+                    false => "no",
+                })
                 .unwrap();
                 text.write_char('\n').unwrap();
             }
