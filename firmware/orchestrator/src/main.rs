@@ -68,7 +68,6 @@ assign_resources! {
     machine_run_detect: MachineRunDetectResources {
         detect: PIN_3, // Input 5
     },
-
     machine_enable: MachineEnableResources {
         relay: PIN_8, // Relay 1
     },
@@ -83,6 +82,11 @@ assign_resources! {
     },
     fume_extraction_fan: FumeExtractionFanResources {
         relay: PIN_13, // Relay 6
+    },
+    unused_relays: UnusedRelayResources {
+        relay_3: PIN_10,
+        relay_7: PIN_14,
+        relay_8: PIN_15,
     },
 }
 
@@ -141,6 +145,11 @@ fn main() -> ! {
 
     info!("Version: {}", git_version::git_version!());
     info!("Boot reason: {}", boot_reason());
+
+    // Set unused relays low
+    let _relay_3 = Output::new(r.unused_relays.relay_3, Level::Low);
+    let _relay_7 = Output::new(r.unused_relays.relay_7, Level::Low);
+    let _relay_8 = Output::new(r.unused_relays.relay_8, Level::Low);
 
     // Core 1 deals with everything...
     spawn_core1(
