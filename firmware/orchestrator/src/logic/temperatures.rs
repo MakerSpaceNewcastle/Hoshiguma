@@ -48,9 +48,6 @@ async fn communication_task(mut communicator: StateMachineCommunicator<'static>)
             Either::First(OutputMessage::ElectronicsTemperatureSeverity(severity)) => {
                 update_monitor_severity(Monitor::ElectronicsTemperature, severity).await;
             }
-            Either::First(OutputMessage::CoolantFlowTemperatureSeverity(severity)) => {
-                update_monitor_severity(Monitor::CoolantFlowTemperature, severity).await;
-            }
             Either::First(OutputMessage::CoolantReservoirTemperatureSeverity(severity)) => {
                 update_monitor_severity(Monitor::CoolantReservoirTemperature, severity).await;
             }

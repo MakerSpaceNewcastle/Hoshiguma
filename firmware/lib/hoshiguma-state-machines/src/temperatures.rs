@@ -15,7 +15,6 @@ pub enum InputMessage {
 pub enum OutputMessage {
     FunctionalSeverity(Severity),
     ElectronicsTemperatureSeverity(Severity),
-    CoolantFlowTemperatureSeverity(Severity),
     CoolantReservoirTemperatureSeverity(Severity),
 }
 
@@ -44,7 +43,6 @@ pub struct State {
 
     output_functional_severity: ObservedValue<Severity>,
     output_electronics_temperature_severity: ObservedValue<Severity>,
-    output_coolant_flow_temperature_severity: ObservedValue<Severity>,
     output_coolant_reservoir_temperature_severity: ObservedValue<Severity>,
 }
 
@@ -64,7 +62,6 @@ impl Default for State {
 
             output_functional_severity: ObservedValue::default(),
             output_electronics_temperature_severity: ObservedValue::default(),
-            output_coolant_flow_temperature_severity: ObservedValue::default(),
             output_coolant_reservoir_temperature_severity: ObservedValue::default(),
         }
     }
@@ -141,23 +138,6 @@ impl<'a> crate::StateMachineRun for StateMachineRunner<'a> {
                     async |v| {
                         self.output_channel
                             .send(OutputMessage::ElectronicsTemperatureSeverity(v))
-                            .await;
-                    },
-                )
-                .await;
-
-            self.state
-                .output_coolant_flow_temperature_severity
-                .update_and_async(
-                    check_temperatures(
-                        &self.state.sensors,
-                        &[TemperatureSensor::CoolantFlowAtTube],
-                        25.0,
-                        35.0,
-                    ),
-                    async |v| {
-                        self.output_channel
-                            .send(OutputMessage::CoolantFlowTemperatureSeverity(v))
                             .await;
                     },
                 )

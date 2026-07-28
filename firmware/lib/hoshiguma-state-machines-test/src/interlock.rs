@@ -221,7 +221,7 @@ pub(super) async fn test_allow_until_idle() {
         // Simulate a minor fuck up that should allow the machine to finish the current job
         communicator
             .send_input(InputMessage::Monitor(
-                Monitor::CoolantFlowTemperature,
+                Monitor::CoolantReservoirTemperature,
                 Severity::Warning,
             ))
             .await;

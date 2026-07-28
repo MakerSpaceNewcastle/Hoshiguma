@@ -34,10 +34,6 @@ pub(super) async fn test_basic() {
         );
         assert_eq!(
             communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Critical)
-        );
-        assert_eq!(
-            communicator.receive_output().await,
             OutputMessage::CoolantReservoirTemperatureSeverity(Severity::Critical)
         );
 
@@ -55,19 +51,6 @@ pub(super) async fn test_basic() {
         );
         assert_queue_empty!(communicator);
 
-        // The coolant-flow sensor reports normally; its severity resolves to Normal.
-        communicator
-            .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
-                reading: Ok(20.0),
-            }))
-            .await;
-        assert_eq!(
-            communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Normal)
-        );
-        assert_queue_empty!(communicator);
-
         // The coolant-reservoir sensor reports normally; its severity resolves to Normal.
         communicator
             .send_input(InputMessage::Temperature(TemperatureSensorReading {
@@ -79,18 +62,6 @@ pub(super) async fn test_basic() {
             communicator.receive_output().await,
             OutputMessage::CoolantReservoirTemperatureSeverity(Severity::Normal)
         );
-        assert_queue_empty!(communicator);
-
-        // Sensors that are not used in any severity check produce no output when they
-        // first report.
-        for sensor in [TemperatureSensor::CoolantReturnAtTube] {
-            communicator
-                .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                    sensor,
-                    reading: Ok(20.0),
-                }))
-                .await;
-        }
         assert_queue_empty!(communicator);
     })
     .await;
@@ -105,9 +76,7 @@ async fn baseline_all_sensors(
     for (sensor, temp) in [
         (TemperatureSensor::OrchastratorPcb, 20.0_f32),
         (TemperatureSensor::CoolerPcb, 20.0),
-        (TemperatureSensor::CoolantFlowAtTube, 20.0),
         (TemperatureSensor::CoolantReservoir, 15.0),
-        (TemperatureSensor::CoolantReturnAtTube, 20.0),
     ] {
         communicator
             .send_input(InputMessage::Temperature(TemperatureSensorReading {
@@ -188,58 +157,6 @@ pub(super) async fn test_electronics_temperature() {
     .await;
 }
 
-pub(super) async fn test_coolant_flow_temperature() {
-    let input_channel = Channel::new();
-    let output_channel = Channel::new();
-
-    let (runner, mut communicator) =
-        hoshiguma_state_machines::temperatures::new(&input_channel, &output_channel);
-
-    crate::run_test(Duration::from_secs(10), runner, async || {
-        baseline_all_sensors(&mut communicator).await;
-
-        // Temperature rises to warning level (warn threshold: 25 °C).
-        communicator
-            .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
-                reading: Ok(26.0),
-            }))
-            .await;
-        assert_eq!(
-            communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Warning)
-        );
-        assert_queue_empty!(communicator);
-
-        // Temperature rises to critical level (critical threshold: 35 °C).
-        communicator
-            .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
-                reading: Ok(36.0),
-            }))
-            .await;
-        assert_eq!(
-            communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Critical)
-        );
-        assert_queue_empty!(communicator);
-
-        // Temperature returns to normal (< 25 °C).
-        communicator
-            .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
-                reading: Ok(20.0),
-            }))
-            .await;
-        assert_eq!(
-            communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Normal)
-        );
-        assert_queue_empty!(communicator);
-    })
-    .await;
-}
-
 pub(super) async fn test_coolant_reservoir_temperature() {
     let input_channel = Channel::new();
     let output_channel = Channel::new();
@@ -305,26 +222,26 @@ pub(super) async fn test_failed_sensor() {
         // A sensor that fails to read causes its group's severity to go Critical.
         communicator
             .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
+                sensor: TemperatureSensor::CoolantReservoir,
                 reading: Err(()),
             }))
             .await;
         assert_eq!(
             communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Critical)
+            OutputMessage::CoolantReservoirTemperatureSeverity(Severity::Critical)
         );
         assert_queue_empty!(communicator);
 
         // When the sensor recovers and reports a valid reading, severity returns to Normal.
         communicator
             .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
-                reading: Ok(20.0),
+                sensor: TemperatureSensor::CoolantReservoir,
+                reading: Ok(17.5),
             }))
             .await;
         assert_eq!(
             communicator.receive_output().await,
-            OutputMessage::CoolantFlowTemperatureSeverity(Severity::Normal)
+            OutputMessage::CoolantReservoirTemperatureSeverity(Severity::Normal)
         );
         assert_queue_empty!(communicator);
     })

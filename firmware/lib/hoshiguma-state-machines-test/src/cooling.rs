@@ -51,7 +51,7 @@ pub(super) async fn test_basic() {
         // Temperature updates for sensors other than CoolantReservoir are ignored.
         communicator
             .send_input(InputMessage::Temperature(TemperatureSensorReading {
-                sensor: TemperatureSensor::CoolantFlowAtTube,
+                sensor: TemperatureSensor::OrchastratorPcb,
                 reading: Ok(20.0),
             }))
             .await;

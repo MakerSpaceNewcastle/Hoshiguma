@@ -24,9 +24,6 @@ pub enum TemperatureSensor {
     CoolerPcb,
     CoolantReservoir,
 
-    CoolantFlowAtTube,
-    CoolantReturnAtTube,
-
     UnknownOnewire(OnewireAddress),
 }
 

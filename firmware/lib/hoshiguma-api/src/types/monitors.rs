@@ -74,9 +74,6 @@ pub enum Monitor {
     /// Are the electronics (of any part of the system) at a suitable temperature?
     ElectronicsTemperature,
 
-    /// Is the temperature of the coolant in the flow line within limits?
-    CoolantFlowTemperature,
-
     /// Is the temperature of the coolant in the reservoir within limits?
     CoolantReservoirTemperature,
 
