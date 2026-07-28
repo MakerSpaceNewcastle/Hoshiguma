@@ -43,7 +43,6 @@ async fn main(_spawner: Spawner) {
     status_light::test_basic().await;
     temperatures::test_basic().await;
     temperatures::test_electronics_temperature().await;
-    temperatures::test_coolant_flow_temperature().await;
     temperatures::test_coolant_reservoir_temperature().await;
     temperatures::test_failed_sensor().await;
 

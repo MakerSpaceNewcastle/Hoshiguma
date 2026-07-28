@@ -26,14 +26,6 @@ pub(super) fn onewire_sensor_to_named_temperature_sensor(
             sensor: TemperatureSensor::CoolantReservoir,
             reading: reading.reading,
         },
-        8087587398082553896 => TemperatureSensorReading {
-            sensor: TemperatureSensor::CoolantFlowAtTube,
-            reading: reading.reading,
-        },
-        5925859576946210856 => TemperatureSensorReading {
-            sensor: TemperatureSensor::CoolantReturnAtTube,
-            reading: reading.reading,
-        },
         _ => {
             info!("Unknown temperature sensor {}", reading.address);
             reading.into()
