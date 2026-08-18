@@ -46,10 +46,10 @@ impl Default for State {
 }
 
 /// Warning differential pressure in Pa.
-const WARN: f32 = 52.0;
+const WARN: f32 = 48.0;
 
 /// Critical differential pressure in Pa.
-const CRITICAL: f32 = 45.0;
+const CRITICAL: f32 = 42.0;
 
 /// Amount of time it typically takes the fan to reach normal operating airflow after it is powered
 /// on from stationary.
