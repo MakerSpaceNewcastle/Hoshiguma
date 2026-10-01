@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-slim
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Render CAD files
@@ -76,7 +76,7 @@ jobs:
           - firmware/lib/hoshiguma-state-machines-test
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Clippy
