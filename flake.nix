@@ -11,7 +11,6 @@
         just
 
         # Code formatting tools
-        treefmt
         alejandra
         mdl
         rustfmt

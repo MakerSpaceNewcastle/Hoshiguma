@@ -8,115 +8,13 @@ on:
   pull_request:
 
 jobs:
-  formatting:
-    name: Formatting
-    runs-on: ubuntu-slim
-
-    steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
-
-      - name: Format
-        run: nix develop --command treefmt --fail-on-change
-
-  cad:
-    name: CAD
-    needs:
-      - formatting
-    runs-on: ubuntu-slim
-
-    steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
-
-      - name: Render CAD files
-        run: |
-          cd cad
-          nix develop --command just
-
-  libraries:
-    name: Libraries
-    needs:
-      - formatting
+  CI:
+    name: CI
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        crate:
-          - hoshiguma-api
-          - hoshiguma-common
-          - hoshiguma-state-machines
-
     steps:
       - uses: actions/checkout@v7
       - uses: DeterminateSystems/nix-installer-action@v23
 
-      - name: Clippy
-        run: |
-          set -x
-          cd ./firmware/lib/${{ matrix.crate }}
-          nix develop --command cargo clippy -- -Dwarnings
-
-      - name: Tests
-        run: |
-          set -x
-          cd ./firmware/lib/${{ matrix.crate }}
-          nix develop --command cargo test
-
-  utilities:
-    name: Utilities
-    needs:
-      - libraries
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        crate:
-          - control-tools
-          - firmware/lib/hoshiguma-state-machines-test
-
-    steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
-
-      - name: Clippy
-        run: |
-          set -x
-          cd ./${{ matrix.crate }}
-          nix develop --command cargo clippy -- -Dwarnings
-
-      - name: Build
-        run: |
-          set -x
-          cd ./${{ matrix.crate }}
-          nix develop --command cargo build --release
-
-  firmware:
-    name: Firmware
-    needs:
-      - libraries
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        crate:
-          - cooler
-          - orchestrator
-          - rear-sensor-board
-          - telemetry-bridge
-
-    steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
-
-      - name: Clippy
-        run: |
-          set -x
-          cd ./firmware/${{ matrix.crate }}
-          nix develop --command cargo clippy -- -Dwarnings
-
-      - name: Build
-        run: |
-          set -x
-          cd ./firmware/${{ matrix.crate }}
-          nix develop --command cargo build --release
+      - name: Check
+        run: nix develop --command just check
