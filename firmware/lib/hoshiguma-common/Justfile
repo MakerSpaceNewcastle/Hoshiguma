@@ -9,6 +9,3 @@ fmt:
 check: build
     cargo fmt --check
     cargo clippy -- -Dwarnings
-
-run:
-    cargo run --release

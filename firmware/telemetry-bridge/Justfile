@@ -3,6 +3,13 @@ default: build
 build:
     cargo build --release
 
+fmt:
+    cargo fmt
+
+check: build
+    cargo fmt --check
+    cargo clippy -- -Dwarnings
+
 run:
     cargo run --release
 
